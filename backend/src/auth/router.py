@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
-from . import service, schemas, models
+from . import service, schemas, models, utils
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -17,7 +17,10 @@ def request_otp(payload: schemas.OTPRequest, db: Session = Depends(get_db)):
 
 @router.post("/verify-otp", response_model=schemas.TokenResponse)
 def verify_otp(payload: schemas.OTPVerify, db: Session = Depends(get_db)):
-    # 1. Validate OTP via service
+    """
+    AUTH-01: Verify the OTP and log the user in.
+    """
+    # Ensure your service returns the User object on success
     user = service.verify_otp(db, payload.phone_number, payload.otp_code)
     
     if not user:
@@ -26,7 +29,7 @@ def verify_otp(payload: schemas.OTPVerify, db: Session = Depends(get_db)):
             detail="Invalid or expired OTP"
         )
     
-    # 2. Generate real JWT with user_id as the 'sub' (subject)
+    # This is where the error was happening
     access_token = utils.create_access_token(data={"sub": str(user.id)})
     
     return {

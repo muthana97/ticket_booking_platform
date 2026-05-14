@@ -1,5 +1,5 @@
 import random
-import datetime
+from datetime import datetime
 from sqlalchemy.orm import Session
 from . import models
 
@@ -21,16 +21,22 @@ def generate_otp(db: Session, phone_number: str):
     print(f"DEBUG: OTP for {phone_number} is {code}") 
     return code
 
-def verify_otp(db: Session, phone_number: str, code: str):
+def verify_otp(db: Session, phone_number: str, otp_code: str):
+    # 1. Find the OTP record
     otp_record = db.query(models.OTPVerification).filter(
         models.OTPVerification.phone_number == phone_number,
-        models.OTPVerification.otp_code == code,
-        models.OTPVerification.is_verified == False,
-        models.OTPVerification.expires_at > datetime.datetime.utcnow()
+        models.OTPVerification.otp_code == otp_code
     ).first()
 
-    if otp_record:
-        otp_record.is_verified = True
-        db.commit()
-        return True
-    return False
+    # 2. Check if it exists and is not expired
+    if not otp_record or otp_record.expires_at < datetime.now():
+        return None  # Return None instead of False
+
+    # 3. Success! Find and return the actual User object
+    user = db.query(models.User).filter(models.User.phone_number == phone_number).first()
+    
+    # Optional: Delete the OTP record so it can't be reused
+    db.delete(otp_record)
+    db.commit()
+
+    return user # <--- THIS MUST BE THE USER OBJECT, NOT 'TRUE'
