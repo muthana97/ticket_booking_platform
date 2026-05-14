@@ -7,3 +7,7 @@ env/
 dist/
 build/
 *.db
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
