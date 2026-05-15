@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..auth.dependencies import get_current_user # <--- New Import
 from ..auth.models import User # <--- For type hinting
+from ..config import settings  # <--- ADD THIS IMPORT
 from . import service, schemas
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])

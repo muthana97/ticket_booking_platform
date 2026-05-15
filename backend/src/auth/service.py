@@ -1,12 +1,12 @@
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from . import models
 
 def generate_otp(db: Session, phone_number: str):
     # Generate a 6-digit code
     code = f"{random.randint(100000, 999999)}"
-    expiry = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+    expiry = datetime.utcnow() + timedelta(minutes=5)
     
     # Store in DB
     db_otp = models.OTPVerification(
@@ -29,7 +29,7 @@ def verify_otp(db: Session, phone_number: str, otp_code: str):
     ).first()
 
     # 2. Check if it exists and is not expired
-    if not otp_record or otp_record.expires_at < datetime.now():
+    if not otp_record or otp_record.expires_at < datetime.utcnow():
         return None  # Return None instead of False
 
     # 3. Success! Find and return the actual User object
