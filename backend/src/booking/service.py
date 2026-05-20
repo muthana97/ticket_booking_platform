@@ -1,13 +1,14 @@
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from fastapi import HTTPException
 from .models import Booking
 from ..inventory.models import Seat
-from fastapi import HTTPException
 
-def lock_seats(db: Session, trip_id: int, seat_numbers: list[str]):
+def lock_seats(db: Session, trip_id: int, seat_numbers: list[str], customer_id: int, total_price: float):
     """
     Implements SEAT-02: Prevent double booking using atomic transactions.
-    Uses 'with_for_update' to lock the rows in Postgres until the transaction ends.
+    Uses 'with_for_update' to lock the rows in Postgres until the transaction ends,
+    and initializes a corresponding state-tracked Booking record (Phase 5).
     """
     # 1. Select seats with a Row-Level Lock
     query = db.query(Seat).filter(
@@ -28,6 +29,30 @@ def lock_seats(db: Session, trip_id: int, seat_numbers: list[str]):
     # 3. Mark seats as locked (pending payment)
     for seat in seats:
         seat.status = "locked"
+
+    # 4. Phase 5 Addition: Instantiate the core Booking transaction record
+    # Set immediate checkout expiration window to 10 minutes from right now
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    expiration_window = now_utc + timedelta(minutes=10)
+
+    # Collect internal primary IDs for JSON database tracking
+    seat_ids_list = [seat.id for seat in seats]
+
+    new_booking = Booking(
+        customer_id=customer_id,
+        trip_id=trip_id,
+        status="pending",
+        total_price=total_price,
+        payment_status="unpaid",       # Tracks initial intent state
+        created_at=now_utc,
+        expires_at=expiration_window,
+        seat_ids=seat_ids_list          # Track the literal IDs for the Reaper daemon
+    )
+
+    db.add(new_booking)
     
+    # 5. Commit the entire atomic unit safely
     db.commit()
-    return seats
+    db.refresh(new_booking)
+    
+    return {"booking": new_booking, "seats": seats}

@@ -1,0 +1,47 @@
+Markdown
+# Project Context: Ticket Booking Platform (Active Development)
+
+## 1. System Overview & Objectives
+* **Goal**: A high-concurrency, multi-provider marketplace for bus tickets featuring real-time seat locking and dual-path payment integration (Bank of Khartoum & Billing Reference).
+* **Core Logic**: Atomic seat management using PostgreSQL row-level locking (`SELECT ... FOR UPDATE`) to prevent double-booking. The system includes an automated "Reaper" lifecycle background task daemon.
+
+## 2. Technical Stack (Live)
+| Layer | Technology |
+| :--- | :--- |
+| **Backend** | FastAPI (Python 3.14) running via Uvicorn |
+| **Database** | PostgreSQL 15 (Docker: `ticket_booking_db`) |
+| **ORM** | SQLAlchemy with `psycopg2-binary` |
+| **Security** | JWT signed via `python-jose`; OTP-based authentication |
+| **Concurrency** | Row-level locking (`with_for_update`) in booking service |
+| **Worker** | Async lifespan background task (The Reaper) |
+
+## 3. Directory Structure (Monorepo)
+```plaintext
+ticket_booking_platform/
+├── backend/
+│   ├── .env                     # DATABASE_URL, SECRET_KEY, JWT_ALGORITHM
+│   ├── docker-compose.yml       # PostgreSQL 15 container config
+│   ├── requirements.txt         # Project dependency footprint (Pydantic v2 split ready)
+│   └── src/
+│       ├── main.py              # App entry point & background task orchestration
+│       ├── config.py            # Settings loader (JWT & Lock constraints)
+│       ├── database.py          # SQLAlchemy engine & session generator
+│       ├── auth/                # OTP & JWT logic
+│       ├── inventory/           # Trip search & seat map logic
+│       ├── booking/             # Atomic locking, Billing Intent, & Reaper logic
+│       └── common/              # Shared utilities
+4. Comprehensive File Manifest
+backend/requirements.txt: Fully cataloged footprint locking fastapi, uvicorn, sqlalchemy, psycopg2-binary, and explicit pydantic-settings splits.
+backend/src/booking/models.py: Upgraded to Phase 5 state engines containing deferred payment vectors (payment_method, payment_status, billing_reference, bill_generated_at) and non-editable audit trail parameters (refund_amount, refund_status, refund_processed_at).
+backend/src/booking/service.py: Enhanced lock_seats mechanics combining original, verified row-level transactional locking with immediate 10-minute database Booking instantiation.
+backend/src/booking/router.py: Secured POST /bookings/lock route updated to extract user security identifiers from incoming tokens and pipe financial transactions downward into the database layer.
+backend/src/booking/schemas.py: Pydantic v2 validation layer capturing total_price requests and outputting complete BookingResponse payloads.
+5. Current Operational State
+Identity (IAM): 100% Complete. Real JWT issuance and verification functional.
+Inventory: 100% Complete. Database seeding and trip search logic functional.
+Booking Engine: 100% Complete. Schema migrated to fully support multi-path payment structures. Atomic locking verified via race-condition tests. Automatic seat-release (Reaper) background lifespans active.
+Local Environment Isolation: 100% Repaired. Virtual environment rebuilt and pinned, resolving macOS execution tree confusion.
+6. Next Steps (Priority Order)
+Billing Intent Completion Endpoint (Task 3): Implement the transition endpoint enabling clients to declare a billing path intent, outputting a mock-verifiable billing signature (BOK-XXXX-XX) and pushing the record's database lifecycle timer forward by an extra 30 minutes (PAY-04).
+The Reaper Validation Constraints (Task 4): Verify the background cleaner daemon naturally drops expired entities if they violate checkout constraints regardless of lock phase depth.
+Passenger Manifest Assembly Engine (Task 5 / Phase 6): Build the query compiler utility to format occupant manifest logs (MAN-02).
