@@ -1,6 +1,6 @@
 # backend/src/booking/tasks.py
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from .models import Booking
@@ -8,37 +8,44 @@ from ..inventory.models import Seat
 
 async def cleanup_expired_bookings():
     """
-    NFR-12: Background task to release seats from expired bookings.
-    Runs every 60 seconds.
+    NFR-12 & SEAT-04: The Reaper background daemon.
+    Scans every 60 seconds to automatically release seat holds from expired bookings.
+    Handles both initial 'pending' locks and Phase 5 extended 'committed_pending' billing intents.
     """
     while True:
         db = SessionLocal()
         try:
-            now = datetime.utcnow()
-            # 1. Find all pending bookings that have passed their expiry time
+            # Match python-naive timestamps used across models.py / service.py
+            now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+            
+            # 1. Capture expired bookings across BOTH hold lifecycle phases
             expired_bookings = db.query(Booking).filter(
-                Booking.status == "pending",
-                Booking.expires_at < now
+                Booking.status.in_(["pending", "committed_pending"]),
+                Booking.expires_at < now_utc
             ).all()
 
-            for booking in expired_bookings:
-                # 2. Revert Seat status to 'available'
-                # seat_ids is stored as a list in a JSON column
-                db.query(Seat).filter(
-                    Seat.id.in_(booking.seat_ids),
-                    Seat.trip_id == booking.trip_id
-                ).update({"status": "available"}, synchronize_session=False)
+            if expired_bookings:
+                for booking in expired_bookings:
+                    # 2. Revert the physical Seat rows to 'available'
+                    # seat_ids is tracked as an array of IDs inside our JSON column
+                    if booking.seat_ids:
+                        db.query(Seat).filter(
+                            Seat.id.in_(booking.seat_ids),
+                            Seat.trip_id == booking.trip_id
+                        ).update({"status": "available"}, synchronize_session=False)
 
-                # 3. Mark Booking as 'expired'
-                booking.status = "expired"
-                print(f"REAPER: Released seats for Booking ID {booking.id}")
+                    # 3. Terminate the Booking record lifecycle state
+                    booking.status = "expired"
+                    print(f"REAPER: Released seats and marked Booking ID {booking.id} as expired ({booking.status})")
 
-            db.commit()
+                # Commit all updates within an atomic batch execution block
+                db.commit()
+                
         except Exception as e:
             print(f"REAPER ERROR: {e}")
             db.rollback()
         finally:
             db.close()
         
-        # Run check every minute
+        # Poll every 60 seconds
         await asyncio.sleep(60)

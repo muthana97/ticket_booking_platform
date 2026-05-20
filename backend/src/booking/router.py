@@ -18,16 +18,8 @@ def reserve_seats(
     SEAT-04: Securely lock seats for a specific trip using an atomic transaction.
     Tied to the active authenticated session via JWT. Creates a 'pending' booking record.
     """
-    # 1. Fallback / Configuration sanity validation
-    # If total_price isn't included in your incoming payload schema yet, 
-    # we calculate a placeholder calculation or require it via schemas.
     total_price = getattr(payload, "total_price", 0.0)
-    if total_price <= 0.0:
-        # If your application logic derives ticket pricing from an inventory lookup instead,
-        # you can fetch the trip's price per seat here. For now, we expect it from the contract.
-        pass
 
-    # 2. Invoke our upgraded service engine layer
     result = service.lock_seats(
         db=db,
         trip_id=payload.trip_id,
@@ -36,7 +28,6 @@ def reserve_seats(
         total_price=total_price
     )
     
-    # 3. Construct and return a unified structural response payload
     return {
         "booking_id": result["booking"].id,
         "status": result["booking"].status,
@@ -46,3 +37,44 @@ def reserve_seats(
         "seats": [seat.seat_number for seat in result["seats"]],
         "message": f"Seats successfully locked under authorization token for {current_user.phone_number}."
     }
+
+
+@router.post("/intent/billing", response_model=schemas.BillingIntentResponse)
+def commit_billing_intent(
+    payload: schemas.BillingIntentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    PAY-04 (Path B): Commit to paying via Billing Reference.
+    Generates a billing confirmation number and extends checkout lifecycle constraints to 30 minutes.
+    """
+    booking = service.create_billing_intent(
+        db=db,
+        booking_id=payload.booking_id,
+        customer_id=current_user.id
+    )
+
+    return {
+        "booking_id": booking.id,
+        "status": booking.status,
+        "payment_method": booking.payment_method,
+        "billing_reference": booking.billing_reference,
+        "expires_at": booking.expires_at,
+        "message": "Billing intent declared successfully. Please settle payment within 30 minutes."
+    }
+@router.get("/trips/{trip_id}/manifest", response_model=schemas.TripManifestResponse)
+def get_trip_manifest(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    MAN-02: Generates the structured passenger manifest for a trip.
+    Restricted to authenticated operators/admins.
+    """
+    # Note: In a subsequent phase, you can filter current_user roles here 
+    # to restrict access specifically to admin/provider accounts.
+    
+    manifest_data = service.compile_trip_manifest(db=db, trip_id=trip_id)
+    return manifest_data

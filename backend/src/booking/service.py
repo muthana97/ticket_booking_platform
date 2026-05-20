@@ -56,3 +56,75 @@ def lock_seats(db: Session, trip_id: int, seat_numbers: list[str], customer_id: 
     db.refresh(new_booking)
     
     return {"booking": new_booking, "seats": seats}
+def create_billing_intent(db: Session, booking_id: int, customer_id: int):
+    """
+    Implements PAY-04 (Path B): Transition booking to 'committed_pending',
+    generate a mock verifiable reference number, and extend the lock window by 30 minutes.
+    """
+    # 1. Fetch the booking using row-level locking to safely change state safely
+    booking = db.query(Booking).filter(
+        Booking.id == booking_id,
+        Booking.customer_id == customer_id
+    ).with_for_update().first()
+
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking record not found or unauthorized")
+
+    # 2. Check if the booking has already expired or changed out of 'pending'
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if booking.expires_at < now_utc:
+        raise HTTPException(status_code=400, detail="Booking hold window has already expired")
+        
+    if booking.status != "pending":
+        raise HTTPException(status_code=400, detail=f"Booking is in an invalid state for checkout: {booking.status}")
+
+    # 3. Generate a deterministically structured mock verification reference code (e.g., BOK-8392-10)
+    random_digits = "".join(random.choices(string.digits, k=4))
+    random_suffix = "".join(random.choices(string.digits, k=2))
+    mock_ref = f"BOK-{random_digits}-{random_suffix}"
+
+    # 4. Advance states and stretch the expiration window out by 30 minutes
+    booking.status = "committed_pending"
+    booking.payment_method = "billing_reference"
+    booking.billing_reference = mock_ref
+    booking.bill_generated_at = now_utc
+    booking.expires_at = now_utc + timedelta(minutes=30)
+    def compile_trip_manifest(db: Session, trip_id: int):
+    """
+    Implements MAN-02: Compiles the passenger list (manifesto) for an operational trip.
+    Collects records only from bookings in 'confirmed' status.
+    """
+    # 1. Fetch confirmed bookings for this specific trip
+    confirmed_bookings = db.query(Booking).filter(
+        Booking.trip_id == trip_id,
+        Booking.status == "confirmed"
+    ).all()
+
+    manifest_list = []
+
+    # 2. Extract passenger lists mapped to those confirmed bookings
+    for booking in confirmed_bookings:
+        for p in booking.passengers:
+            manifest_list.append(
+                {
+                    "passenger_id": p.id,
+                    "full_name": p.full_name,
+                    "phone_number": p.phone_number,
+                    "national_id": p.national_id,
+                    "booking_id": booking.id
+                }
+            )
+
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    return {
+        "trip_id": trip_id,
+        "total_confirmed_passengers": len(manifest_list),
+        "generated_at": now_utc,
+        "manifest": manifest_list
+    }
+
+    db.commit()
+    db.refresh(booking)
+
+    return booking

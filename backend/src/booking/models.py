@@ -44,3 +44,18 @@ class Passenger(Base):
     national_id = Column(String, nullable=True) # MAN-01 requirement
     
     booking = relationship("Booking", back_populates="passengers")
+class ManifestPassengerItem(BaseModel):
+    passenger_id: int
+    full_name: str
+    phone_number: str
+    national_id: str | None
+    booking_id: int
+
+class TripManifestResponse(BaseModel):
+    trip_id: int
+    total_confirmed_passengers: int
+    generated_at: datetime
+    manifest: List[ManifestPassengerItem]
+
+    class Config:
+        from_attributes = True
