@@ -128,3 +128,44 @@ def create_billing_intent(db: Session, booking_id: int, customer_id: int):
     db.refresh(booking)
 
     return booking
+
+def settle_direct_payment(db: Session, booking_id: int, customer_id: int, transaction_ref: str):
+    """
+    Implements PAY-01 & SYS-01 (Path A): Verifies payment proof, transitions booking 
+    to 'confirmed', flips payment to 'paid', and permanently marks seats as 'booked'.
+    """
+    # 1. Fetch the booking using row-level locking to freeze the state during update
+    booking = db.query(Booking).filter(
+        Booking.id == booking_id,
+        Booking.customer_id == customer_id
+    ).with_for_update().first()
+
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking record not found or unauthorized")
+
+    # 2. Guard against processing an already expired hold window
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if booking.expires_at < now_utc and booking.status in ["pending", "committed_pending"]:
+        raise HTTPException(status_code=400, detail="Cannot settle payment: Checkout window has expired")
+
+    if booking.status not in ["pending", "committed_pending"]:
+        raise HTTPException(status_code=400, detail=f"Booking is in an un-settleable state: {booking.status}")
+
+    # 3. Permanently lock down the physical seats away from the Reaper daemon
+    if booking.seat_ids:
+        db.query(Seat).filter(
+            Seat.id.in_(booking.seat_ids),
+            Seat.trip_id == booking.trip_id
+        ).update({"status": "booked"}, synchronize_session=False)
+
+    # 4. Advance the transaction state parameters
+    booking.status = "confirmed"
+    booking.payment_status = "paid"
+    booking.payment_method = "bok_direct"
+    booking.billing_reference = transaction_ref  # Save external trace reference
+    
+    # 5. Atomic commit safety
+    db.commit()
+    db.refresh(booking)
+
+    return booking

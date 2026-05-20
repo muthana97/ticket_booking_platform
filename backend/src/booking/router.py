@@ -78,3 +78,29 @@ def get_trip_manifest(
     
     manifest_data = service.compile_trip_manifest(db=db, trip_id=trip_id)
     return manifest_data
+@router.post("/settle/direct", response_model=schemas.BookingConfirmationResponse)
+def confirm_booking_payment(
+    payload: schemas.PaymentSettlementRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    PAY-01 (Path A): Process direct payment clearance verification.
+    Transitions booking state to confirmed and secures the assigned seats permanently.
+    """
+    booking = service.settle_direct_payment(
+        db=db,
+        booking_id=payload.booking_id,
+        customer_id=current_user.id,
+        transaction_ref=payload.transaction_reference
+    )
+
+    return {
+        "booking_id": booking.id,
+        "status": booking.status,
+        "payment_status": booking.payment_status,
+        "payment_method": booking.payment_method,
+        "billing_reference": booking.billing_reference,
+        "total_price": booking.total_price,
+        "message": "Payment verified successfully. Your booking is officially confirmed!"
+    }

@@ -37,3 +37,18 @@ class BillingIntentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+class PaymentSettlementRequest(BaseModel):
+    booking_id: int
+    transaction_reference: str  # Proof of payment identifier from provider
+
+class BookingConfirmationResponse(BaseModel):
+    booking_id: int
+    status: str
+    payment_status: str
+    payment_method: str
+    billing_reference: str | None
+    total_price: float
+    message: str
+
+    class Config:
+        from_attributes = True
