@@ -15,16 +15,41 @@ from .admin.router import router as admin_router
 # Ensure tables are created (Standard SQLAlchemy sync way)
 Base.metadata.create_all(bind=engine)
 
+def _bootstrap_if_empty():
+    """
+    Auto-seed on first boot. Render's free tier doesn't expose a shell, so
+    `python seed.py` can't be run manually — we run it on startup instead,
+    but only if the DB has no admin yet (idempotent across cold starts).
+    """
+    try:
+        from .auth.models import User
+        from .database import SessionLocal
+
+        db = SessionLocal()
+        has_admin = db.query(User).filter(User.role == "admin").first() is not None
+        db.close()
+
+        if has_admin:
+            print("[BOOTSTRAP] admin present — skipping seed")
+            return
+
+        print("[BOOTSTRAP] empty DB — running seed_data()")
+        from seed import seed_data
+        seed_data()
+    except Exception as e:
+        print(f"[BOOTSTRAP] failed: {e!r}")
+
+
 # 1. Define the Lifespan manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # STARTUP: This runs when the server starts
-    # We use asyncio.create_task so it runs in the background without blocking the API
+    # STARTUP
+    _bootstrap_if_empty()
     reaper_task = asyncio.create_task(cleanup_expired_bookings())
-    
+
     yield  # The application serves requests here
-    
-    # SHUTDOWN: This runs when the server stops
+
+    # SHUTDOWN
     reaper_task.cancel()
 
 # 2. Initialize FastAPI with the lifespan

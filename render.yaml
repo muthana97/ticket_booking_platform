@@ -32,6 +32,13 @@ services:
         value: "5"
       - key: DB_POOL_MAX_OVERFLOW
         value: "10"
+      # Admin creds — set in Render dashboard so prod admin can be rotated
+      # without a code change. seed.py falls back to committed defaults if
+      # these are unset (fine for local dev).
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
       # SMTP — set these manually in the Render dashboard; sync:false keeps
       # them out of source control.
       - key: SMTP_HOST

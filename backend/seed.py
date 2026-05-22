@@ -2,10 +2,15 @@
 Seed: builds two providers (for data-isolation testing), 4 trips, sample
 bookings across statuses, and the admin / demo customer accounts.
 
+Admin credentials are read from env (ADMIN_EMAIL / ADMIN_PASSWORD) so prod
+can override the committed defaults without a code change. Demo customer +
+provider accounts stay hardcoded — they're disposable demo data.
+
 Run from the backend directory:
     ./venv/bin/python seed.py
 """
 
+import os
 from datetime import datetime, timedelta
 
 from src.auth.models import User
@@ -17,20 +22,20 @@ from src.inventory.service import build_layout_config, generate_seat_names
 
 
 # ---------------------------------------------------------------------------
-# Demo credentials
+# Admin — overridable via env so prod can set its own credentials
 # ---------------------------------------------------------------------------
 
-ADMIN_EMAIL    = "admin@tazkirati.app"
-ADMIN_PASSWORD = "TazAdmin#MVP-2026"
+ADMIN_EMAIL    = os.getenv("ADMIN_EMAIL",    "admin@tazkirati.app")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "TazAdmin#MVP-2026")
 
+# Demo accounts (customer + two providers) — hardcoded; rotate by editing
+# this file. These exist purely to populate the stakeholder demo.
 CUSTOMER_EMAIL    = "passenger@tazkirati.app"
 CUSTOMER_PASSWORD = "Passenger#2026"
-
-# Two providers — proves data isolation (each only sees their own trips)
-NILE_EMAIL    = "operator@tazkirati.app"            # "Nile Coach Co."
-NILE_PASSWORD = "NileOps#2026"
-SUDAN_EMAIL    = "ops@sudanbus.app"                 # "SudanBus Express"
-SUDAN_PASSWORD = "SudanOps#2026"
+NILE_EMAIL        = "operator@tazkirati.app"
+NILE_PASSWORD     = "NileOps#2026"
+SUDAN_EMAIL       = "ops@sudanbus.app"
+SUDAN_PASSWORD    = "SudanOps#2026"
 
 
 def _build_seats(db, trip, total_seats):
