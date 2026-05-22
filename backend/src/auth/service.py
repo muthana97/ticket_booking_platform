@@ -1,11 +1,41 @@
 import random
+import smtplib
 from datetime import datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from . import models, utils
+
+
+def _send_email(to: str, subject: str, html: str, text: str) -> bool:
+    """
+    Deliver an email via SMTP if credentials are configured. Returns True on
+    success. On failure (or no config) we silently fall back to a console log
+    of the OTP — the demo still works locally that way.
+    """
+    if not (settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD):
+        return False
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = settings.SMTP_FROM or settings.SMTP_USER
+        msg["To"] = to
+        msg["Subject"] = subject
+        msg.attach(MIMEText(text, "plain"))
+        msg.attach(MIMEText(html, "html"))
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as s:
+            s.starttls()
+            # Gmail App Passwords are tolerant of spaces, but strip just in case.
+            s.login(settings.SMTP_USER, settings.SMTP_PASSWORD.replace(" ", ""))
+            s.send_message(msg)
+        print(f"[EMAIL] sent to {to} subject={subject!r}")
+        return True
+    except Exception as e:
+        print(f"[EMAIL] SMTP delivery failed: {e!r}")
+        return False
 
 
 def _generate_email_otp(db: Session, email: str) -> str:
@@ -18,9 +48,34 @@ def _generate_email_otp(db: Session, email: str) -> str:
     )
     db.add(rec)
     db.commit()
-    # In production this would hand off to an email transport. For the demo we
-    # surface the code via the response (matching the existing dev pattern).
-    print(f"[EMAIL-OTP] {email} → {code}")
+
+    subject = f"Your Tazkirati verification code: {code}"
+    text = (
+        f"Welcome to Tazkirati.\n\n"
+        f"Your 6-digit verification code is: {code}\n"
+        f"It expires in {settings.OTP_EXPIRY_MINUTES} minutes.\n\n"
+        f"If you didn't request this, you can safely ignore it."
+    )
+    html = f"""\
+<!doctype html>
+<html><body style="font-family: -apple-system, system-ui, sans-serif; background: #F2EAD3; padding: 32px;">
+  <table style="max-width: 480px; margin: 0 auto; background: #FBF6E7; border: 1.5px solid #2D261B;">
+    <tr><td style="padding: 28px 32px 14px;">
+      <div style="font-family: Georgia, serif; font-weight: 900; font-size: 32px; color: #1A1814; letter-spacing: -0.02em;">Tazkirati.</div>
+      <div style="font-family: monospace; font-size: 10px; letter-spacing: 0.2em; color: #3D362A; text-transform: uppercase; margin-top: 4px;">Sudan Intercity Coach</div>
+    </td></tr>
+    <tr><td style="padding: 0 32px 28px;">
+      <p style="font-size: 15px; color: #1A1814; margin: 18px 0;">Welcome aboard. Use this code to confirm your email:</p>
+      <div style="font-family: monospace; font-weight: 600; font-size: 40px; letter-spacing: 0.4em; padding: 18px; background: #F2EAD3; border: 2px solid #0F2A47; color: #0F2A47; text-align: center;">{code}</div>
+      <p style="font-size: 12px; color: #3D362A; margin-top: 16px;">Valid for {settings.OTP_EXPIRY_MINUTES} minutes. If you didn't request this, ignore it.</p>
+    </td></tr>
+  </table>
+</body></html>"""
+
+    sent = _send_email(to=email, subject=subject, html=html, text=text)
+    if not sent:
+        # Fallback when SMTP isn't configured (or fails) — keeps local dev working.
+        print(f"[EMAIL-OTP-CONSOLE] {email} → {code}")
     return code
 
 

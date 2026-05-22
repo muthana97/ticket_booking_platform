@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed origins. Use "*" in dev / set explicit
     # origins in production (e.g. "https://tazkirati.onrender.com").
     CORS_ALLOWED_ORIGINS: str = "*"
+
+    # ----- SMTP (optional — if unset we fall back to console-logged OTPs) -----
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=env_path, extra="ignore")
 
