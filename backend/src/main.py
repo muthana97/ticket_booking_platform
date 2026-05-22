@@ -17,25 +17,58 @@ Base.metadata.create_all(bind=engine)
 
 def _bootstrap_if_empty():
     """
-    Auto-seed on first boot. Render's free tier doesn't expose a shell, so
-    `python seed.py` can't be run manually — we run it on startup instead,
-    but only if the DB has no admin yet (idempotent across cold starts).
+    On every startup:
+      1. If the DB has no admin → run seed_data() (free-tier has no shell to
+         run `python seed.py` manually).
+      2. If ADMIN_EMAIL and ADMIN_PASSWORD env vars are set, reconcile the
+         existing admin row to match them — so changing the env vars in
+         Render's UI actually takes effect on the next deploy without
+         needing DB access.
     """
+    import os
     try:
         from .auth.models import User
+        from .auth.utils import hash_password
         from .database import SessionLocal
 
         db = SessionLocal()
-        has_admin = db.query(User).filter(User.role == "admin").first() is not None
-        db.close()
+        try:
+            admin = db.query(User).filter(User.role == "admin").first()
 
-        if has_admin:
-            print("[BOOTSTRAP] admin present — skipping seed")
-            return
+            if admin is None:
+                print("[BOOTSTRAP] empty DB — running seed_data()")
+                db.close()
+                from seed import seed_data
+                seed_data()
+                return
 
-        print("[BOOTSTRAP] empty DB — running seed_data()")
-        from seed import seed_data
-        seed_data()
+            # Reconcile admin to env vars if both are set.
+            env_email = os.getenv("ADMIN_EMAIL")
+            env_pw = os.getenv("ADMIN_PASSWORD")
+            if env_email and env_pw:
+                changed = False
+                new_email = env_email.lower().strip()
+                if admin.email != new_email:
+                    admin.email = new_email
+                    changed = True
+                # Always re-hash from env on each boot — bcrypt salts differ
+                # so we re-verify by trying to authenticate with the env pw.
+                from .auth.utils import verify_password
+                if not verify_password(env_pw, admin.password_hash):
+                    admin.password_hash = hash_password(env_pw)
+                    changed = True
+                if changed:
+                    db.commit()
+                    print(f"[BOOTSTRAP] reconciled admin → {new_email}")
+                else:
+                    print(f"[BOOTSTRAP] admin already matches env ({new_email})")
+            else:
+                print("[BOOTSTRAP] admin present, env not set — leaving as-is")
+        finally:
+            try:
+                db.close()
+            except Exception:
+                pass
     except Exception as e:
         print(f"[BOOTSTRAP] failed: {e!r}")
 
