@@ -1,21 +1,36 @@
+from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Integer, Boolean
+
 from ..database import Base
-import datetime
+
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    phone_number = Column(String, unique=True, index=True)
-    full_name = Column(String, nullable=True)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    full_name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=True)
 
-class OTPVerification(Base):
-    __tablename__ = "otp_verifications"
+    # 'customer' | 'provider' | 'admin' — set at registration, persisted forever.
+    role = Column(String, nullable=False, default="customer")
+    # 'pending' | 'active' | 'blocked'
+    # Customers go straight to 'active' after email verification.
+    # Providers land 'pending' and require admin approval.
+    # Admins are seeded as 'active'.
+    status = Column(String, nullable=False, default="active")
+    email_verified = Column(Boolean, default=False, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class EmailOTP(Base):
+    __tablename__ = "email_otps"
 
     id = Column(Integer, primary_key=True, index=True)
-    phone_number = Column(String, index=True)
-    otp_code = Column(String)
-    expires_at = Column(DateTime)
-    is_verified = Column(Boolean, default=False)
+    email = Column(String, index=True, nullable=False)
+    otp_code = Column(String, nullable=False)
+    purpose = Column(String, nullable=False, default="verify")  # 'verify' for now
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

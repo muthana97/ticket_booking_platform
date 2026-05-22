@@ -1,42 +1,120 @@
 import random
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from . import models
 
-def generate_otp(db: Session, phone_number: str):
-    # Generate a 6-digit code
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from ..config import settings
+from . import models, utils
+
+
+def _generate_email_otp(db: Session, email: str) -> str:
     code = f"{random.randint(100000, 999999)}"
-    expiry = datetime.utcnow() + timedelta(minutes=5)
-    
-    # Store in DB
-    db_otp = models.OTPVerification(
-        phone_number=phone_number,
+    rec = models.EmailOTP(
+        email=email,
         otp_code=code,
-        expires_at=expiry
+        purpose="verify",
+        expires_at=datetime.utcnow() + timedelta(minutes=settings.OTP_EXPIRY_MINUTES),
     )
-    db.add(db_otp)
+    db.add(rec)
     db.commit()
-    
-    # In production, this is where you'd call an SMS Gateway (e.g., Twilio)
-    print(f"DEBUG: OTP for {phone_number} is {code}") 
+    # In production this would hand off to an email transport. For the demo we
+    # surface the code via the response (matching the existing dev pattern).
+    print(f"[EMAIL-OTP] {email} → {code}")
     return code
 
-def verify_otp(db: Session, phone_number: str, otp_code: str):
-    # 1. Find the OTP record
-    otp_record = db.query(models.OTPVerification).filter(
-        models.OTPVerification.phone_number == phone_number,
-        models.OTPVerification.otp_code == otp_code
-    ).first()
 
-    # 2. Check if it exists and is not expired
-    if not otp_record or otp_record.expires_at < datetime.utcnow():
-        return None  # Return None instead of False
+def register_user(
+    db: Session,
+    *,
+    email: str,
+    password: str,
+    full_name: str,
+    role: str,
+    phone_number: str | None = None,
+) -> tuple[models.User, str]:
+    """Register a new user.
 
-    # 3. Success! Find and return the actual User object
-    user = db.query(models.User).filter(models.User.phone_number == phone_number).first()
-    
-    # Optional: Delete the OTP record so it can't be reused
-    db.delete(otp_record)
+    Customers are immediately `active` once they verify their email.
+    Providers land in `pending` and need admin approval before they can
+    create trips.
+
+    Returns the new user and the dev-mode OTP (for the response payload).
+    """
+    if role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin accounts cannot be self-registered.",
+        )
+
+    existing = db.query(models.User).filter(models.User.email == email.lower()).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists.",
+        )
+
+    new_status = "pending" if role == "provider" else "active"
+    user = models.User(
+        email=email.lower(),
+        password_hash=utils.hash_password(password),
+        full_name=full_name.strip(),
+        phone_number=phone_number,
+        role=role,
+        status=new_status,
+        email_verified=False,
+    )
+    db.add(user)
     db.commit()
+    db.refresh(user)
 
-    return user # <--- THIS MUST BE THE USER OBJECT, NOT 'TRUE'
+    otp = _generate_email_otp(db, user.email)
+    return user, otp
+
+
+def verify_email(db: Session, *, email: str, otp_code: str) -> models.User:
+    user = db.query(models.User).filter(models.User.email == email.lower()).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    rec = (
+        db.query(models.EmailOTP)
+        .filter(
+            models.EmailOTP.email == email.lower(),
+            models.EmailOTP.otp_code == otp_code,
+            models.EmailOTP.purpose == "verify",
+        )
+        .order_by(models.EmailOTP.id.desc())
+        .first()
+    )
+    if not rec or rec.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+
+    user.email_verified = True
+    db.delete(rec)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def resend_email_otp(db: Session, *, email: str) -> str:
+    user = db.query(models.User).filter(models.User.email == email.lower()).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.email_verified:
+        raise HTTPException(status_code=400, detail="Email is already verified")
+    return _generate_email_otp(db, user.email)
+
+
+def authenticate(db: Session, *, email: str, password: str) -> models.User:
+    user = db.query(models.User).filter(models.User.email == email.lower()).first()
+    if not user or not utils.verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Verify your email before signing in. Check the registration OTP.",
+        )
+    if user.status == "blocked":
+        raise HTTPException(status_code=403, detail="Account blocked. Contact an administrator.")
+    return user

@@ -1,0 +1,40 @@
+# Render blueprint — `git push` after connecting this repo to Render and
+# both services + the managed Postgres come up. Free tier defaults.
+#
+# Free tier caveats (intentional, accept-them-for-now):
+#   • web service sleeps after 15 min of inactivity (~30s cold-start on wake)
+#   • free Postgres is 256MB, 1GB storage, expires after 90 days
+#
+# When stakeholders sign off, change `plan: free` → `plan: starter` ($7/mo
+# each) and the sleep + expiry disappear. See claude.md for upgrade notes.
+
+services:
+  - type: web
+    name: tazkirati-web
+    runtime: docker
+    region: frankfurt        # closest to Sudan among Render regions
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tazkirati-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false           # set manually to your deployed origin
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: DB_POOL_MAX_OVERFLOW
+        value: "10"
+
+databases:
+  - name: tazkirati-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: 15

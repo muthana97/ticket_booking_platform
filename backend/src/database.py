@@ -1,22 +1,31 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
 from .config import settings
 
-# engine handles the actual connection to Postgres
+# Render (and Heroku, ElephantSQL, etc.) hand out DATABASE_URL with the
+# `postgres://` scheme, which SQLAlchemy 2.x no longer accepts. Normalize it.
+_db_url = settings.DATABASE_URL
+if _db_url.startswith("postgres://"):
+    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+
+# Cloud-friendly engine config:
+#   - pool_pre_ping: recover transparently from dropped connections (PaaS sleep)
+#   - pool_size / max_overflow: tuned via env so the same code runs on
+#     Render free tier (1 worker) and on a paid multi-worker plan.
 engine = create_engine(
-    settings.DATABASE_URL,
-    # pool_pre_ping helps recover from dropped connections (NFR-06)
-    pool_pre_ping=True 
+    _db_url,
+    pool_pre_ping=True,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_POOL_MAX_OVERFLOW,
+    pool_recycle=settings.DB_POOL_RECYCLE_SECONDS,
 )
 
-# Each instance of SessionLocal will be a database session
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Base class for our models to inherit from
 Base = declarative_base()
 
-# Dependency to get DB session in FastAPI routes
+
 def get_db():
     db = SessionLocal()
     try:

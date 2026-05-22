@@ -1,0 +1,19 @@
+{
+  "name": "Tazkirati — Sudan Intercity Coach",
+  "short_name": "Tazkirati",
+  "description": "Real-time intercity bus booking for Sudan.",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#F2EAD3",
+  "theme_color": "#0F2A47",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/app/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

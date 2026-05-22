@@ -1,0 +1,2231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tazkirati — Sudan Intercity Coach</title>
+
+<link rel="manifest" href="/app/manifest.json">
+<meta name="theme-color" content="#0F2A47">
+<link rel="icon" type="image/svg+xml" href="/app/icon.svg">
+<link rel="apple-touch-icon" href="/app/icon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@300..600&display=swap" rel="stylesheet">
+
+<!-- QR code (~10KB, no deps) for TKT-04 -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root {
+    --paper:        #F2EAD3;
+    --paper-2:      #E7DDBE;
+    --bone:         #FBF6E7;
+    --ink:          #1A1814;
+    --ink-soft:     #3D362A;
+    --rule:         #2D261B;
+    --nile:         #0F2A47;
+    --nile-dim:     #1F3E64;
+    --terra:        #C2532A;
+    --terra-dim:    #8E3A1A;
+    --moss:         #5C7F4A;
+    --moss-dim:     #486a36;
+    --amber:        #C58823;
+    --oxblood:      #8B2E2B;
+    --admin:        #5A1D1A;
+    --admin-light:  #B4302C;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Hanken Grotesk', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(194, 83, 42, 0.05), transparent 50%),
+      radial-gradient(circle at 80% 90%, rgba(15, 42, 71, 0.06), transparent 50%),
+      repeating-linear-gradient(105deg, rgba(45, 38, 27, 0.012) 0 2px, transparent 2px 6px);
+    pointer-events: none; z-index: 0;
+  }
+  .ff-display { font-family: 'Fraunces', serif; font-optical-sizing: auto; }
+  .ff-mono    { font-family: 'JetBrains Mono', monospace; }
+
+  /* ───── Shell / topbar ───── */
+  .shell { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar {
+    border-bottom: 1px solid var(--rule);
+    padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 18px;
+  }
+  .topbar.role-provider { background: var(--ink); color: var(--bone); border-bottom-color: var(--ink); }
+  .topbar.role-admin    { background: var(--admin); color: var(--bone); border-bottom-color: var(--admin); }
+  .topbar .brand {
+    font-family: 'Fraunces', serif; font-weight: 900; font-size: 28px;
+    letter-spacing: -0.025em; line-height: 0.92;
+    font-variation-settings: "SOFT" 30, "WONK" 1;
+    cursor: pointer; user-select: none;
+  }
+  .topbar .brand small {
+    font-family: 'Fraunces', serif; font-style: italic; font-weight: 400;
+    font-size: 12px; margin-left: 6px; opacity: 0.6;
+  }
+  .topbar-nav {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .topbar-nav a.nav-link {
+    color: inherit; text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 6px 10px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: border-color 160ms, background 160ms;
+  }
+  .topbar-nav a.nav-link:hover { border-color: currentColor; }
+  .topbar-nav a.nav-link.active {
+    background: currentColor;
+    color: var(--paper);
+  }
+  .topbar.role-provider .topbar-nav a.nav-link.active { color: var(--ink); background: var(--bone); }
+  .topbar.role-admin    .topbar-nav a.nav-link.active { color: var(--admin); background: var(--bone); }
+  .topbar .session {
+    display: flex; align-items: center; gap: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .topbar .session .badge {
+    padding: 4px 8px; border: 1.5px solid currentColor; letter-spacing: 0.18em;
+  }
+  .topbar.role-customer .badge { background: var(--terra); color: var(--bone); border-color: var(--terra); }
+  .topbar.role-provider .badge { background: var(--bone); color: var(--ink); border-color: var(--bone); }
+  .topbar.role-admin    .badge { background: var(--admin-light); color: var(--bone); border-color: var(--admin-light); }
+  .topbar .session button.signout {
+    appearance: none; background: transparent;
+    border: 1.5px solid currentColor; color: inherit;
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; cursor: pointer; text-transform: uppercase;
+  }
+  .topbar .session button.signout:hover { background: currentColor; color: var(--paper); }
+  .topbar.role-provider .session button.signout:hover { color: var(--ink); }
+  .topbar.role-admin    .session button.signout:hover { color: var(--admin); }
+
+  .subhead {
+    padding: 10px 32px;
+    display: flex; align-items: center; gap: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    border-bottom: 1px dashed var(--rule); min-height: 38px;
+  }
+  .subhead .back {
+    appearance: none; background: transparent;
+    border: 1px solid var(--rule); color: var(--ink-soft);
+    padding: 4px 10px;
+    font-family: inherit; font-size: 10px; cursor: pointer; letter-spacing: 0.18em;
+  }
+  .subhead .back:hover { background: var(--ink); color: var(--bone); }
+  .subhead .live { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+  .live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--moss); }
+  .live .dot.idle { background: var(--ink-soft); opacity: 0.4; }
+
+  /* ───── Screens ───── */
+  main.canvas { flex: 1; position: relative; }
+  .screen { display: none; padding: 32px; animation: fadeIn 280ms ease; }
+  body[data-screen="welcome"]               #screen-welcome,
+  body[data-screen="sign-in"]               #screen-sign-in,
+  body[data-screen="register"]              #screen-register,
+  body[data-screen="verify-email"]          #screen-verify-email,
+  body[data-screen="provider-pending"]      #screen-provider-pending,
+  body[data-screen="customer-search"]       #screen-customer-search,
+  body[data-screen="customer-trips"]        #screen-customer-trips,
+  body[data-screen="customer-book"]         #screen-customer-book,
+  body[data-screen="customer-my-tickets"]   #screen-customer-my-tickets,
+  body[data-screen="provider-home"]         #screen-provider-home,
+  body[data-screen="provider-book"]         #screen-customer-book,
+  body[data-screen="admin-home"]            #screen-admin-home { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ───── Auth screens ───── */
+  .auth-stage { max-width: 480px; margin: 60px auto; }
+  .auth-stage.wide { max-width: 680px; }
+  .auth-stage h1 {
+    font-family: 'Fraunces', serif; font-weight: 800;
+    font-size: 56px; line-height: 0.95;
+    letter-spacing: -0.035em; margin: 0 0 6px;
+    font-variation-settings: "SOFT" 30, "WONK" 1;
+  }
+  .auth-stage .lead {
+    font-family: 'Fraunces', serif; font-style: italic;
+    color: var(--ink-soft); font-size: 16px;
+    margin-bottom: 30px; line-height: 1.4;
+  }
+  .auth-stage .field, .field-block { margin-bottom: 16px; }
+  .auth-stage label, .field-block label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .auth-stage input[type="text"],
+  .auth-stage input[type="email"],
+  .auth-stage input[type="tel"],
+  .auth-stage input[type="password"],
+  .auth-stage input[type="number"],
+  .auth-stage input[type="datetime-local"] {
+    width: 100%;
+    background: var(--bone); border: 1.5px solid var(--rule);
+    padding: 13px 16px;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 17px; color: var(--ink); outline: none;
+    transition: border-color 200ms, background 200ms;
+  }
+  .auth-stage input:focus { border-color: var(--nile); background: var(--paper); }
+  .otp-input {
+    text-align: center !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 32px !important;
+    letter-spacing: 0.4em; padding-left: 0.4em;
+  }
+  .helper {
+    margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-soft); line-height: 1.7;
+  }
+  .helper code { color: var(--terra-dim); font-weight: 600; }
+  .helper a, .auth-stage .text-link {
+    color: var(--terra-dim); text-decoration: none;
+    border-bottom: 1px dashed var(--terra-dim);
+  }
+  .helper a:hover, .auth-stage .text-link:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .cta {
+    display: block; width: 100%;
+    appearance: none; border: 0;
+    background: var(--ink); color: var(--bone);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.24em; text-transform: uppercase;
+    padding: 16px; cursor: pointer;
+    transition: background 200ms, transform 200ms;
+    margin-top: 8px;
+  }
+  .cta:hover:not(:disabled) { background: var(--nile); transform: translateY(-1px); }
+  .cta:disabled { background: var(--paper-2); color: var(--ink-soft); cursor: not-allowed; }
+  .cta.alt { background: var(--terra); }
+  .cta.alt:hover:not(:disabled) { background: var(--terra-dim); }
+  .cta.admin { background: var(--admin); }
+  .cta.admin:hover:not(:disabled) { background: var(--admin-light); }
+  .cta.ghost { background: transparent; color: var(--ink-soft); border: 1.5px dashed var(--rule); }
+  .cta.ghost:hover:not(:disabled) { background: var(--ink); color: var(--bone); border-style: solid; }
+
+  .welcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+  .welcome-card {
+    appearance: none; text-align: left;
+    background: var(--bone); border: 1.5px solid var(--rule);
+    padding: 22px; cursor: pointer;
+    transition: transform 220ms ease, box-shadow 220ms ease;
+    font-family: inherit; color: inherit; display: flex; flex-direction: column;
+  }
+  .welcome-card:hover { transform: translate(-3px, -3px); box-shadow: 6px 6px 0 var(--rule); }
+  .welcome-card .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-soft); letter-spacing: 0.24em; text-transform: uppercase; }
+  .welcome-card .ttl { font-family: 'Fraunces', serif; font-weight: 800; font-size: 26px; letter-spacing: -0.015em; margin-top: 6px; line-height: 1.05; }
+  .welcome-card .dsc { font-size: 13px; color: var(--ink-soft); line-height: 1.45; margin-top: 6px; }
+
+  .role-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .role-pick label {
+    cursor: pointer; border: 1.5px solid var(--rule);
+    padding: 14px; background: var(--paper);
+    display: flex; flex-direction: column; gap: 4px;
+    transition: background 180ms, transform 180ms;
+  }
+  .role-pick label:hover { transform: translateY(-1px); }
+  .role-pick label.active { background: var(--ink); color: var(--bone); }
+  .role-pick label.active .rp-desc { color: var(--paper); opacity: 0.7; }
+  .role-pick label .rp-title { font-family: 'Fraunces', serif; font-weight: 800; font-size: 22px; letter-spacing: -0.01em; }
+  .role-pick label .rp-desc { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; color: var(--ink-soft); text-transform: uppercase; }
+  .role-pick input { display: none; }
+
+  .pending-card {
+    background: var(--bone); border: 1.5px solid var(--amber);
+    border-left-width: 6px;
+    padding: 22px; margin: 30px 0;
+  }
+  .pending-card h3 { font-family: 'Fraunces', serif; font-weight: 800; font-size: 28px; letter-spacing: -0.015em; margin: 0 0 6px; }
+  .pending-card .meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.1em; line-height: 1.7; }
+
+  /* ───── Search / trip cards ───── */
+  .search-stage { max-width: 720px; margin: 30px auto; }
+  .search-stage h2, .panel h2, .provider-stage h2, .admin-stage h2 {
+    font-family: 'Fraunces', serif; font-weight: 800;
+    font-size: 40px; letter-spacing: -0.025em; margin: 0 0 14px;
+  }
+  .search-stage .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .trip-list { display: flex; flex-direction: column; gap: 14px; max-width: 880px; margin: 16px auto 0; }
+  .trip-card {
+    background: var(--bone); border: 1.5px solid var(--rule);
+    padding: 22px;
+    display: grid; grid-template-columns: 1fr auto; gap: 18px;
+    align-items: center;
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  .trip-card:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--rule); }
+  .trip-card .meta-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .trip-card .chip-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 8px; border: 1px solid var(--rule); letter-spacing: 0.18em; text-transform: uppercase; }
+  .trip-card .route { font-family: 'Fraunces', serif; font-weight: 700; font-size: 28px; letter-spacing: -0.015em; line-height: 1.1; }
+  .trip-card .route .arrow { color: var(--terra-dim); margin: 0 12px; }
+  .trip-card .stats { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); margin-top: 8px; letter-spacing: 0.06em; }
+  .trip-card .stats b { color: var(--ink); font-weight: 600; }
+  .trip-card .price { font-family: 'Fraunces', serif; font-weight: 800; font-size: 32px; text-align: right; line-height: 1; }
+  .trip-card .price small { display: block; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-soft); margin-top: 4px; letter-spacing: 0.2em; }
+  .trip-card-actions {
+    grid-column: 1 / -1;
+    display: flex; gap: 10px;
+    border-top: 1px dashed var(--rule);
+    padding-top: 14px; margin-top: 4px; flex-wrap: wrap;
+  }
+  .btn-inline {
+    appearance: none; cursor: pointer;
+    background: var(--ink); color: var(--bone);
+    border: 0; padding: 10px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    transition: background 180ms, transform 180ms;
+  }
+  .btn-inline:hover { background: var(--nile); transform: translateY(-1px); }
+  .btn-inline.danger { background: transparent; color: var(--oxblood); border: 1.5px solid var(--oxblood); }
+  .btn-inline.danger:hover { background: var(--oxblood); color: var(--bone); }
+  .btn-inline.alt { background: var(--terra); }
+  .btn-inline.alt:hover { background: var(--terra-dim); }
+  .btn-inline.admin { background: var(--admin); }
+  .btn-inline.admin:hover { background: var(--admin-light); }
+  .btn-inline.success { background: var(--moss); }
+  .btn-inline.success:hover { background: var(--moss-dim); }
+  .btn-inline.ghost { background: transparent; color: var(--ink-soft); border: 1.5px solid var(--rule); }
+  .btn-inline.ghost:hover { background: var(--ink); color: var(--bone); }
+
+  .empty-state { text-align: center; margin: 60px auto; max-width: 480px; }
+  .empty-state h3 { font-family: 'Fraunces', serif; font-weight: 700; font-size: 28px; letter-spacing: -0.015em; margin: 0 0 6px; }
+  .empty-state p { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.06em; }
+
+  /* ───── My Tickets ───── */
+  .my-tickets-stage { max-width: 880px; margin: 0 auto; }
+  .my-tickets-stage h2 { font-family: 'Fraunces', serif; font-weight: 800; font-size: 40px; letter-spacing: -0.025em; margin: 0 0 6px; }
+  .my-tickets-stage .lead { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 22px; }
+
+  .mt-section { margin-bottom: 28px; }
+  .mt-section h3 {
+    font-family: 'Fraunces', serif; font-weight: 700;
+    font-size: 22px; letter-spacing: -0.01em;
+    margin: 0 0 10px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .mt-section h3 .count {
+    font-family: 'JetBrains Mono', monospace; font-weight: 500;
+    font-size: 11px; color: var(--ink-soft);
+    background: var(--paper-2);
+    padding: 2px 8px; border-radius: 10px; letter-spacing: 0.1em;
+  }
+  .mt-section.awaiting h3 { color: var(--terra-dim); }
+  .mt-section.upcoming h3 { color: var(--nile); }
+  .mt-section.past     h3 { color: var(--ink-soft); }
+
+  /* ───── Booking row (used by My Tickets + Provider + Admin) ───── */
+  .booking-row {
+    background: var(--bone);
+    border: 1.5px solid var(--rule);
+    padding: 16px 20px;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 14px; align-items: center;
+    margin-bottom: 10px;
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  .booking-row:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--rule); }
+  .booking-row .main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .booking-row .meta-row {
+    display: flex; align-items: baseline; gap: 12px;
+    flex-wrap: wrap;
+  }
+  .booking-row .route-line {
+    font-family: 'Fraunces', serif; font-weight: 700;
+    font-size: 22px; letter-spacing: -0.01em;
+  }
+  .booking-row .route-line .arrow { color: var(--terra-dim); margin: 0 8px; }
+  .booking-row .info-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.06em; line-height: 1.6;
+  }
+  .booking-row .info-line b { color: var(--ink); font-weight: 600; }
+  .booking-row .actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .booking-row.past { opacity: 0.75; }
+
+  .status-pill {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 3px 8px;
+    border: 1px solid var(--rule);
+    letter-spacing: 0.2em; text-transform: uppercase;
+  }
+  .status-pill.pending           { background: var(--amber);   color: var(--ink);  border-color: var(--amber); }
+  .status-pill.committed_pending { background: var(--terra);   color: var(--bone); border-color: var(--terra); }
+  .status-pill.confirmed         { background: var(--moss);    color: var(--bone); border-color: var(--moss); }
+  .status-pill.expired           { background: var(--ink-soft); color: var(--bone); border-color: var(--ink-soft); }
+  .status-pill.active            { background: var(--moss);    color: var(--bone); border-color: var(--moss); }
+  .status-pill.blocked           { background: var(--oxblood); color: var(--bone); border-color: var(--oxblood); }
+  .status-pill.walkin            { background: var(--nile);    color: var(--bone); border-color: var(--nile); }
+
+  /* ───── Booking screen (seat picker) ───── */
+  .book-grid { display: grid; grid-template-columns: 1fr 360px; gap: 32px; max-width: 1180px; margin: 0 auto; }
+  .book-head {
+    max-width: 1180px; margin: 0 auto 22px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+  .book-head .route { font-family: 'Fraunces', serif; font-weight: 800; font-size: 42px; letter-spacing: -0.025em; line-height: 1; }
+  .book-head .route .arrow { color: var(--terra-dim); margin: 0 12px; }
+  .book-head .meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.1em; text-align: right; line-height: 1.6; }
+  .book-head .meta b { color: var(--ink); }
+  .bus-stage { display: flex; flex-direction: column; align-items: center; }
+  .bus-frame {
+    position: relative;
+    background: var(--bone); border: 2px solid var(--ink);
+    border-radius: 30px 30px 14px 14px;
+    padding: 28px 22px 22px;
+    width: 360px;
+    box-shadow: 6px 6px 0 var(--rule);
+  }
+  .bus-frame::before {
+    content: ''; position: absolute;
+    top: 8px; left: 24px; right: 24px; height: 8px;
+    border-radius: 14px;
+    background: repeating-linear-gradient(90deg, var(--rule) 0 6px, transparent 6px 12px);
+    opacity: 0.4;
+  }
+  .driver { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.15em; color: var(--ink-soft); }
+  .steering-wheel { width: 26px; height: 26px; border: 2px solid var(--rule); border-radius: 50%; position: relative; }
+  .steering-wheel::before { content: ''; position: absolute; inset: 9px; background: var(--rule); border-radius: 50%; }
+  .door { width: 14px; height: 26px; border: 1.5px solid var(--rule); background: var(--paper-2); }
+  .front-jumps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px dashed var(--rule); }
+  .regular-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .regular-row { display: grid; grid-template-columns: 1fr 1fr 22px 1fr 1fr; gap: 6px; align-items: center; }
+  .aisle { height: 1px; background: repeating-linear-gradient(90deg, var(--ink-soft) 0 3px, transparent 3px 6px); opacity: 0.4; }
+  .back-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding-top: 14px; border-top: 1px dashed var(--rule); }
+  .seat {
+    aspect-ratio: 1 / 1;
+    appearance: none; border: 1.5px solid var(--rule);
+    background: var(--moss); color: var(--bone);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    transition: transform 160ms cubic-bezier(.7,0,.2,1), background 240ms ease, box-shadow 200ms ease;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15);
+    border-radius: 5px 5px 8px 8px; line-height: 1;
+  }
+  .seat.locked  { background: var(--amber); color: var(--ink); }
+  .seat.booked  { background: var(--oxblood); color: var(--bone); cursor: not-allowed; }
+  .seat.selected {
+    background: var(--nile); color: var(--bone);
+    transform: scale(1.06);
+    box-shadow: 0 0 0 3px var(--bone), 0 0 0 4.5px var(--nile);
+  }
+  .seat[disabled] { cursor: not-allowed; }
+  .seat:not([disabled]):hover { transform: translateY(-2px); box-shadow: 0 4px 0 var(--rule); }
+  .seat { animation: seatIn 380ms cubic-bezier(.7,0,.2,1) backwards; }
+  @keyframes seatIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .bus-legend { display: flex; gap: 18px; margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-soft); letter-spacing: 0.06em; }
+  .bus-legend .sw { display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--rule); margin-right: 6px; vertical-align: middle; }
+
+  .panel-stack { display: flex; flex-direction: column; gap: 12px; }
+  .panel { background: var(--bone); border: 1.5px solid var(--rule); }
+  .panel-head {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--paper-2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .panel-body { padding: 14px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border: 1px solid var(--rule); background: var(--paper); }
+  .chip.empty { opacity: 0.4; }
+  .pax-row { display: grid; grid-template-columns: 56px 1fr; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .pax-row .seat-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 6px 8px; background: var(--ink); color: var(--bone); text-align: center; letter-spacing: 0.1em; }
+  .pax-row input { font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; background: var(--paper); border: 1px solid var(--rule); padding: 8px 10px; color: var(--ink); outline: none; transition: border-color 200ms, background 200ms; }
+  .pax-row input:focus { border-color: var(--nile); background: var(--bone); }
+
+  .summary-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .summary-row .k { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: var(--ink-soft); text-transform: uppercase; }
+  .summary-row .v { font-family: 'Fraunces', serif; font-weight: 700; font-size: 28px; letter-spacing: -0.01em; }
+  .booking-active { padding: 14px; }
+  .booking-id { font-family: 'Fraunces', serif; font-weight: 800; font-size: 28px; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .booking-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); line-height: 1.6; }
+  .countdown {
+    margin-top: 10px; padding: 10px;
+    background: var(--ink); color: var(--bone);
+    font-family: 'JetBrains Mono', monospace;
+    text-align: center; font-size: 24px; letter-spacing: 0.08em;
+  }
+  .countdown small { display: block; font-size: 9px; letter-spacing: 0.3em; margin-bottom: 4px; opacity: 0.6; }
+  .countdown.expired { background: var(--oxblood); }
+
+  /* ───── Provider home / Admin home ───── */
+  .provider-stage, .admin-stage { max-width: 1180px; margin: 0 auto; }
+  .provider-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 14px; }
+  .provider-head .lead { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  .tab-bar { display: flex; gap: 0; border-bottom: 1.5px solid var(--rule); margin-bottom: 22px; }
+  .tab-bar button {
+    appearance: none; background: transparent;
+    border: 0; border-bottom: 3px solid transparent;
+    padding: 14px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-soft); cursor: pointer;
+    transition: color 180ms, border-color 180ms;
+  }
+  .tab-bar button:hover { color: var(--ink); }
+  .tab-bar.admin-tabs button.active { color: var(--admin); border-bottom-color: var(--admin); }
+  .tab-bar.provider-tabs button.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .tab-bar button .count { margin-left: 8px; padding: 1px 8px; border-radius: 10px; font-size: 10px; }
+  .tab-bar.admin-tabs button.active .count { background: var(--admin-light); color: var(--bone); }
+  .tab-bar.provider-tabs button.active .count { background: var(--ink); color: var(--bone); }
+  .tab-bar button:not(.active) .count { background: var(--paper-2); color: var(--ink-soft); }
+  .tab-content > * { display: none; }
+  .tab-content > .active { display: block; }
+
+  /* Admin filter strip */
+  .filter-strip {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .filter-strip input, .filter-strip select {
+    width: 100%;
+    background: var(--bone); border: 1.5px solid var(--rule);
+    padding: 9px 12px;
+    font-family: 'Hanken Grotesk', sans-serif; font-size: 13px;
+    color: var(--ink); outline: none;
+  }
+  .filter-strip input:focus, .filter-strip select:focus { border-color: var(--admin-light); }
+
+  .admin-row {
+    background: var(--bone); border: 1.5px solid var(--rule);
+    padding: 18px 22px;
+    display: grid; grid-template-columns: 1fr auto; gap: 16px;
+    align-items: center; margin-bottom: 12px;
+  }
+  .admin-row .main { display: flex; flex-direction: column; gap: 4px; }
+  .admin-row .name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
+  .admin-row .sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.06em; }
+  .admin-row .sub b { color: var(--ink); }
+  .admin-row .actions { display: flex; gap: 8px; }
+
+  /* ───── Modals ───── */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(26, 24, 20, 0.78);
+    backdrop-filter: blur(4px);
+    z-index: 200; display: none;
+    align-items: center; justify-content: center;
+    padding: 30px; overflow-y: auto;
+  }
+  .modal-bg.show { display: flex; }
+  .modal-card {
+    background: var(--bone); border: 1.5px solid var(--rule);
+    max-width: 520px; width: 100%; padding: 28px;
+    animation: modalDrop 360ms cubic-bezier(.4,1.4,.4,1);
+    box-shadow: 14px 14px 0 rgba(0,0,0,0.6);
+  }
+  @keyframes modalDrop { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-card h3 { font-family: 'Fraunces', serif; font-weight: 800; font-size: 30px; letter-spacing: -0.015em; margin: 0 0 4px; }
+  .modal-card .modal-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-soft); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 20px; }
+  .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .field-block input {
+    width: 100%;
+    background: var(--paper); border: 1.5px solid var(--rule);
+    padding: 10px 12px;
+    font-family: 'Hanken Grotesk', sans-serif; font-size: 15px;
+    color: var(--ink); outline: none;
+  }
+  .field-block input:focus { border-color: var(--nile); background: var(--bone); }
+  .field-block.full { grid-column: 1 / -1; }
+
+  .layout-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .layout-pick label {
+    cursor: pointer; border: 1.5px solid var(--rule);
+    padding: 14px; background: var(--paper);
+    transition: background 180ms, transform 180ms;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .layout-pick label:hover { transform: translateY(-1px); }
+  .layout-pick input { display: none; }
+  .layout-pick label.active { background: var(--ink); color: var(--bone); }
+  .layout-pick label .l-num { font-family: 'Fraunces', serif; font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
+  .layout-pick label .l-desc { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; color: var(--ink-soft); text-transform: uppercase; }
+  .layout-pick label.active .l-desc { color: var(--paper); opacity: 0.7; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 12px; }
+  .modal-actions .cta { margin-top: 0; }
+
+  /* ───── Toast ───── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--ink); color: var(--bone);
+    padding: 12px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    z-index: 300;
+    transition: transform 320ms cubic-bezier(.7,0,.2,1);
+    border: 1.5px solid var(--rule); box-shadow: 4px 4px 0 var(--rule);
+    max-width: 90vw;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.err { background: var(--oxblood); }
+
+  /* ───── Ticket receipt modal ───── */
+  .ticket {
+    position: relative;
+    width: 720px; max-width: 100%;
+    background: var(--bone); color: var(--ink);
+    box-shadow: 14px 14px 0 rgba(0,0,0,0.6), 0 0 0 1.5px var(--rule);
+    animation: ticketDrop 520ms cubic-bezier(.5,1.4,.4,1);
+    transform-origin: top center;
+    background-image: repeating-linear-gradient(105deg, rgba(45,38,27,0.018) 0 2px, transparent 2px 6px);
+  }
+  @keyframes ticketDrop { from { transform: translateY(-40px) rotate(-1.5deg); opacity: 0; } to { transform: translateY(0) rotate(0); opacity: 1; } }
+  .ticket::before, .ticket::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 18px;
+    background: radial-gradient(circle at 9px 50%, var(--paper) 5px, transparent 5.5px) repeat-x;
+    background-size: 18px 18px;
+  }
+  .ticket::before { top: -9px; }
+  .ticket::after  { bottom: -9px; transform: rotate(180deg); }
+
+  .ticket-head {
+    padding: 24px 36px 14px;
+    border-bottom: 2px solid var(--rule);
+    display: grid; grid-template-columns: 1fr auto auto; gap: 18px; align-items: flex-start;
+  }
+  .ticket-head .brand-sm { font-family: 'Fraunces', serif; font-weight: 900; font-size: 30px; letter-spacing: -0.025em; line-height: 0.92; }
+  .ticket-head .sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: var(--ink-soft); text-transform: uppercase; margin-top: 6px; }
+  .ticket-head .bok { text-align: right; }
+  .ticket-head .bok .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.3em; color: var(--ink-soft); text-transform: uppercase; }
+  .ticket-head .bok .code {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600; font-size: 20px;
+    color: var(--terra-dim);
+    border: 2.5px solid var(--terra-dim);
+    padding: 6px 12px; margin-top: 6px;
+    transform: rotate(-2deg); display: inline-block;
+    background: var(--bone);
+  }
+  .ticket-head .qr-block {
+    text-align: center;
+    padding-top: 4px;
+  }
+  .ticket-head .qr-block .qr-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px; color: var(--ink-soft);
+    letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .ticket-head .qr-block .qr-frame {
+    background: var(--bone);
+    border: 1.5px solid var(--rule);
+    padding: 4px;
+    display: inline-block;
+  }
+  .ticket-head .qr-block .qr-frame canvas, .ticket-head .qr-block .qr-frame img {
+    display: block; width: 84px; height: 84px;
+  }
+
+  .delivered-banner {
+    background: var(--moss); color: var(--bone);
+    padding: 8px 36px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.16em;
+    border-bottom: 1px solid var(--rule);
+  }
+  .delivered-banner b { font-weight: 600; }
+
+  .ticket-route {
+    padding: 22px 36px;
+    border-bottom: 1px dashed var(--rule);
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 18px;
+  }
+  .ticket-route .city { font-family: 'Fraunces', serif; font-weight: 700; font-size: 36px; line-height: 1; letter-spacing: -0.02em; }
+  .ticket-route .city.right { text-align: right; }
+  .ticket-route .city .meta { font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 10px; letter-spacing: 0.2em; color: var(--ink-soft); text-transform: uppercase; margin-top: 6px; display: block; }
+  .ticket-route .arrow { font-family: 'Fraunces', serif; font-size: 32px; color: var(--terra-dim); }
+
+  .ticket-grid {
+    padding: 22px 36px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px; border-bottom: 1px dashed var(--rule);
+  }
+  .ticket-grid .cell .k { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.24em; color: var(--ink-soft); text-transform: uppercase; }
+  .ticket-grid .cell .v { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; margin-top: 4px; letter-spacing: -0.005em; }
+  .ticket-grid .cell .v.mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 15px; }
+
+  .pax-block { padding: 22px 36px 8px; }
+  .pax-block h4 { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.24em; color: var(--ink-soft); text-transform: uppercase; margin: 0 0 12px; }
+  .pax-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--rule); }
+  .pax-list li { display: grid; grid-template-columns: 60px 1fr auto; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--rule); align-items: center; }
+  .pax-list .seat-stamp { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; background: var(--ink); color: var(--bone); text-align: center; padding: 4px 0; letter-spacing: 0.08em; }
+  .pax-list .name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
+  .pax-list .phone { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); }
+
+  .ticket-foot {
+    padding: 22px 36px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 24px;
+    background: var(--paper-2);
+    border-top: 2px solid var(--rule);
+  }
+  .ticket-foot .stamp {
+    transform: rotate(-7deg);
+    border: 2.5px solid var(--nile); color: var(--nile);
+    padding: 6px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600; font-size: 12px; letter-spacing: 0.3em;
+    text-transform: uppercase; background: var(--bone);
+  }
+  .ticket-foot .stamp.confirmed { border-color: var(--moss); color: var(--moss); }
+  .ticket-foot .total { font-family: 'Fraunces', serif; font-weight: 800; font-size: 30px; letter-spacing: -0.02em; }
+  .ticket-foot .total .cur { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.2em; margin-right: 6px; }
+
+  .ticket-actions { display: flex; gap: 10px; padding: 0 36px 26px; }
+  .ticket-actions button {
+    flex: 1;
+    appearance: none; border: 1.5px solid var(--rule);
+    background: var(--bone); color: var(--ink);
+    padding: 12px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    transition: background 160ms, color 160ms;
+  }
+  .ticket-actions button.primary { background: var(--ink); color: var(--bone); }
+  .ticket-actions button:hover { background: var(--terra); color: var(--bone); }
+  .ticket-actions button.primary:hover { background: var(--nile); }
+
+  @media print {
+    body * { visibility: hidden; }
+    .ticket, .ticket * { visibility: visible; }
+    .ticket { position: absolute; top: 0; left: 0; box-shadow: none; }
+    .ticket-actions { display: none; }
+    .modal-bg { position: static; padding: 0; background: white; }
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 880px) {
+    .book-grid, .modal-row, .role-pick, .welcome-grid, .search-stage .row, .filter-strip {
+      grid-template-columns: 1fr;
+    }
+    .ticket-head { grid-template-columns: 1fr; text-align: left; }
+    .ticket-head .bok, .ticket-head .qr-block { text-align: left; }
+  }
+</style>
+</head>
+<body data-screen="welcome">
+
+<div class="shell">
+
+  <!-- ─── TOPBAR ─── -->
+  <header class="topbar" id="topbar">
+    <div class="brand" id="brand-home">Tazkirati. <small>تذكرتي</small></div>
+    <nav class="topbar-nav" id="topbar-nav" hidden></nav>
+    <div class="session" id="session" hidden>
+      <span class="badge" id="role-badge">—</span>
+      <span id="email-tag">—</span>
+      <button class="signout" id="signout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <div class="subhead" id="subhead" hidden>
+    <button class="back" id="back-btn">← Back</button>
+    <span id="crumb">—</span>
+    <span class="live"><span class="dot" id="conn-dot"></span><span id="conn-text">Live</span></span>
+  </div>
+
+  <main class="canvas">
+
+    <!-- Welcome -->
+    <section class="screen" id="screen-welcome">
+      <div class="auth-stage wide">
+        <h1>Welcome aboard.</h1>
+        <div class="lead">Sudan Intercity Coach Authority · Sign in to your account or create a new one.</div>
+        <div class="welcome-grid">
+          <button class="welcome-card" data-act="sign-in">
+            <span class="lbl">Returning</span>
+            <span class="ttl">Sign in</span>
+            <span class="dsc">Use your email and password.</span>
+          </button>
+          <button class="welcome-card" data-act="register">
+            <span class="lbl">New here</span>
+            <span class="ttl">Create account</span>
+            <span class="dsc">Register as a passenger or a counter operator.</span>
+          </button>
+        </div>
+        <div class="helper">
+          DEMO CREDENTIALS:<br>
+          • ADMIN &nbsp;&nbsp;&nbsp;&nbsp;<code>admin@tazkirati.app</code> / <code>tazkirati-admin-2026</code><br>
+          • CUSTOMER <code>passenger@tazkirati.app</code> / <code>passenger123</code><br>
+          • NILE OP &nbsp;<code>operator@tazkirati.app</code> / <code>operator123</code><br>
+          • SUDANBUS <code>ops@sudanbus.app</code> / <code>operator123</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sign in -->
+    <section class="screen" id="screen-sign-in">
+      <div class="auth-stage">
+        <h1>Sign in.</h1>
+        <div class="lead">Email + password. We'll route you to the right place.</div>
+        <div class="field"><label for="si-email">Email</label><input type="email" id="si-email" autocomplete="email" /></div>
+        <div class="field"><label for="si-password">Password</label><input type="password" id="si-password" autocomplete="current-password" /></div>
+        <button class="cta" id="sign-in-btn">Continue →</button>
+        <div class="helper">Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.</div>
+      </div>
+    </section>
+
+    <!-- Register -->
+    <section class="screen" id="screen-register">
+      <div class="auth-stage">
+        <h1>Create an account.</h1>
+        <div class="lead">Role is set now and stays with the account.</div>
+        <div class="field"><label for="rg-name">Full name</label><input type="text" id="rg-name" autocomplete="name" /></div>
+        <div class="field"><label for="rg-email">Email</label><input type="email" id="rg-email" autocomplete="email" /></div>
+        <div class="field"><label for="rg-password">Password (min 6)</label><input type="password" id="rg-password" autocomplete="new-password" /></div>
+        <div class="field"><label for="rg-phone">Phone (optional)</label><input type="tel" id="rg-phone" autocomplete="tel" placeholder="249…" /></div>
+        <div class="field">
+          <label>Account type</label>
+          <div class="role-pick">
+            <label class="active" data-role="customer">
+              <input type="radio" name="rg-role" value="customer" checked>
+              <span class="rp-title">Passenger</span>
+              <span class="rp-desc">Search · Book · Pay</span>
+            </label>
+            <label data-role="provider">
+              <input type="radio" name="rg-role" value="provider">
+              <span class="rp-title">Operator</span>
+              <span class="rp-desc">Counter · Add Trips</span>
+            </label>
+          </div>
+        </div>
+        <button class="cta" id="register-btn">Create account →</button>
+        <div class="helper">Operator accounts require admin approval before they can host trips.<br>Already have an account? <a href="#" id="goto-signin" class="text-link">Sign in</a>.</div>
+      </div>
+    </section>
+
+    <!-- Verify -->
+    <section class="screen" id="screen-verify-email">
+      <div class="auth-stage">
+        <h1>Check your email.</h1>
+        <div class="lead">We sent a 6-digit code to <b id="vf-email">—</b>.</div>
+        <div class="field"><label for="vf-input">6-digit code</label><input type="text" id="vf-input" inputmode="numeric" maxlength="6" class="otp-input" placeholder="••••••" /></div>
+        <button class="cta" id="verify-btn">Verify & continue →</button>
+        <button class="cta ghost" id="resend-btn" style="margin-top: 10px;">Resend code</button>
+        <div class="helper" id="vf-dev-hint">—</div>
+      </div>
+    </section>
+
+    <!-- Provider pending -->
+    <section class="screen" id="screen-provider-pending">
+      <div class="auth-stage wide">
+        <h1>Approval pending.</h1>
+        <div class="lead">Thanks for registering as an operator. An administrator will review your application shortly.</div>
+        <div class="pending-card">
+          <h3>What happens next?</h3>
+          <div class="meta">
+            • Admin reviews your account at <b>/admin · Providers</b><br>
+            • Once approved, you'll get access to Trip Inventory and Walk-In booking<br>
+            • You can keep this tab open — refresh status when you think you've been approved
+          </div>
+        </div>
+        <button class="cta ghost" id="pending-refresh">Refresh status</button>
+      </div>
+    </section>
+
+    <!-- Customer search -->
+    <section class="screen" id="screen-customer-search">
+      <div class="search-stage">
+        <h2>Where are we going today?</h2>
+        <div class="lead" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 22px;">
+          Sudan Intercity Coach Network
+        </div>
+        <div class="row">
+          <div class="field-block"><label>From</label><input type="text" id="search-origin" placeholder="e.g. Khartoum" list="city-list" /></div>
+          <div class="field-block"><label>To</label><input type="text" id="search-destination" placeholder="e.g. Port Sudan" list="city-list" /></div>
+        </div>
+        <datalist id="city-list">
+          <option value="Khartoum"><option value="Port Sudan"><option value="Atbara">
+          <option value="Wadi Halfa"><option value="Kassala"><option value="Nyala">
+          <option value="El Obeid"><option value="Dongola">
+        </datalist>
+        <button class="cta" id="search-btn" style="margin-top: 16px;">Find Trips →</button>
+      </div>
+    </section>
+
+    <!-- Customer trip list -->
+    <section class="screen" id="screen-customer-trips">
+      <div class="provider-stage">
+        <div class="provider-head">
+          <div>
+            <h2 id="trips-route-title">—</h2>
+            <div class="lead">Tap a trip to pick your seats.</div>
+          </div>
+        </div>
+        <div class="trip-list" id="customer-trip-list"></div>
+        <div class="empty-state hidden" id="customer-trip-empty">
+          <h3>No trips found.</h3>
+          <p>Try a different origin / destination.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customer My Tickets -->
+    <section class="screen" id="screen-customer-my-tickets">
+      <div class="my-tickets-stage">
+        <h2>My Tickets</h2>
+        <div class="lead">Your bookings — across the whole journey lifecycle.</div>
+
+        <div class="mt-section awaiting">
+          <h3>Awaiting Payment <span class="count" id="mt-awaiting-count">0</span></h3>
+          <div id="mt-awaiting-list"></div>
+          <div class="empty-state hidden" id="mt-awaiting-empty" style="margin: 12px 0;">
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No bookings awaiting payment.</p>
+          </div>
+        </div>
+
+        <div class="mt-section upcoming">
+          <h3>Upcoming <span class="count" id="mt-upcoming-count">0</span></h3>
+          <div id="mt-upcoming-list"></div>
+          <div class="empty-state hidden" id="mt-upcoming-empty" style="margin: 12px 0;">
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No upcoming trips.</p>
+          </div>
+        </div>
+
+        <div class="mt-section past">
+          <h3>Past <span class="count" id="mt-past-count">0</span></h3>
+          <div id="mt-past-list"></div>
+          <div class="empty-state hidden" id="mt-past-empty" style="margin: 12px 0;">
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No past bookings yet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Booking (shared) -->
+    <section class="screen" id="screen-customer-book">
+      <div class="book-head">
+        <div><div class="route" id="book-route">— <span class="arrow">→</span> —</div></div>
+        <div class="meta" id="book-meta">—</div>
+      </div>
+      <div class="book-grid">
+        <div class="bus-stage">
+          <div id="bus-frame" class="bus-frame">
+            <div class="driver">
+              <div class="steering-wheel" title="driver"></div>
+              <div>FRONT</div>
+              <div class="door" title="boarding door"></div>
+            </div>
+            <div id="front-jumps" class="front-jumps hidden"></div>
+            <div id="regular-rows" class="regular-rows"></div>
+            <div id="back-row" class="back-row"></div>
+          </div>
+          <div class="bus-legend">
+            <span><span class="sw" style="background: var(--moss);"></span>Available</span>
+            <span><span class="sw" style="background: var(--amber);"></span>Locked</span>
+            <span><span class="sw" style="background: var(--oxblood);"></span>Booked</span>
+            <span><span class="sw" style="background: var(--nile);"></span>Selected</span>
+          </div>
+        </div>
+        <aside class="panel-stack">
+          <div class="panel">
+            <div class="panel-head"><span>Selection</span><span id="select-count" class="ff-mono">0 SEATS</span></div>
+            <div class="panel-body"><div id="selection-chips" class="chip-row"><div class="chip empty">Tap seats to select</div></div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><span>Passenger Details</span></div>
+            <div class="panel-body" id="pax-body"><div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">Select seats to fill in passenger names.</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><span>Total</span></div>
+            <div class="panel-body">
+              <div class="summary-row">
+                <div><div class="k">SDG</div><div class="v" id="total-amount">0</div></div>
+                <div style="text-align:right;"><div class="k">×</div><div class="v ff-mono" id="seat-count" style="font-size:18px;">0 seats</div></div>
+              </div>
+            </div>
+          </div>
+          <button id="lock-btn" class="cta" disabled>Lock Seats →</button>
+          <div id="booking-panel" class="hidden">
+            <div class="panel">
+              <div class="panel-head"><span>Active Hold</span><span class="ff-mono" id="booking-channel" style="font-size:10px;">—</span></div>
+              <div class="panel-body booking-active">
+                <div class="booking-id" id="booking-id-label">—</div>
+                <div class="booking-meta" id="booking-meta">—</div>
+                <div class="countdown" id="countdown"><small>HOLD EXPIRES IN</small><span id="countdown-value">10:00</span></div>
+              </div>
+            </div>
+            <button id="billing-btn" class="cta alt" style="margin-top: 10px;">Generate Billing Reference →</button>
+            <button id="restart-flow-btn" class="cta ghost" style="margin-top: 10px;">Start New Booking</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Provider home with tabs -->
+    <section class="screen" id="screen-provider-home">
+      <div class="provider-stage">
+        <div class="provider-head">
+          <div>
+            <h2>Operator Console</h2>
+            <div class="lead" id="provider-greeting">Your trips and your bookings.</div>
+          </div>
+          <button class="btn-inline alt" id="add-trip-open-btn">+ New Trip</button>
+        </div>
+        <div class="tab-bar provider-tabs" id="provider-tab-bar">
+          <button data-ptab="trips" class="active">My Trips <span class="count" id="pcnt-trips">0</span></button>
+          <button data-ptab="bookings">My Bookings <span class="count" id="pcnt-bookings">0</span></button>
+        </div>
+        <div class="tab-content" id="provider-tab-content">
+          <div data-ptab-panel="trips" class="active">
+            <div class="trip-list" id="provider-trip-list"></div>
+            <div class="empty-state hidden" id="provider-trip-empty">
+              <h3>No trips yet.</h3>
+              <p>Tap "New Trip" to add the first one.</p>
+            </div>
+          </div>
+          <div data-ptab-panel="bookings">
+            <div id="provider-bookings-list"></div>
+            <div class="empty-state hidden" id="provider-bookings-empty">
+              <h3>No bookings yet.</h3>
+              <p>Bookings will appear here once passengers book your trips — including walk-ins.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin home with tabs -->
+    <section class="screen" id="screen-admin-home">
+      <div class="admin-stage">
+        <div class="provider-head">
+          <div>
+            <h2>Administrator Console</h2>
+            <div class="lead">Provider gate · Trip oversight · Booking search · Pending payments</div>
+          </div>
+        </div>
+        <div class="tab-bar admin-tabs">
+          <button data-tab="providers" class="active">Providers <span class="count" id="cnt-providers">0</span></button>
+          <button data-tab="trips">Trips <span class="count" id="cnt-trips">0</span></button>
+          <button data-tab="bookings">Bookings <span class="count" id="cnt-bookings">0</span></button>
+          <button data-tab="payments">Pending Payments <span class="count" id="cnt-payments">0</span></button>
+        </div>
+        <div class="tab-content">
+          <div data-tab-panel="providers" class="active">
+            <div id="admin-provider-list"></div>
+            <div class="empty-state hidden" id="admin-provider-empty">
+              <h3>No providers yet.</h3><p>Once operators register, they'll appear here.</p>
+            </div>
+          </div>
+          <div data-tab-panel="trips">
+            <div id="admin-trip-list"></div>
+            <div class="empty-state hidden" id="admin-trip-empty">
+              <h3>No trips in the system.</h3><p>An approved provider can add one from the Operator Console.</p>
+            </div>
+          </div>
+          <div data-tab-panel="bookings">
+            <div class="filter-strip">
+              <input type="text" id="ab-q" placeholder="Search by customer name, passenger, billing ref, booking id…" />
+              <input type="text" id="ab-origin" placeholder="Origin (e.g. Khartoum)" list="city-list" />
+              <input type="text" id="ab-destination" placeholder="Destination" list="city-list" />
+              <select id="ab-status">
+                <option value="confirmed">Confirmed only</option>
+                <option value="committed_pending">Awaiting Payment</option>
+                <option value="pending">Pending lock</option>
+                <option value="expired">Expired</option>
+                <option value="any">Any status</option>
+              </select>
+            </div>
+            <div id="admin-bookings-list"></div>
+            <div class="empty-state hidden" id="admin-bookings-empty">
+              <h3>No bookings match.</h3><p>Try clearing or relaxing the filters.</p>
+            </div>
+          </div>
+          <div data-tab-panel="payments">
+            <div id="admin-payment-list"></div>
+            <div class="empty-state hidden" id="admin-payment-empty">
+              <h3>No pending payments.</h3><p>Bookings settle here once a billing reference is issued.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Add Trip Modal -->
+<div id="add-trip-modal" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3>Schedule a Trip</h3>
+    <div class="modal-sub">All seats are auto-generated from the fleet layout.</div>
+    <div class="modal-row">
+      <div class="field-block"><label>From</label><input type="text" id="nt-origin" placeholder="Khartoum" list="city-list" /></div>
+      <div class="field-block"><label>To</label><input type="text" id="nt-destination" placeholder="Port Sudan" list="city-list" /></div>
+    </div>
+    <div class="modal-row">
+      <div class="field-block full">
+        <label>Fleet layout</label>
+        <div class="layout-pick">
+          <label class="active" data-seats="45"><input type="radio" name="nt-seats" value="45" checked><span class="l-num">45</span><span class="l-desc">2x2 · 5-Back</span></label>
+          <label data-seats="48"><input type="radio" name="nt-seats" value="48"><span class="l-num">48</span><span class="l-desc">3 Front · 2x2 · 5-Back</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="field-block"><label>Departure</label><input type="datetime-local" id="nt-departure" /></div>
+      <div class="field-block"><label>Price (SDG)</label><input type="number" id="nt-price" min="1" value="15000" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="cta ghost" id="add-trip-cancel">Cancel</button>
+      <button class="cta alt" id="add-trip-submit">Create →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ticket Modal -->
+<div id="ticket-modal" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="ticket">
+    <div class="ticket-head">
+      <div>
+        <div class="brand-sm">Tazkirati.</div>
+        <div class="sub">Sudan Intercity Coach · Boarding Stub</div>
+      </div>
+      <div class="bok">
+        <div class="lbl">Billing Reference</div>
+        <div class="code" id="t-bok">—</div>
+      </div>
+      <div class="qr-block">
+        <div class="qr-lbl">SCAN AT BOARDING</div>
+        <div class="qr-frame" id="t-qr-frame"></div>
+      </div>
+    </div>
+    <div class="delivered-banner hidden" id="t-delivered">— <b id="t-delivered-to">—</b></div>
+    <div class="ticket-route">
+      <div class="city"><span id="t-origin">—</span><span class="meta" id="t-departure">—</span></div>
+      <div class="arrow">→</div>
+      <div class="city right"><span id="t-destination">—</span><span class="meta" id="t-duration">—</span></div>
+    </div>
+    <div class="ticket-grid">
+      <div class="cell"><div class="k">Booking ID</div><div class="v mono" id="t-booking-id">—</div></div>
+      <div class="cell"><div class="k">Channel</div><div class="v" id="t-channel">—</div></div>
+      <div class="cell"><div class="k">Status</div><div class="v" id="t-status">—</div></div>
+      <div class="cell"><div class="k">Issued</div><div class="v mono" id="t-issued">—</div></div>
+      <div class="cell"><div class="k">Expires</div><div class="v mono" id="t-expires">—</div></div>
+      <div class="cell"><div class="k">Seat Map</div><div class="v mono" id="t-seats">—</div></div>
+    </div>
+    <div class="pax-block"><h4>Manifest</h4><ul class="pax-list" id="t-pax-list"></ul></div>
+    <div class="ticket-foot">
+      <div class="stamp" id="t-stamp">Settle Within 30 Min</div>
+      <div class="total"><span class="cur">SDG</span><span id="t-total">—</span></div>
+    </div>
+    <div class="ticket-actions">
+      <button id="t-close">Close</button>
+      <button id="t-print" class="primary">Print Receipt</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">—</div>
+
+<script>
+/* ==========================================================================
+ *  Tazkirati — multi-role web portal
+ * ========================================================================== */
+
+const API = location.origin;
+const POLL_INTERVAL_MS = 200;
+const ADMIN_REFRESH_MS = 4000;
+
+const STATE = {
+  screen: 'welcome',
+  auth: null,
+  pendingRegister: null,
+  bookingFlow: 'customer',
+  activeTrip: null,
+  selected: new Set(),
+  passengers: {},
+  knownVersion: null,
+  pollAbort: null,
+  loopRunning: false,
+  currentBooking: null,
+  countdownTimer: null,
+  history: [],
+  adminTab: 'providers',
+  providerTab: 'trips',
+  adminRefreshTimer: null,
+  adminBookingsTimer: null,
+};
+
+/* ---------- DOM utils ---------- */
+const $  = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+function toast(msg, isErr = false) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.toggle('err', isErr);
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+function setConn(ok) {
+  $('#conn-dot').classList.toggle('idle', !ok);
+  $('#conn-text').textContent = ok ? 'Live' : 'Reconnecting…';
+}
+
+/* ---------- Time helpers (UTC-safe) ---------- */
+function parseUtc(iso) {
+  if (!iso) return null;
+  return /[+-]\d{2}:?\d{2}$|Z$/.test(iso) ? new Date(iso) : new Date(iso + 'Z');
+}
+function fmtTime(iso) {
+  const d = parseUtc(iso);
+  return d ? d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+}
+function fmtDateOnly(iso) {
+  const d = parseUtc(iso);
+  return d ? d.toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—';
+}
+function fmtMoney(n) { return Number(n).toLocaleString('en-US'); }
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- Navigation ---------- */
+function goto(screen, opts = {}) {
+  if (!opts.replaceHistory && STATE.screen !== screen) STATE.history.push(STATE.screen);
+  STATE.screen = screen;
+  document.body.dataset.screen = screen;
+  if (screen !== 'admin-home') stopAdminRefresh();
+  paintChrome();
+}
+function back() {
+  const prev = STATE.history.pop();
+  if (!prev) return;
+  STATE.screen = prev;
+  document.body.dataset.screen = prev;
+  if (prev === 'provider-home') refreshProviderTab();
+  if (prev === 'admin-home')    { refreshAdminTab(); startAdminRefresh(); }
+  if (prev === 'customer-my-tickets') refreshMyTickets();
+  paintChrome();
+}
+
+function paintChrome() {
+  const auth = STATE.auth;
+  const topbar = $('#topbar');
+  const session = $('#session');
+  const subhead = $('#subhead');
+  const nav = $('#topbar-nav');
+  topbar.classList.remove('role-customer', 'role-provider', 'role-admin');
+  nav.innerHTML = '';
+  if (auth) {
+    session.hidden = false;
+    topbar.classList.add('role-' + auth.user.role);
+    const roleLabel = { customer: 'Passenger', provider: 'Operator', admin: 'Administrator' }[auth.user.role] || auth.user.role;
+    $('#role-badge').textContent = roleLabel;
+    $('#email-tag').textContent = auth.user.email;
+    if (auth.user.role === 'customer') {
+      nav.hidden = false;
+      nav.innerHTML = `
+        <a class="nav-link" data-nav="customer-search">Search</a>
+        <a class="nav-link" data-nav="customer-my-tickets">My Tickets</a>
+      `;
+      nav.querySelectorAll('a').forEach(a => {
+        a.classList.toggle('active', STATE.screen === a.dataset.nav);
+        a.addEventListener('click', () => {
+          if (a.dataset.nav === 'customer-search') {
+            STATE.history = [];
+            goto('customer-search', { replaceHistory: true });
+          } else if (a.dataset.nav === 'customer-my-tickets') {
+            STATE.history = [];
+            goto('customer-my-tickets', { replaceHistory: true });
+            refreshMyTickets();
+          }
+        });
+      });
+    } else {
+      nav.hidden = true;
+    }
+  } else {
+    session.hidden = true;
+    nav.hidden = true;
+  }
+
+  const noSubHead = ['welcome','sign-in','register','verify-email','provider-pending'].includes(STATE.screen);
+  subhead.hidden = noSubHead;
+  $('#back-btn').style.visibility = STATE.history.length > 0 ? 'visible' : 'hidden';
+  const crumbs = {
+    'customer-search':      'PASSENGER · SEARCH',
+    'customer-trips':       'PASSENGER · RESULTS',
+    'customer-book':        STATE.bookingFlow === 'provider' ? 'OPERATOR · WALK-IN BOOKING' : 'PASSENGER · SEAT SELECTION',
+    'customer-my-tickets':  'PASSENGER · MY TICKETS',
+    'provider-home':        'OPERATOR · CONSOLE',
+    'provider-book':        'OPERATOR · WALK-IN BOOKING',
+    'admin-home':           'ADMIN · CONSOLE',
+  };
+  $('#crumb').textContent = crumbs[STATE.screen] || '';
+}
+
+/* ---------- API ---------- */
+async function api(path, opts = {}) {
+  const headers = Object.assign(
+    { 'Content-Type': 'application/json' },
+    STATE.auth?.token ? { 'Authorization': 'Bearer ' + STATE.auth.token } : {},
+    opts.headers || {}
+  );
+  const res = await fetch(API + path, { ...opts, headers });
+  if (!res.ok) {
+    let detail = '';
+    try { detail = (await res.json()).detail || ''; } catch (_) {}
+    throw new Error(`${res.status} ${res.statusText}${detail ? ' — ' + detail : ''}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+/* ---------- Auth ---------- */
+async function doSignIn() {
+  const email = $('#si-email').value.trim().toLowerCase();
+  const password = $('#si-password').value;
+  if (!email || !password) return toast('Email and password required', true);
+  try {
+    const r = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    STATE.auth = { token: r.access_token, user: r.user };
+    STATE.history = [];
+    routeAfterAuth();
+    toast(`Welcome, ${r.user.full_name}`);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function doRegister() {
+  const full_name = $('#rg-name').value.trim();
+  const email     = $('#rg-email').value.trim().toLowerCase();
+  const password  = $('#rg-password').value;
+  const phone_number = $('#rg-phone').value.trim() || null;
+  const role = $$('input[name="rg-role"]').find(r => r.checked).value;
+  if (!full_name) return toast('Full name required', true);
+  if (!email)     return toast('Email required', true);
+  if (password.length < 6) return toast('Password must be at least 6 characters', true);
+  try {
+    const r = await api('/auth/register', { method: 'POST', body: JSON.stringify({ full_name, email, password, phone_number, role }) });
+    STATE.pendingRegister = { email: r.email, role: r.role };
+    $('#vf-email').textContent = r.email;
+    $('#vf-dev-hint').innerHTML = `DEV MODE · code is <code>${r.dev_otp}</code> (auto-prefilled)`;
+    $('#vf-input').value = r.dev_otp;
+    goto('verify-email');
+    setTimeout(() => $('#vf-input').focus(), 60);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function doVerify() {
+  const code = $('#vf-input').value.trim();
+  if (!/^\d{6}$/.test(code)) return toast('Enter the 6-digit code', true);
+  if (!STATE.pendingRegister) { toast('Restart registration', true); return goto('register'); }
+  try {
+    const r = await api('/auth/verify-email', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email, otp_code: code }) });
+    STATE.auth = { token: r.access_token, user: r.user };
+    STATE.pendingRegister = null;
+    STATE.history = [];
+    routeAfterAuth();
+    toast(`Welcome aboard, ${r.user.full_name}`);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function doResendOtp() {
+  if (!STATE.pendingRegister) return;
+  try {
+    const r = await api('/auth/resend-otp', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email }) });
+    $('#vf-input').value = r.dev_otp;
+    $('#vf-dev-hint').innerHTML = `New code · <code>${r.dev_otp}</code>`;
+    toast('New code issued');
+  } catch (e) { toast(e.message, true); }
+}
+
+async function refreshPendingStatus() {
+  try {
+    const r = await api('/auth/me');
+    STATE.auth.user = r;
+    if (r.status === 'active') {
+      toast('Approved! Welcome aboard.');
+      routeAfterAuth();
+    } else {
+      toast('Still pending. Try again in a moment.');
+    }
+  } catch (e) { toast(e.message, true); }
+}
+
+function routeAfterAuth() {
+  const u = STATE.auth.user;
+  STATE.history = [];
+  if (u.role === 'admin') {
+    goto('admin-home', { replaceHistory: true });
+    refreshAdminTab(); startAdminRefresh();
+    return;
+  }
+  if (u.role === 'provider') {
+    if (u.status !== 'active') return goto('provider-pending', { replaceHistory: true });
+    goto('provider-home', { replaceHistory: true });
+    refreshProviderTab();
+    return;
+  }
+  goto('customer-search', { replaceHistory: true });
+}
+
+function logout() {
+  STATE.auth = null;
+  STATE.pendingRegister = null;
+  STATE.history = [];
+  stopStreamLoop(); stopAdminRefresh();
+  resetBookingState();
+  $('#si-email').value = ''; $('#si-password').value = '';
+  $('#rg-name').value = ''; $('#rg-email').value = ''; $('#rg-password').value = ''; $('#rg-phone').value = '';
+  $('#vf-input').value = '';
+  goto('welcome', { replaceHistory: true });
+}
+
+/* ---------- Customer search ---------- */
+async function doSearch() {
+  const origin = $('#search-origin').value.trim();
+  const destination = $('#search-destination').value.trim();
+  if (!origin || !destination) return toast('Enter both cities', true);
+  try {
+    const params = new URLSearchParams({ origin, destination });
+    const trips = await api('/trips/search?' + params);
+    renderCustomerTrips(trips, origin, destination);
+    goto('customer-trips');
+  } catch (e) { toast(e.message, true); }
+}
+
+function renderCustomerTrips(trips, origin, destination) {
+  $('#trips-route-title').innerHTML =
+    `${escapeHtml(origin)} <span class="arrow" style="color: var(--terra-dim);">→</span> ${escapeHtml(destination)}`;
+  const list = $('#customer-trip-list');
+  const empty = $('#customer-trip-empty');
+  list.innerHTML = '';
+  if (!trips.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); list.classList.remove('hidden');
+  trips.forEach(t => list.appendChild(makeTripCard(t, false)));
+}
+
+function makeTripCard(t, asProvider) {
+  const card = document.createElement('div');
+  card.className = 'trip-card';
+  card.innerHTML = `
+    <div>
+      <div class="meta-row">
+        <span class="chip-id">Trip #${t.trip_id}</span>
+        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(t.departure_time)}</span>
+        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${t.duration || '12H'}</span>
+      </div>
+      <div class="route">${escapeHtml(t.origin)} <span class="arrow">→</span> ${escapeHtml(t.destination)}</div>
+      <div class="stats"><b>${t.available_seats_count}</b>/${t.total_seats} available · <b>${t.total_seats}-seat</b> layout</div>
+    </div>
+    <div class="price">${fmtMoney(t.price)}<small>SDG / SEAT</small></div>
+    <div class="trip-card-actions">
+      ${ asProvider
+          ? `<button class="btn-inline" data-action="book">Walk-in Book →</button>
+             <button class="btn-inline danger" data-action="delete">Delete Trip</button>`
+          : `<button class="btn-inline" data-action="book">Select Seats →</button>`
+      }
+    </div>
+  `;
+  card.querySelector('[data-action="book"]').addEventListener('click', () => openBooking(t, asProvider));
+  if (asProvider) {
+    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(t.trip_id, '/trips/'));
+  }
+  return card;
+}
+
+/* ---------- Customer: My Tickets ---------- */
+async function refreshMyTickets() {
+  try {
+    const bookings = await api('/bookings/me');
+    renderMyTickets(bookings);
+  } catch (e) { toast(e.message, true); }
+}
+
+function renderMyTickets(bookings) {
+  const awaiting = bookings.filter(b => b.status === 'committed_pending' || b.status === 'pending');
+  const upcoming = bookings.filter(b => b.status === 'confirmed' && !b.is_past);
+  const past     = bookings.filter(b => b.status === 'confirmed' &&  b.is_past);
+
+  fillSection('mt-awaiting', awaiting, 'awaiting');
+  fillSection('mt-upcoming', upcoming, 'upcoming');
+  fillSection('mt-past',     past,     'past');
+}
+
+function fillSection(prefix, rows, kind) {
+  const list = $('#' + prefix + '-list');
+  const empty = $('#' + prefix + '-empty');
+  $('#' + prefix + '-count').textContent = rows.length;
+  list.innerHTML = '';
+  if (!rows.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); list.classList.remove('hidden');
+  rows.forEach(b => list.appendChild(makeMyTicketRow(b, kind)));
+}
+
+function makeMyTicketRow(b, kind) {
+  const row = document.createElement('div');
+  row.className = 'booking-row' + (b.is_past ? ' past' : '');
+  const statusKey = b.status;
+  const refTag = b.billing_reference ? `· <b>${escapeHtml(b.billing_reference)}</b>` : '';
+  const action = (kind === 'awaiting')
+    ? `<button class="btn-inline alt" data-action="open-ticket">View Ticket →</button>`
+    : `<button class="btn-inline ghost" data-action="open-ticket">View Ticket</button>`;
+  row.innerHTML = `
+    <div class="main">
+      <div class="meta-row">
+        <span class="status-pill ${statusKey}">${statusKey.replace('_',' ')}</span>
+        <span class="chip-id">#${b.booking_id}</span>
+        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
+      </div>
+      <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
+      <div class="info-line">SEATS <b>${b.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}</div>
+    </div>
+    <div class="actions">${action}</div>
+  `;
+  row.querySelector('[data-action="open-ticket"]').addEventListener('click', () => openExistingTicket(b.booking_id));
+  return row;
+}
+
+async function openExistingTicket(bookingId) {
+  try {
+    const ticket = await api('/bookings/' + bookingId + '/ticket');
+    STATE.bookingFlow = 'customer';
+    renderTicket(ticket, { confirmed: ticket.booking_status === 'confirmed' });
+    $('#ticket-modal').classList.add('show');
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ---------- Provider home (tabs) ---------- */
+async function refreshProviderTab() {
+  if (STATE.providerTab === 'trips')    return refreshProviderTrips();
+  if (STATE.providerTab === 'bookings') return refreshProviderBookings();
+}
+
+function switchProviderTab(tab) {
+  STATE.providerTab = tab;
+  $$('#provider-tab-bar button').forEach(b => b.classList.toggle('active', b.dataset.ptab === tab));
+  $$('#provider-tab-content > *').forEach(p => p.classList.toggle('active', p.dataset.ptabPanel === tab));
+  refreshProviderTab();
+}
+
+async function refreshProviderTrips() {
+  try {
+    const trips = await api('/trips/mine');   // <-- only this provider's trips
+    $('#pcnt-trips').textContent = trips.length;
+    const list = $('#provider-trip-list');
+    const empty = $('#provider-trip-empty');
+    list.innerHTML = '';
+    if (!trips.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+    empty.classList.add('hidden'); list.classList.remove('hidden');
+    trips.forEach(t => list.appendChild(makeTripCard(t, true)));
+    // Update bookings count quietly too
+    api('/bookings/provider/mine').then(bs => $('#pcnt-bookings').textContent = bs.length).catch(()=>{});
+  } catch (e) { toast(e.message, true); }
+}
+
+async function refreshProviderBookings() {
+  try {
+    const bookings = await api('/bookings/provider/mine');
+    $('#pcnt-bookings').textContent = bookings.length;
+    const list = $('#provider-bookings-list');
+    const empty = $('#provider-bookings-empty');
+    list.innerHTML = '';
+    if (!bookings.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+    empty.classList.add('hidden'); list.classList.remove('hidden');
+    bookings.forEach(b => list.appendChild(makeProviderBookingRow(b)));
+    // Also refresh trips count quietly
+    api('/trips/mine').then(ts => $('#pcnt-trips').textContent = ts.length).catch(()=>{});
+  } catch (e) { toast(e.message, true); }
+}
+
+function makeProviderBookingRow(b) {
+  const row = document.createElement('div');
+  row.className = 'booking-row';
+  const channelPill = b.channel === 'walkin'
+    ? `<span class="status-pill walkin">walk-in</span>`
+    : `<span class="status-pill" style="background: var(--paper-2); color: var(--ink-soft);">online</span>`;
+  const refTag = b.billing_reference ? `· <b>${escapeHtml(b.billing_reference)}</b>` : '';
+  row.innerHTML = `
+    <div class="main">
+      <div class="meta-row">
+        <span class="status-pill ${b.status}">${b.status.replace('_',' ')}</span>
+        ${channelPill}
+        <span class="chip-id">#${b.booking_id}</span>
+        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
+      </div>
+      <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
+      <div class="info-line">
+        ${escapeHtml(b.customer_name || '—')} · ${escapeHtml(b.customer_email || '—')}<br>
+        SEATS <b>${b.seats.join(', ') || '—'}</b> · <b>${b.passenger_count}</b> passenger(s) · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
+      </div>
+    </div>
+    <div class="actions">
+      ${b.billing_reference ? `<button class="btn-inline ghost" data-action="view-ticket">View Ticket</button>` : ''}
+    </div>
+  `;
+  const viewBtn = row.querySelector('[data-action="view-ticket"]');
+  if (viewBtn) viewBtn.addEventListener('click', () => openExistingTicket(b.booking_id));
+  return row;
+}
+
+/* ---------- Deletion (shared between provider + admin) ---------- */
+async function deleteTrip(tripId, basePath) {
+  if (!confirm(`Delete Trip #${tripId}? This cannot be undone.`)) return;
+  try {
+    await api(basePath + tripId, { method: 'DELETE' });
+    toast(`Trip #${tripId} removed`);
+    if (STATE.auth?.user.role === 'provider') refreshProviderTrips();
+    else refreshAdminTab();
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ---------- Add Trip ---------- */
+function openAddTrip() {
+  const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0);
+  $('#nt-departure').value = d.toISOString().slice(0, 16);
+  $('#nt-origin').value = ''; $('#nt-destination').value = '';
+  $('#nt-price').value = 15000;
+  $$('.layout-pick label').forEach((l, i) => l.classList.toggle('active', i === 0));
+  $$('input[name="nt-seats"]').forEach((r, i) => r.checked = (i === 0));
+  $('#add-trip-modal').classList.add('show');
+  setTimeout(() => $('#nt-origin').focus(), 50);
+}
+function closeAddTrip() { $('#add-trip-modal').classList.remove('show'); }
+
+async function submitAddTrip() {
+  const origin = $('#nt-origin').value.trim();
+  const destination = $('#nt-destination').value.trim();
+  const total_seats = parseInt($$('input[name="nt-seats"]').find(r => r.checked).value, 10);
+  const departure = $('#nt-departure').value;
+  const price = parseFloat($('#nt-price').value);
+  if (!origin || !destination) return toast('Origin and destination required', true);
+  if (!departure)              return toast('Pick a departure time', true);
+  if (!(price > 0))            return toast('Price must be positive', true);
+  try {
+    const r = await api('/trips', {
+      method: 'POST',
+      body: JSON.stringify({ origin, destination, total_seats,
+        departure_time: new Date(departure).toISOString(), price }),
+    });
+    closeAddTrip();
+    toast(`Trip #${r.trip_id} created`);
+    refreshProviderTrips();
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ---------- Booking screen (shared) ---------- */
+function openBooking(trip, asProvider) {
+  STATE.activeTrip = trip;
+  STATE.bookingFlow = asProvider ? 'provider' : 'customer';
+  STATE.selected.clear();
+  STATE.passengers = {};
+  STATE.knownVersion = null;
+  STATE.currentBooking = null;
+  $('#booking-panel').classList.add('hidden');
+  $('#book-route').innerHTML =
+    `${escapeHtml(trip.origin)} <span class="arrow">→</span> ${escapeHtml(trip.destination)}`;
+  $('#book-meta').innerHTML = `
+    TRIP <b>#${trip.trip_id}</b><br>
+    ${fmtTime(trip.departure_time)}<br>
+    <b>${trip.total_seats}-SEAT</b> · SDG <b>${fmtMoney(trip.price)}</b> / SEAT
+  `;
+  goto(asProvider ? 'provider-book' : 'customer-book');
+  refreshSelectionUI();
+  startStreamLoop();
+}
+
+function classifySeat(name) {
+  if (/^F\d/.test(name)) return { kind: 'front' };
+  const m = name.match(/^(\d+)([A-Z])$/);
+  if (!m) return { kind: 'unknown' };
+  const row = parseInt(m[1], 10);
+  if (row === 11) return { kind: 'back', col: m[2].charCodeAt(0) - 65 };
+  return { kind: 'regular', row, col: m[2].charCodeAt(0) - 65 };
+}
+function buildLayout(seats) {
+  const front = []; const regular = {}; const back = [];
+  seats.forEach(s => {
+    const c = classifySeat(s.seat_number);
+    if (c.kind === 'front') front.push(s);
+    else if (c.kind === 'back') back.push(s);
+    else if (c.kind === 'regular') {
+      regular[c.row] = regular[c.row] || {};
+      regular[c.row][c.col] = s;
+    }
+  });
+  return { front, regular, back };
+}
+function renderBus(seats) {
+  const layout = buildLayout(seats);
+  const fj = $('#front-jumps'); fj.innerHTML = '';
+  if (layout.front.length) {
+    fj.classList.remove('hidden');
+    layout.front.forEach((s, i) => fj.appendChild(makeSeat(s, i * 30)));
+  } else { fj.classList.add('hidden'); }
+  const rr = $('#regular-rows'); rr.innerHTML = '';
+  const rowNums = Object.keys(layout.regular).map(Number).sort((a, b) => a - b);
+  rowNums.forEach((r, ri) => {
+    const row = document.createElement('div'); row.className = 'regular-row';
+    const cols = ['A','B','aisle','C','D'];
+    cols.forEach((c, ci) => {
+      if (c === 'aisle') { const a = document.createElement('div'); a.className = 'aisle'; row.appendChild(a); return; }
+      const seat = layout.regular[r][c.charCodeAt(0) - 65];
+      if (seat) row.appendChild(makeSeat(seat, ri * 22 + ci * 6));
+    });
+    rr.appendChild(row);
+  });
+  const br = $('#back-row'); br.innerHTML = '';
+  layout.back.slice().sort((a, b) => a.seat_number.localeCompare(b.seat_number))
+    .forEach((s, i) => br.appendChild(makeSeat(s, 250 + i * 12)));
+}
+function makeSeat(seat, delay) {
+  const btn = document.createElement('button');
+  btn.className = 'seat ' + seat.status;
+  btn.textContent = seat.seat_number;
+  btn.dataset.seat = seat.seat_number;
+  btn.style.animationDelay = (delay || 0) + 'ms';
+  if (STATE.selected.has(seat.seat_number)) btn.classList.add('selected');
+  if (seat.status === 'booked') btn.disabled = true;
+  if (seat.status === 'locked' && !STATE.selected.has(seat.seat_number)) btn.disabled = true;
+  btn.addEventListener('click', () => toggleSeat(seat.seat_number));
+  return btn;
+}
+function toggleSeat(name) {
+  if (STATE.currentBooking) { toast('Finish current booking first', true); return; }
+  if (STATE.selected.has(name)) { STATE.selected.delete(name); delete STATE.passengers[name]; }
+  else { STATE.selected.add(name); STATE.passengers[name] = STATE.passengers[name] || { name: '' }; }
+  refreshSelectionUI();
+  const el = document.querySelector(`.seat[data-seat="${name}"]`);
+  if (el) el.classList.toggle('selected');
+}
+
+function refreshSelectionUI() {
+  const chips = $('#selection-chips'); chips.innerHTML = '';
+  if (STATE.selected.size === 0) chips.innerHTML = '<div class="chip empty">Tap seats to select</div>';
+  else [...STATE.selected].sort(seatSortKey).forEach(s => {
+    const c = document.createElement('div'); c.className = 'chip'; c.textContent = s; chips.appendChild(c);
+  });
+  $('#select-count').textContent = STATE.selected.size + ' SEAT' + (STATE.selected.size === 1 ? '' : 'S');
+
+  const body = $('#pax-body'); body.innerHTML = '';
+  if (STATE.selected.size === 0) {
+    body.innerHTML = `<div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">Select seats to fill in passenger names.</div>`;
+  } else {
+    [...STATE.selected].sort(seatSortKey).forEach(s => {
+      const row = document.createElement('div'); row.className = 'pax-row';
+      const defaultName = STATE.bookingFlow === 'customer' && STATE.selected.size === 1
+        ? (STATE.auth?.user.full_name || '') : '';
+      row.innerHTML = `<div class="seat-tag">${s}</div>
+        <input data-seat="${s}" placeholder="Full name" value="${escapeHtml(STATE.passengers[s]?.name || defaultName)}">`;
+      body.appendChild(row);
+    });
+    body.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const seat = e.target.dataset.seat;
+        STATE.passengers[seat] = STATE.passengers[seat] || { name: '' };
+        STATE.passengers[seat].name = e.target.value;
+      });
+    });
+  }
+  const total = STATE.selected.size * (STATE.activeTrip?.price || 0);
+  $('#total-amount').textContent = fmtMoney(total);
+  $('#seat-count').textContent = STATE.selected.size + (STATE.selected.size === 1 ? ' seat' : ' seats');
+  const lockBtn = $('#lock-btn');
+  lockBtn.disabled = STATE.selected.size === 0;
+  lockBtn.textContent = STATE.bookingFlow === 'provider'
+    ? `Issue Walk-In · SDG ${fmtMoney(total)} →`
+    : `Lock Seats · SDG ${fmtMoney(total)} →`;
+}
+function seatSortKey(s) {
+  if (/^F/.test(s)) return '0_' + s;
+  const m = s.match(/^(\d+)([A-Z])$/);
+  return '1_' + m[1].padStart(3, '0') + m[2];
+}
+
+/* ---------- Long-poll ---------- */
+async function refreshSeatMatrix({ immediate = false } = {}) {
+  if (!STATE.activeTrip) return;
+  try {
+    const url = `${API}/bookings/trips/${STATE.activeTrip.trip_id}/seats/stream`
+      + (STATE.knownVersion != null && !immediate ? `?since=${STATE.knownVersion}&timeout_seconds=10` : '');
+    const ctrl = new AbortController();
+    STATE.pollAbort?.abort?.();
+    STATE.pollAbort = ctrl;
+    const res = await fetch(url, { signal: ctrl.signal,
+      headers: STATE.auth?.token ? { 'Authorization': 'Bearer ' + STATE.auth.token } : {} });
+    if (!res.ok) throw new Error('stream ' + res.status);
+    const snap = await res.json();
+    setConn(true);
+    STATE.knownVersion = snap.version;
+    renderBus(snap.seats);
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    setConn(false);
+    await new Promise(r => setTimeout(r, 600));
+  }
+}
+async function startStreamLoop() {
+  if (STATE.loopRunning) return;
+  STATE.loopRunning = true;
+  await refreshSeatMatrix({ immediate: true });
+  while (STATE.loopRunning && STATE.activeTrip) {
+    await refreshSeatMatrix();
+    await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+  }
+}
+function stopStreamLoop() {
+  STATE.loopRunning = false;
+  STATE.pollAbort?.abort?.();
+  STATE.activeTrip = null;
+  clearInterval(STATE.countdownTimer);
+}
+
+/* ---------- Lock + billing ---------- */
+async function doLock() {
+  if (STATE.selected.size === 0) return;
+  const seats = [...STATE.selected].sort(seatSortKey);
+  const passengers = seats.map(seat => ({
+    full_name: (STATE.passengers[seat]?.name || '').trim() || (STATE.auth?.user.full_name || 'Passenger'),
+    phone_number: STATE.auth?.user.phone_number || '',
+    national_id: null,
+    seat_number: seat,
+  }));
+  const body = {
+    trip_id: STATE.activeTrip.trip_id,
+    seat_numbers: seats,
+    total_price: seats.length * STATE.activeTrip.price,
+    passengers,
+  };
+  const endpoint = STATE.bookingFlow === 'provider' ? '/bookings/walkin' : '/bookings/lock';
+  try {
+    const r = await api(endpoint, { method: 'POST', body: JSON.stringify(body) });
+    STATE.currentBooking = r;
+    showBookingPanel(r);
+    STATE.knownVersion = null;
+    toast(`Booking #${r.booking_id} locked`);
+  } catch (e) { toast(e.message, true); }
+}
+
+function showBookingPanel(b) {
+  $('#booking-panel').classList.remove('hidden');
+  $('#booking-id-label').textContent = '#' + b.booking_id;
+  $('#booking-channel').textContent = b.channel.toUpperCase();
+  $('#booking-meta').innerHTML = `
+    SEATS: <b style="color: var(--ink);">${b.seats.join(', ')}</b><br>
+    TOTAL: <b style="color: var(--ink);">SDG ${fmtMoney(b.total_price)}</b><br>
+    STATUS: <b style="color: var(--ink);">${b.status.toUpperCase()}</b>
+  `;
+  startCountdown(b.expires_at);
+  $('#lock-btn').disabled = true;
+}
+
+function startCountdown(expiresIso) {
+  clearInterval(STATE.countdownTimer);
+  const target = parseUtc(expiresIso).getTime();
+  const cd = $('#countdown');
+  const tick = () => {
+    const ms = target - Date.now();
+    if (ms <= 0) {
+      $('#countdown-value').textContent = 'EXPIRED';
+      cd.classList.add('expired');
+      clearInterval(STATE.countdownTimer);
+      return;
+    }
+    cd.classList.remove('expired');
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    $('#countdown-value').textContent = `${m}:${String(s).padStart(2, '0')}`;
+  };
+  tick();
+  STATE.countdownTimer = setInterval(tick, 500);
+}
+
+async function doBilling() {
+  if (!STATE.currentBooking) return;
+  try {
+    const ticket = await api('/bookings/intent/billing', {
+      method: 'POST',
+      body: JSON.stringify({ booking_id: STATE.currentBooking.booking_id }),
+    });
+    renderTicket(ticket, { confirmed: false });
+    $('#ticket-modal').classList.add('show');
+    startCountdown(ticket.expires_at);
+    toast('Billing reference issued');
+  } catch (e) { toast(e.message, true); }
+}
+
+function resetBookingState() {
+  STATE.selected.clear();
+  STATE.passengers = {};
+  STATE.currentBooking = null;
+  $('#booking-panel').classList.add('hidden');
+  $('#lock-btn').disabled = true;
+  clearInterval(STATE.countdownTimer);
+}
+function restartFlow() { resetBookingState(); STATE.knownVersion = null; refreshSelectionUI(); }
+
+/* ---------- Ticket modal + QR ---------- */
+function renderTicket(t, { confirmed }) {
+  $('#t-bok').textContent = t.billing_reference || '—';
+  $('#t-origin').textContent = t.trip.origin;
+  $('#t-destination').textContent = t.trip.destination;
+  $('#t-departure').textContent = 'DEP ' + fmtTime(t.trip.departure_time);
+  $('#t-duration').textContent = (t.trip.duration || '12H') + ' · ROUTE A';
+  $('#t-booking-id').textContent = '#' + t.booking_id;
+  $('#t-channel').textContent = STATE.bookingFlow === 'provider' ? 'Walk-In' : 'Consumer';
+  $('#t-status').textContent = t.booking_status.replace('_', ' ');
+  $('#t-issued').textContent = fmtTime(t.bill_generated_at);
+  $('#t-expires').textContent = fmtTime(t.expires_at);
+  $('#t-seats').textContent = t.seats.join(' · ');
+  $('#t-total').textContent = fmtMoney(t.total_price);
+
+  const ul = $('#t-pax-list'); ul.innerHTML = '';
+  t.passengers.forEach(p => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div class="seat-stamp">${p.seat_number || '—'}</div>
+      <div class="name">${escapeHtml(p.full_name)}</div>
+      <div class="phone">${escapeHtml(p.phone_number || '')}</div>
+    `;
+    ul.appendChild(li);
+  });
+
+  // Delivered banner
+  const banner = $('#t-delivered');
+  if (t.delivered_to) {
+    banner.classList.remove('hidden');
+    banner.innerHTML = `📧 RECEIPT SENT TO <b>${escapeHtml(t.delivered_to)}</b>`;
+  } else { banner.classList.add('hidden'); }
+
+  // Stamp swap when confirmed
+  const stamp = $('#t-stamp');
+  if (confirmed) {
+    stamp.textContent = 'Payment Confirmed';
+    stamp.classList.add('confirmed');
+  } else {
+    stamp.textContent = 'Settle Within 30 Min';
+    stamp.classList.remove('confirmed');
+  }
+
+  // QR code (TKT-04)
+  const qrFrame = $('#t-qr-frame');
+  qrFrame.innerHTML = '';
+  if (typeof QRCode !== 'undefined' && t.qr_payload) {
+    new QRCode(qrFrame, {
+      text: t.qr_payload,
+      width: 84, height: 84,
+      colorDark: '#1A1814', colorLight: '#FBF6E7',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+}
+function closeTicket() { $('#ticket-modal').classList.remove('show'); }
+
+/* ==========================================================================
+ *  ADMIN CONSOLE
+ * ========================================================================== */
+function switchAdminTab(tab) {
+  STATE.adminTab = tab;
+  $$('.admin-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $$('.tab-content > *').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
+  refreshAdminTab();
+}
+
+async function refreshAdminTab() {
+  if (STATE.auth?.user.role !== 'admin') return;
+  const tab = STATE.adminTab;
+  try {
+    if (tab === 'providers') await renderAdminProviders();
+    if (tab === 'trips')     await renderAdminTrips();
+    if (tab === 'bookings')  await renderAdminBookings();
+    if (tab === 'payments')  await renderAdminPayments();
+    // Pull other counts quietly
+    if (tab !== 'providers') api('/admin/providers').then(p => $('#cnt-providers').textContent = p.length).catch(()=>{});
+    if (tab !== 'trips')     api('/admin/trips').then(t => $('#cnt-trips').textContent = t.length).catch(()=>{});
+    if (tab !== 'bookings')  api('/admin/bookings?status=any').then(b => $('#cnt-bookings').textContent = b.length).catch(()=>{});
+    if (tab !== 'payments')  api('/admin/payments/pending').then(p => $('#cnt-payments').textContent = p.length).catch(()=>{});
+  } catch (e) { toast(e.message, true); }
+}
+
+async function renderAdminProviders() {
+  const providers = await api('/admin/providers');
+  $('#cnt-providers').textContent = providers.length;
+  const list = $('#admin-provider-list');
+  const empty = $('#admin-provider-empty');
+  list.innerHTML = '';
+  if (!providers.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); list.classList.remove('hidden');
+  providers.forEach(p => {
+    const row = document.createElement('div'); row.className = 'admin-row';
+    row.innerHTML = `
+      <div class="main">
+        <div><span class="status-pill ${p.status}">${p.status}</span><span class="name">${escapeHtml(p.full_name)}</span></div>
+        <div class="sub">${escapeHtml(p.email)} · ${escapeHtml(p.phone_number || '—')} · joined ${fmtTime(p.created_at)} · <b>${p.trip_count}</b> trip(s)</div>
+      </div>
+      <div class="actions">
+        ${ p.status === 'active'
+            ? `<button class="btn-inline danger" data-action="block">Block</button>`
+            : `<button class="btn-inline success" data-action="approve">Approve</button>${p.status==='blocked' ? '' : ''}` }
+      </div>
+    `;
+    const approve = row.querySelector('[data-action="approve"]');
+    const block = row.querySelector('[data-action="block"]');
+    approve?.addEventListener('click', () => adminProviderAction(p.id, 'approve'));
+    block?.addEventListener('click',   () => adminProviderAction(p.id, 'block'));
+    list.appendChild(row);
+  });
+}
+async function adminProviderAction(providerId, action) {
+  try {
+    await api(`/admin/providers/${providerId}/${action}`, { method: 'POST' });
+    toast(`Provider ${action}d`);
+    refreshAdminTab();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function renderAdminTrips() {
+  const trips = await api('/admin/trips');
+  $('#cnt-trips').textContent = trips.length;
+  const list = $('#admin-trip-list');
+  const empty = $('#admin-trip-empty');
+  list.innerHTML = '';
+  if (!trips.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); list.classList.remove('hidden');
+  trips.forEach(t => {
+    const card = document.createElement('div'); card.className = 'trip-card';
+    card.innerHTML = `
+      <div>
+        <div class="meta-row">
+          <span class="chip-id">Trip #${t.trip_id}</span>
+          <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(t.departure_time)}</span>
+          <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">Provider #${t.provider_id}</span>
+        </div>
+        <div class="route">${escapeHtml(t.origin)} <span class="arrow">→</span> ${escapeHtml(t.destination)}</div>
+        <div class="stats"><b>${t.available_seats_count}</b>/${t.total_seats} available · <b>${t.total_seats}-seat</b> layout</div>
+      </div>
+      <div class="price">${fmtMoney(t.price)}<small>SDG / SEAT</small></div>
+      <div class="trip-card-actions">
+        <button class="btn-inline danger" data-action="delete">Delete Trip</button>
+      </div>
+    `;
+    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(t.trip_id, '/admin/trips/'));
+    list.appendChild(card);
+  });
+}
+
+async function renderAdminBookings() {
+  const q           = $('#ab-q').value.trim();
+  const origin      = $('#ab-origin').value.trim();
+  const destination = $('#ab-destination').value.trim();
+  const status      = $('#ab-status').value;
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (q) params.set('q', q);
+  if (origin) params.set('origin', origin);
+  if (destination) params.set('destination', destination);
+
+  const bookings = await api('/admin/bookings?' + params);
+  $('#cnt-bookings').textContent = bookings.length;
+  const list = $('#admin-bookings-list');
+  const empty = $('#admin-bookings-empty');
+  list.innerHTML = '';
+  if (!bookings.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); list.classList.remove('hidden');
+  bookings.forEach(b => list.appendChild(makeAdminBookingRow(b)));
+}
+
+function makeAdminBookingRow(b) {
+  const row = document.createElement('div');
+  row.className = 'booking-row';
+  const refTag = b.billing_reference ? `· <b>${escapeHtml(b.billing_reference)}</b>` : '';
+  const channelPill = b.channel === 'walkin'
+    ? `<span class="status-pill walkin">walk-in</span>`
+    : `<span class="status-pill" style="background: var(--paper-2); color: var(--ink-soft);">online</span>`;
+  row.innerHTML = `
+    <div class="main">
+      <div class="meta-row">
+        <span class="status-pill ${b.status}">${b.status.replace('_',' ')}</span>
+        ${channelPill}
+        <span class="chip-id">#${b.booking_id}</span>
+        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
+      </div>
+      <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
+      <div class="info-line">
+        ${escapeHtml(b.customer_name || '—')} · ${escapeHtml(b.customer_email || '—')}<br>
+        Provider: <b>${escapeHtml(b.provider_name || '#'+b.provider_id)}</b> · Passengers: ${escapeHtml(b.passenger_names.join(', ') || '—')}<br>
+        SEATS <b>${b.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
+      </div>
+    </div>
+    <div class="actions">
+      ${b.billing_reference ? `<button class="btn-inline ghost" data-action="view-ticket">View Ticket</button>` : ''}
+    </div>
+  `;
+  const viewBtn = row.querySelector('[data-action="view-ticket"]');
+  if (viewBtn) viewBtn.addEventListener('click', () => openExistingTicket(b.booking_id));
+  return row;
+}
+
+async function renderAdminPayments() {
+  const payments = await api('/admin/payments/pending');
+  $('#cnt-payments').textContent = payments.length;
+  const list = $('#admin-payment-list');
+  const empty = $('#admin-payment-empty');
+  list.innerHTML = '';
+  if (!payments.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); list.classList.remove('hidden');
+  payments.forEach(p => {
+    const row = document.createElement('div'); row.className = 'admin-row';
+    row.innerHTML = `
+      <div class="main">
+        <div><span class="status-pill committed_pending">${p.status.replace('_',' ')}</span><span class="name">${escapeHtml(p.billing_reference || `#${p.booking_id}`)}</span></div>
+        <div class="sub">
+          ${escapeHtml(p.customer_name || '—')} · ${escapeHtml(p.customer_email || '—')}<br>
+          ${escapeHtml(p.origin)} → ${escapeHtml(p.destination)} · ${fmtTime(p.departure_time)}<br>
+          SEATS <b>${p.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(p.total_price)}</b> · expires ${fmtTime(p.expires_at)}
+        </div>
+      </div>
+      <div class="actions"><button class="btn-inline success" data-action="confirm">Mark Paid</button></div>
+    `;
+    row.querySelector('[data-action="confirm"]').addEventListener('click', () => adminConfirmPayment(p));
+    list.appendChild(row);
+  });
+}
+async function adminConfirmPayment(payment) {
+  if (!confirm(`Confirm payment for ${payment.billing_reference || '#'+payment.booking_id}?`)) return;
+  try {
+    const r = await api(`/admin/payments/${payment.booking_id}/confirm`, { method: 'POST' });
+    toast(r.message);
+    refreshAdminTab();
+  } catch (e) { toast(e.message, true); }
+}
+
+function startAdminRefresh() {
+  stopAdminRefresh();
+  STATE.adminRefreshTimer = setInterval(refreshAdminTab, ADMIN_REFRESH_MS);
+}
+function stopAdminRefresh() {
+  if (STATE.adminRefreshTimer) { clearInterval(STATE.adminRefreshTimer); STATE.adminRefreshTimer = null; }
+}
+
+/* ==========================================================================
+ *  Wire-up
+ * ========================================================================== */
+function wire() {
+  $$('.welcome-card').forEach(c => c.addEventListener('click', () => {
+    if (c.dataset.act === 'sign-in') goto('sign-in'); else goto('register');
+  }));
+  $('#sign-in-btn').addEventListener('click', doSignIn);
+  $('#si-email').addEventListener('keydown', e => { if (e.key === 'Enter') $('#si-password').focus(); });
+  $('#si-password').addEventListener('keydown', e => { if (e.key === 'Enter') doSignIn(); });
+  $('#goto-register').addEventListener('click', e => { e.preventDefault(); goto('register'); });
+
+  $('#register-btn').addEventListener('click', doRegister);
+  $$('.role-pick label').forEach(l => l.addEventListener('click', () => {
+    $$('.role-pick label').forEach(x => x.classList.remove('active'));
+    l.classList.add('active');
+    l.querySelector('input').checked = true;
+  }));
+  $('#goto-signin').addEventListener('click', e => { e.preventDefault(); goto('sign-in'); });
+
+  $('#verify-btn').addEventListener('click', doVerify);
+  $('#vf-input').addEventListener('keydown', e => { if (e.key === 'Enter') doVerify(); });
+  $('#resend-btn').addEventListener('click', doResendOtp);
+
+  $('#pending-refresh').addEventListener('click', refreshPendingStatus);
+
+  $('#signout-btn').addEventListener('click', logout);
+  $('#brand-home').addEventListener('click', () => {
+    if (STATE.auth) {
+      STATE.history = [];
+      routeAfterAuth();
+    } else { goto('welcome', { replaceHistory: true }); }
+  });
+  $('#back-btn').addEventListener('click', () => {
+    if (STATE.screen === 'customer-book' || STATE.screen === 'provider-book') stopStreamLoop();
+    back();
+  });
+
+  $('#search-btn').addEventListener('click', doSearch);
+  $('#search-origin').addEventListener('keydown', e => { if (e.key === 'Enter') $('#search-destination').focus(); });
+  $('#search-destination').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  $('#add-trip-open-btn').addEventListener('click', openAddTrip);
+  $('#add-trip-cancel').addEventListener('click', closeAddTrip);
+  $('#add-trip-submit').addEventListener('click', submitAddTrip);
+  $$('.layout-pick label').forEach(lbl => lbl.addEventListener('click', () => {
+    $$('.layout-pick label').forEach(l => l.classList.remove('active'));
+    lbl.classList.add('active');
+    const r = lbl.querySelector('input'); if (r) r.checked = true;
+  }));
+  $('#add-trip-modal').addEventListener('click', e => { if (e.target.id === 'add-trip-modal') closeAddTrip(); });
+
+  $('#lock-btn').addEventListener('click', doLock);
+  $('#billing-btn').addEventListener('click', doBilling);
+  $('#restart-flow-btn').addEventListener('click', restartFlow);
+
+  $('#t-close').addEventListener('click', closeTicket);
+  $('#t-print').addEventListener('click', () => window.print());
+  $('#ticket-modal').addEventListener('click', e => { if (e.target.id === 'ticket-modal') closeTicket(); });
+
+  $$('.admin-tabs button').forEach(b => b.addEventListener('click', () => switchAdminTab(b.dataset.tab)));
+  $$('#provider-tab-bar button').forEach(b => b.addEventListener('click', () => switchProviderTab(b.dataset.ptab)));
+
+  // Admin bookings filter strip — debounced refresh on input
+  let bookingFilterTimer = null;
+  ['#ab-q', '#ab-origin', '#ab-destination'].forEach(sel => {
+    $(sel).addEventListener('input', () => {
+      clearTimeout(bookingFilterTimer);
+      bookingFilterTimer = setTimeout(renderAdminBookings, 280);
+    });
+  });
+  $('#ab-status').addEventListener('change', renderAdminBookings);
+}
+
+/* PWA service worker (no-op on initial fail) */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/app/sw.js').catch(() => { /* ignore */ });
+  });
+}
+
+wire();
+paintChrome();
+</script>
+</body>
+</html>

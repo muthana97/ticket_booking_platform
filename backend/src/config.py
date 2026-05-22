@@ -1,26 +1,45 @@
 import os
+from typing import List
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(current_dir, "..", ".env")
 
+
 class Settings(BaseSettings):
-    # App Settings
+    # ----- App -----
     APP_NAME: str = "TicketBookingPlatform"
     DEBUG: bool = False
-    
-    # Database Settings
+
+    # ----- Database -----
     DATABASE_URL: str
-    
-    # Security & JWT
+    DB_POOL_SIZE: int = 5
+    DB_POOL_MAX_OVERFLOW: int = 10
+    DB_POOL_RECYCLE_SECONDS: int = 1800  # recycle connections every 30 min
+
+    # ----- Security & JWT -----
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     OTP_EXPIRY_MINUTES: int = 5
-    
-    # Logic Constraints
-    SEAT_LOCK_DURATION_MINUTES: int = 10 # Requirement SEAT-04
 
-    model_config = SettingsConfigDict(env_file=env_path)
+    # ----- Logic constraints -----
+    SEAT_LOCK_DURATION_MINUTES: int = 10  # SEAT-04
+
+    # ----- CORS -----
+    # Comma-separated list of allowed origins. Use "*" in dev / set explicit
+    # origins in production (e.g. "https://tazkirati.onrender.com").
+    CORS_ALLOWED_ORIGINS: str = "*"
+
+    model_config = SettingsConfigDict(env_file=env_path, extra="ignore")
+
+    @property
+    def cors_origins(self) -> List[str]:
+        raw = self.CORS_ALLOWED_ORIGINS.strip()
+        if raw == "*" or not raw:
+            return ["*"]
+        return [o.strip() for o in raw.split(",") if o.strip()]
+
 
 settings = Settings()
