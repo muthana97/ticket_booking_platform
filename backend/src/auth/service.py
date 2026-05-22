@@ -102,14 +102,34 @@ def register_user(
             detail="Admin accounts cannot be self-registered.",
         )
 
+    new_status = "pending" if role == "provider" else "active"
     existing = db.query(models.User).filter(models.User.email == email.lower()).first()
-    if existing:
+
+    if existing and existing.email_verified:
+        # Real, completed account — block the duplicate sign-up.
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email already exists.",
         )
 
-    new_status = "pending" if role == "provider" else "active"
+    if existing and not existing.email_verified:
+        # Previous attempt that never verified — overwrite the record so the
+        # caller can pick up where they left off (or change their details).
+        existing.password_hash = utils.hash_password(password)
+        existing.full_name = full_name.strip()
+        existing.phone_number = phone_number
+        existing.role = role
+        existing.status = new_status
+        # Drop any prior unverified OTPs for this email so only the new one
+        # is valid going forward.
+        db.query(models.EmailOTP).filter(
+            models.EmailOTP.email == email.lower()
+        ).delete()
+        db.commit()
+        db.refresh(existing)
+        otp = _generate_email_otp(db, existing.email)
+        return existing, otp
+
     user = models.User(
         email=email.lower(),
         password_hash=utils.hash_password(password),
