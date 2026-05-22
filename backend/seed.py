@@ -21,16 +21,16 @@ from src.inventory.service import build_layout_config, generate_seat_names
 # ---------------------------------------------------------------------------
 
 ADMIN_EMAIL    = "admin@tazkirati.app"
-ADMIN_PASSWORD = "tazkirati-admin-2026"
+ADMIN_PASSWORD = "TazAdmin#MVP-2026"
 
 CUSTOMER_EMAIL    = "passenger@tazkirati.app"
-CUSTOMER_PASSWORD = "passenger123"
+CUSTOMER_PASSWORD = "Passenger#2026"
 
 # Two providers — proves data isolation (each only sees their own trips)
 NILE_EMAIL    = "operator@tazkirati.app"            # "Nile Coach Co."
-NILE_PASSWORD = "operator123"
+NILE_PASSWORD = "NileOps#2026"
 SUDAN_EMAIL    = "ops@sudanbus.app"                 # "SudanBus Express"
-SUDAN_PASSWORD = "operator123"
+SUDAN_PASSWORD = "SudanOps#2026"
 
 
 def _build_seats(db, trip, total_seats):

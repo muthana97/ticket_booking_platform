@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..database import get_db
 from . import service, schemas, utils, dependencies as deps
 
@@ -29,7 +30,9 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
         "email": user.email,
         "role": user.role,
         "status": user.status,
-        "dev_otp": dev_otp,
+        # Dev-mode convenience only. Stripped in production to avoid leaking
+        # OTPs in API responses. See settings.DEBUG.
+        "dev_otp": dev_otp if settings.DEBUG else None,
     }
 
 
@@ -55,7 +58,7 @@ def resend_otp(payload: schemas.ResendOtpRequest, db: Session = Depends(get_db))
         "email": user.email,
         "role": user.role,
         "status": user.status,
-        "dev_otp": dev_otp,
+        "dev_otp": dev_otp if settings.DEBUG else None,
     }
 
 

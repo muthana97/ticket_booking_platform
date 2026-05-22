@@ -45,31 +45,7 @@ def search_trips(
         query = query.filter(models.Trip.departure_time >= datetime.utcnow())
 
     trips = query.order_by(models.Trip.departure_time.asc()).all()
-
-    results = []
-    for trip in trips:
-        available = (
-            db.query(models.Seat)
-            .filter(models.Seat.trip_id == trip.id, models.Seat.status == "available")
-            .count()
-        )
-        total = (
-            db.query(models.Seat).filter(models.Seat.trip_id == trip.id).count()
-        )
-        results.append(
-            {
-                "trip_id": trip.id,
-                "provider_id": trip.provider_id or 0,
-                "origin": trip.route.origin,
-                "destination": trip.route.destination,
-                "departure_time": trip.departure_time,
-                "duration": trip.route.duration,
-                "price": trip.price,
-                "total_seats": total,
-                "available_seats_count": available,
-            }
-        )
-    return results
+    return [service.decorate_trip_row(db, trip) for trip in trips]
 
 
 # ---------------------------------------------------------------------------
@@ -119,26 +95,7 @@ def list_my_trips(
         .order_by(models.Trip.departure_time.asc())
         .all()
     )
-    out = []
-    for trip in trips:
-        available = (
-            db.query(models.Seat)
-            .filter(models.Seat.trip_id == trip.id, models.Seat.status == "available")
-            .count()
-        )
-        total = db.query(models.Seat).filter(models.Seat.trip_id == trip.id).count()
-        out.append({
-            "trip_id": trip.id,
-            "provider_id": trip.provider_id or 0,
-            "origin": trip.route.origin,
-            "destination": trip.route.destination,
-            "departure_time": trip.departure_time,
-            "duration": trip.route.duration,
-            "price": trip.price,
-            "total_seats": total,
-            "available_seats_count": available,
-        })
-    return out
+    return [service.decorate_trip_row(db, trip) for trip in trips]
 
 
 @router.delete("/{trip_id}", status_code=204)

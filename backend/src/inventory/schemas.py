@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 class TripSearchResponse(BaseModel):
     trip_id: int
     provider_id: int
+    provider_name: Optional[str] = None
     origin: str
     destination: str
     departure_time: datetime

@@ -786,12 +786,10 @@
             <span class="dsc">Register as a passenger or a counter operator.</span>
           </button>
         </div>
-        <div class="helper">
-          DEMO CREDENTIALS:<br>
-          • ADMIN &nbsp;&nbsp;&nbsp;&nbsp;<code>admin@tazkirati.app</code> / <code>tazkirati-admin-2026</code><br>
-          • CUSTOMER <code>passenger@tazkirati.app</code> / <code>passenger123</code><br>
-          • NILE OP &nbsp;<code>operator@tazkirati.app</code> / <code>operator123</code><br>
-          • SUDANBUS <code>ops@sudanbus.app</code> / <code>operator123</code>
+        <div class="helper" id="welcome-helper" hidden>
+          <!-- Demo credentials are surfaced only when the URL carries ?demo=1.
+               Stakeholders can append the query string for the guided tour;
+               public visitors don't see hints. -->
         </div>
       </div>
     </section>
@@ -1344,8 +1342,13 @@ async function doRegister() {
     const r = await api('/auth/register', { method: 'POST', body: JSON.stringify({ full_name, email, password, phone_number, role }) });
     STATE.pendingRegister = { email: r.email, role: r.role };
     $('#vf-email').textContent = r.email;
-    $('#vf-dev-hint').innerHTML = `DEV MODE · code is <code>${r.dev_otp}</code> (auto-prefilled)`;
-    $('#vf-input').value = r.dev_otp;
+    if (r.dev_otp) {
+      $('#vf-dev-hint').innerHTML = `DEV MODE · code is <code>${r.dev_otp}</code> (auto-prefilled)`;
+      $('#vf-input').value = r.dev_otp;
+    } else {
+      $('#vf-dev-hint').textContent = 'Check your email — we sent the 6-digit code there.';
+      $('#vf-input').value = '';
+    }
     goto('verify-email');
     setTimeout(() => $('#vf-input').focus(), 60);
   } catch (e) { toast(e.message, true); }
@@ -1369,8 +1372,12 @@ async function doResendOtp() {
   if (!STATE.pendingRegister) return;
   try {
     const r = await api('/auth/resend-otp', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email }) });
-    $('#vf-input').value = r.dev_otp;
-    $('#vf-dev-hint').innerHTML = `New code · <code>${r.dev_otp}</code>`;
+    if (r.dev_otp) {
+      $('#vf-input').value = r.dev_otp;
+      $('#vf-dev-hint').innerHTML = `New code · <code>${r.dev_otp}</code>`;
+    } else {
+      $('#vf-dev-hint').textContent = 'New code sent. Check your email.';
+    }
     toast('New code issued');
   } catch (e) { toast(e.message, true); }
 }
@@ -1444,8 +1451,12 @@ function renderCustomerTrips(trips, origin, destination) {
 function makeTripCard(t, asProvider) {
   const card = document.createElement('div');
   card.className = 'trip-card';
+  const providerLine = !asProvider && t.provider_name
+    ? `<div class="ff-mono" style="font-size: 10px; color: var(--ink-soft); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px;">Operated by <b style="color: var(--ink); font-weight: 600;">${escapeHtml(t.provider_name)}</b></div>`
+    : '';
   card.innerHTML = `
     <div>
+      ${providerLine}
       <div class="meta-row">
         <span class="chip-id">Trip #${t.trip_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(t.departure_time)}</span>
@@ -2029,12 +2040,15 @@ async function renderAdminTrips() {
   empty.classList.add('hidden'); list.classList.remove('hidden');
   trips.forEach(t => {
     const card = document.createElement('div'); card.className = 'trip-card';
+    const providerTag = t.provider_name
+      ? escapeHtml(t.provider_name)
+      : `Provider #${t.provider_id}`;
     card.innerHTML = `
       <div>
+        <div class="ff-mono" style="font-size: 10px; color: var(--ink-soft); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px;">Operated by <b style="color: var(--ink); font-weight: 600;">${providerTag}</b></div>
         <div class="meta-row">
           <span class="chip-id">Trip #${t.trip_id}</span>
           <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(t.departure_time)}</span>
-          <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">Provider #${t.provider_id}</span>
         </div>
         <div class="route">${escapeHtml(t.origin)} <span class="arrow">→</span> ${escapeHtml(t.destination)}</div>
         <div class="stats"><b>${t.available_seats_count}</b>/${t.total_seats} available · <b>${t.total_seats}-seat</b> layout</div>
@@ -2224,8 +2238,27 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+/* Demo-mode helper: only render seeded credentials when ?demo=1 is set in the
+ * URL. Keeps the welcome screen clean for public visitors. */
+function showDemoHelperIfRequested() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('demo') !== '1') return;
+  const el = $('#welcome-helper');
+  if (!el) return;
+  el.hidden = false;
+  el.innerHTML = `
+    DEMO CREDENTIALS (visible because <code>?demo=1</code>):<br>
+    • ADMIN &nbsp;&nbsp;&nbsp;&nbsp;<code>admin@tazkirati.app</code><br>
+    • CUSTOMER <code>passenger@tazkirati.app</code><br>
+    • NILE OP &nbsp;<code>operator@tazkirati.app</code><br>
+    • SUDANBUS <code>ops@sudanbus.app</code><br>
+    Passwords are shared out-of-band — ask the stakeholder lead.
+  `;
+}
+
 wire();
 paintChrome();
+showDemoHelperIfRequested();
 </script>
 </body>
 </html>

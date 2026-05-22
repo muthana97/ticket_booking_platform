@@ -25,7 +25,7 @@ class RegisterResponse(BaseModel):
     email: EmailStr
     role: UserRole
     status: UserStatus
-    dev_otp: str  # demo-mode — strip in production
+    dev_otp: Optional[str] = None  # only populated when settings.DEBUG is true
 
 
 class VerifyEmailRequest(BaseModel):

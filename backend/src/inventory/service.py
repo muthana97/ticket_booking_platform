@@ -5,7 +5,39 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from . import models
+from ..auth.models import User
 from ..booking.models import Booking
+
+
+def decorate_trip_row(db: Session, trip: models.Trip) -> dict:
+    """
+    Materialize a Trip into the shape `TripSearchResponse` expects, including
+    a lookup of the provider's display name. Used by every trip-listing
+    endpoint so customer / provider / admin views all carry provider_name.
+    """
+    available = (
+        db.query(models.Seat)
+        .filter(models.Seat.trip_id == trip.id, models.Seat.status == "available")
+        .count()
+    )
+    total = db.query(models.Seat).filter(models.Seat.trip_id == trip.id).count()
+    provider_name = None
+    if trip.provider_id:
+        provider = db.query(User).filter(User.id == trip.provider_id).first()
+        if provider:
+            provider_name = provider.full_name
+    return {
+        "trip_id": trip.id,
+        "provider_id": trip.provider_id or 0,
+        "provider_name": provider_name,
+        "origin": trip.route.origin,
+        "destination": trip.route.destination,
+        "departure_time": trip.departure_time,
+        "duration": trip.route.duration,
+        "price": trip.price,
+        "total_seats": total,
+        "available_seats_count": available,
+    }
 
 
 REGULAR_ROW_COUNT = 10

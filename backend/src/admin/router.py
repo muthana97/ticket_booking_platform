@@ -72,32 +72,12 @@ def list_trips(
     db: Session = Depends(get_db),
 ):
     """All trips in the system, optionally scoped to a single provider."""
-    from ..inventory.models import Seat, Trip
+    from ..inventory.models import Trip
     q = db.query(Trip)
     if provider_id is not None:
         q = q.filter(Trip.provider_id == provider_id)
     trips = q.order_by(Trip.departure_time.asc()).all()
-
-    out = []
-    for trip in trips:
-        available = (
-            db.query(Seat)
-            .filter(Seat.trip_id == trip.id, Seat.status == "available")
-            .count()
-        )
-        total = db.query(Seat).filter(Seat.trip_id == trip.id).count()
-        out.append({
-            "trip_id": trip.id,
-            "provider_id": trip.provider_id or 0,
-            "origin": trip.route.origin,
-            "destination": trip.route.destination,
-            "departure_time": trip.departure_time,
-            "duration": trip.route.duration,
-            "price": trip.price,
-            "total_seats": total,
-            "available_seats_count": available,
-        })
-    return out
+    return [inv_service.decorate_trip_row(db, trip) for trip in trips]
 
 
 @router.delete("/trips/{trip_id}", status_code=204)
