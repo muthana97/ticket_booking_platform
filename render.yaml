@@ -14,7 +14,7 @@ services:
     runtime: docker
     region: frankfurt        # closest to Sudan among Render regions
     plan: free
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /
     envVars:
