@@ -863,7 +863,7 @@
   </header>
 
   <div class="subhead" id="subhead" hidden>
-    <button class="back" id="back-btn">← Back</button>
+    <button class="back" id="back-btn" data-i18n="back">← Back</button>
     <span id="crumb">—</span>
   </div>
 
@@ -909,40 +909,40 @@
     <!-- Register -->
     <section class="screen" id="screen-register">
       <div class="auth-stage">
-        <h1>Create an account.</h1>
-        <div class="lead">Role is set now and stays with the account.</div>
-        <div class="field"><label for="rg-name">Full name</label><input type="text" id="rg-name" autocomplete="name" /></div>
-        <div class="field"><label for="rg-email">Email</label><input type="email" id="rg-email" autocomplete="email" /></div>
-        <div class="field"><label for="rg-password">Password (min 6)</label><input type="password" id="rg-password" autocomplete="new-password" /></div>
-        <div class="field"><label for="rg-phone">Phone (optional)</label><input type="tel" id="rg-phone" autocomplete="tel" placeholder="249…" /></div>
+        <h1 data-i18n="register.title">Create an account.</h1>
+        <div class="lead" data-i18n="register.lead">Role is set now and stays with the account.</div>
+        <div class="field"><label for="rg-name" data-i18n="form.fullname">Full name</label><input type="text" id="rg-name" autocomplete="name" /></div>
+        <div class="field"><label for="rg-email" data-i18n="form.email">Email</label><input type="email" id="rg-email" autocomplete="email" /></div>
+        <div class="field"><label for="rg-password" data-i18n="form.password">Password</label><input type="password" id="rg-password" autocomplete="new-password" /></div>
+        <div class="field"><label for="rg-phone" data-i18n="form.phone">Phone (optional)</label><input type="tel" id="rg-phone" autocomplete="tel" placeholder="249…" /></div>
         <div class="field">
-          <label>Account type</label>
+          <label data-i18n="register.role.label">Account type</label>
           <div class="role-pick">
             <label class="active" data-role="customer">
               <input type="radio" name="rg-role" value="customer" checked>
-              <span class="rp-title">Passenger</span>
-              <span class="rp-desc">Search · Book · Pay</span>
+              <span class="rp-title" data-i18n="register.role.passenger">Passenger</span>
+              <span class="rp-desc" data-i18n="register.role.passenger.desc">Search · Book · Pay</span>
             </label>
             <label data-role="provider">
               <input type="radio" name="rg-role" value="provider">
-              <span class="rp-title">Operator</span>
-              <span class="rp-desc">Counter · Add Trips</span>
+              <span class="rp-title" data-i18n="register.role.operator">Operator</span>
+              <span class="rp-desc" data-i18n="register.role.operator.desc">Counter · Add Trips</span>
             </label>
           </div>
         </div>
-        <button class="cta" id="register-btn">Create account →</button>
-        <div class="helper">Operator accounts require admin approval before they can host trips.<br>Already have an account? <a href="#" id="goto-signin" class="text-link">Sign in</a>.</div>
+        <button class="cta" id="register-btn" data-i18n="register.cta">Create account →</button>
+        <div class="helper" data-i18n="register.helper" data-i18n-html="1">Operator accounts require admin approval before they can host trips.<br>Already have an account? <a href="#" id="goto-signin" class="text-link">Sign in</a>.</div>
       </div>
     </section>
 
     <!-- Verify -->
     <section class="screen" id="screen-verify-email">
       <div class="auth-stage">
-        <h1>Check your email.</h1>
-        <div class="lead">We sent a 6-digit code to <b id="vf-email">—</b>.</div>
-        <div class="field"><label for="vf-input">6-digit code</label><input type="text" id="vf-input" inputmode="numeric" maxlength="6" class="otp-input" placeholder="••••••" /></div>
-        <button class="cta" id="verify-btn">Verify & continue →</button>
-        <button class="cta ghost" id="resend-btn" style="margin-top: 10px;">Resend code</button>
+        <h1 data-i18n="verify.title">Check your email.</h1>
+        <div class="lead"><span data-i18n="verify.lead">We sent a 6-digit code to</span> <b id="vf-email">—</b>.</div>
+        <div class="field"><label for="vf-input" data-i18n="verify.code">6-digit code</label><input type="text" id="vf-input" inputmode="numeric" maxlength="6" class="otp-input" placeholder="••••••" /></div>
+        <button class="cta" id="verify-btn" data-i18n="verify.cta">Verify & continue →</button>
+        <button class="cta ghost" id="resend-btn" style="margin-top: 10px;" data-i18n="verify.resend">Resend code</button>
         <div class="helper" id="vf-dev-hint">—</div>
       </div>
     </section>
@@ -950,17 +950,17 @@
     <!-- Provider pending -->
     <section class="screen" id="screen-provider-pending">
       <div class="auth-stage wide">
-        <h1>Approval pending.</h1>
-        <div class="lead">Thanks for registering as an operator. An administrator will review your application shortly.</div>
+        <h1 data-i18n="pending.title">Approval pending.</h1>
+        <div class="lead" data-i18n="pending.lead">Thanks for registering as an operator. An administrator will review your application shortly.</div>
         <div class="pending-card">
-          <h3>What happens next?</h3>
-          <div class="meta">
+          <h3 data-i18n="pending.next">What happens next?</h3>
+          <div class="meta" data-i18n="pending.steps" data-i18n-html="1">
             • Admin reviews your account at <b>/admin · Providers</b><br>
             • Once approved, you'll get access to Trip Inventory and Walk-In booking<br>
             • You can keep this tab open — refresh status when you think you've been approved
           </div>
         </div>
-        <button class="cta ghost" id="pending-refresh">Refresh status</button>
+        <button class="cta ghost" id="pending-refresh" data-i18n="pending.refresh">Refresh status</button>
       </div>
     </section>
 
@@ -972,8 +972,8 @@
           Sudan Intercity Coach Network
         </div>
         <div class="row">
-          <div class="field-block"><label data-i18n="search.from">From</label><input type="text" id="search-origin" placeholder="e.g. Khartoum" list="city-list" /></div>
-          <div class="field-block"><label data-i18n="search.to">To</label><input type="text" id="search-destination" placeholder="e.g. Port Sudan" list="city-list" /></div>
+          <div class="field-block"><label data-i18n="search.from">From</label><input type="text" id="search-origin" data-i18n-placeholder="search.placeholder.from" placeholder="e.g. Khartoum" list="city-list" /></div>
+          <div class="field-block"><label data-i18n="search.to">To</label><input type="text" id="search-destination" data-i18n-placeholder="search.placeholder.to" placeholder="e.g. Port Sudan" list="city-list" /></div>
         </div>
         <datalist id="city-list">
           <option value="Khartoum"><option value="Port Sudan"><option value="Atbara">
@@ -990,13 +990,13 @@
         <div class="provider-head">
           <div>
             <h2 id="trips-route-title">—</h2>
-            <div class="lead">Tap a trip to pick your seats.</div>
+            <div class="lead" data-i18n="trips.tap">Tap a trip to pick your seats.</div>
           </div>
         </div>
         <div class="trip-list" id="customer-trip-list"></div>
         <div class="empty-state hidden" id="customer-trip-empty">
-          <h3>No trips found.</h3>
-          <p>Try a different origin / destination.</p>
+          <h3 data-i18n="trips.empty.title">No trips found.</h3>
+          <p data-i18n="trips.empty.desc">Try a different origin / destination.</p>
         </div>
       </div>
     </section>
@@ -1011,7 +1011,7 @@
           <h3><span data-i18n="mytickets.awaiting">Awaiting Payment</span> <span class="count" id="mt-awaiting-count">0</span></h3>
           <div id="mt-awaiting-list"></div>
           <div class="empty-state hidden" id="mt-awaiting-empty" style="margin: 12px 0;">
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No bookings awaiting payment.</p>
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);" data-i18n="mytickets.empty.awaiting">No bookings awaiting payment.</p>
           </div>
         </div>
 
@@ -1019,7 +1019,7 @@
           <h3><span data-i18n="mytickets.upcoming">Upcoming</span> <span class="count" id="mt-upcoming-count">0</span></h3>
           <div id="mt-upcoming-list"></div>
           <div class="empty-state hidden" id="mt-upcoming-empty" style="margin: 12px 0;">
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No upcoming trips.</p>
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);" data-i18n="mytickets.empty.upcoming">No upcoming trips.</p>
           </div>
         </div>
 
@@ -1027,7 +1027,7 @@
           <h3><span data-i18n="mytickets.past">Past</span> <span class="count" id="mt-past-count">0</span></h3>
           <div id="mt-past-list"></div>
           <div class="empty-state hidden" id="mt-past-empty" style="margin: 12px 0;">
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No past bookings yet.</p>
+            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);" data-i18n="mytickets.empty.past">No past bookings yet.</p>
           </div>
         </div>
       </div>
@@ -1044,7 +1044,7 @@
           <div id="bus-frame" class="bus-frame">
             <div class="driver">
               <div class="steering-wheel" title="driver"></div>
-              <div>FRONT</div>
+              <div data-i18n="book.bus.front">FRONT</div>
               <div class="door" title="boarding door"></div>
             </div>
             <div id="front-jumps" class="front-jumps hidden"></div>
@@ -1052,23 +1052,23 @@
             <div id="back-row" class="back-row"></div>
           </div>
           <div class="bus-legend">
-            <span><span class="sw" style="background: var(--moss);"></span>Available</span>
-            <span><span class="sw" style="background: var(--amber);"></span>Locked</span>
-            <span><span class="sw" style="background: var(--oxblood);"></span>Booked</span>
-            <span><span class="sw" style="background: var(--nile);"></span>Selected</span>
+            <span><span class="sw" style="background: var(--moss);"></span><span data-i18n="book.legend.available">Available</span></span>
+            <span><span class="sw" style="background: var(--amber);"></span><span data-i18n="book.legend.locked">Locked</span></span>
+            <span><span class="sw" style="background: var(--oxblood);"></span><span data-i18n="book.legend.booked">Booked</span></span>
+            <span><span class="sw" style="background: var(--nile);"></span><span data-i18n="book.legend.selected">Selected</span></span>
           </div>
         </div>
         <aside class="panel-stack">
           <div class="panel">
-            <div class="panel-head"><span>Selection</span><span id="select-count" class="ff-mono">0 SEATS</span></div>
-            <div class="panel-body"><div id="selection-chips" class="chip-row"><div class="chip empty">Tap seats to select</div></div></div>
+            <div class="panel-head"><span data-i18n="book.selection">Selection</span><span id="select-count" class="ff-mono">0 SEATS</span></div>
+            <div class="panel-body"><div id="selection-chips" class="chip-row"><div class="chip empty" data-i18n="book.tapseats">Tap seats to select</div></div></div>
           </div>
           <div class="panel">
-            <div class="panel-head"><span>Passenger Details</span></div>
-            <div class="panel-body" id="pax-body"><div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">Select seats to fill in passenger names.</div></div>
+            <div class="panel-head"><span data-i18n="book.pax">Passenger Details</span></div>
+            <div class="panel-body" id="pax-body"><div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);" data-i18n="book.fillnames">Select seats to fill in passenger names.</div></div>
           </div>
           <div class="panel">
-            <div class="panel-head"><span>Total</span></div>
+            <div class="panel-head"><span data-i18n="book.total">Total</span></div>
             <div class="panel-body">
               <div class="summary-row">
                 <div><div class="k">SDG</div><div class="v" id="total-amount">0</div></div>
@@ -1079,15 +1079,15 @@
           <button id="lock-btn" class="cta" disabled>Lock Seats →</button>
           <div id="booking-panel" class="hidden">
             <div class="panel">
-              <div class="panel-head"><span>Active Hold</span><span class="ff-mono" id="booking-channel" style="font-size:10px;">—</span></div>
+              <div class="panel-head"><span data-i18n="book.hold">Active Hold</span><span class="ff-mono" id="booking-channel" style="font-size:10px;">—</span></div>
               <div class="panel-body booking-active">
                 <div class="booking-id" id="booking-id-label">—</div>
                 <div class="booking-meta" id="booking-meta">—</div>
-                <div class="countdown" id="countdown"><small>HOLD EXPIRES IN</small><span id="countdown-value">10:00</span></div>
+                <div class="countdown" id="countdown"><small data-i18n="book.expires_in">HOLD EXPIRES IN</small><span id="countdown-value">10:00</span></div>
               </div>
             </div>
-            <button id="billing-btn" class="cta alt" style="margin-top: 10px;">Generate Billing Reference →</button>
-            <button id="restart-flow-btn" class="cta ghost" style="margin-top: 10px;">Start New Booking</button>
+            <button id="billing-btn" class="cta alt" style="margin-top: 10px;" data-i18n="book.billing.cta">Generate Billing Reference →</button>
+            <button id="restart-flow-btn" class="cta ghost" style="margin-top: 10px;" data-i18n="book.restart">Start New Booking</button>
           </div>
         </aside>
       </div>
@@ -1098,28 +1098,28 @@
       <div class="provider-stage">
         <div class="provider-head">
           <div>
-            <h2>Operator Console</h2>
-            <div class="lead" id="provider-greeting">Your trips and your bookings.</div>
+            <h2 data-i18n="provider.title">Operator Console</h2>
+            <div class="lead" id="provider-greeting" data-i18n="provider.lead">Your trips and your bookings.</div>
           </div>
-          <button class="btn-inline alt" id="add-trip-open-btn">+ New Trip</button>
+          <button class="btn-inline alt" id="add-trip-open-btn" data-i18n="provider.newtrip">+ New Trip</button>
         </div>
         <div class="tab-bar provider-tabs" id="provider-tab-bar">
-          <button data-ptab="trips" class="active">My Trips <span class="count" id="pcnt-trips">0</span></button>
-          <button data-ptab="bookings">My Bookings <span class="count" id="pcnt-bookings">0</span></button>
+          <button data-ptab="trips" class="active"><span data-i18n="provider.tab.trips">My Trips</span> <span class="count" id="pcnt-trips">0</span></button>
+          <button data-ptab="bookings"><span data-i18n="provider.tab.bookings">My Bookings</span> <span class="count" id="pcnt-bookings">0</span></button>
         </div>
         <div class="tab-content" id="provider-tab-content">
           <div data-ptab-panel="trips" class="active">
             <div class="trip-list" id="provider-trip-list"></div>
             <div class="empty-state hidden" id="provider-trip-empty">
-              <h3>No trips yet.</h3>
-              <p>Tap "New Trip" to add the first one.</p>
+              <h3 data-i18n="provider.empty.trips.title">No trips yet.</h3>
+              <p data-i18n="provider.empty.trips.desc">Tap "New Trip" to add the first one.</p>
             </div>
           </div>
           <div data-ptab-panel="bookings">
             <div id="provider-bookings-list"></div>
             <div class="empty-state hidden" id="provider-bookings-empty">
-              <h3>No bookings yet.</h3>
-              <p>Bookings will appear here once passengers book your trips — including walk-ins.</p>
+              <h3 data-i18n="provider.empty.bookings.title">No bookings yet.</h3>
+              <p data-i18n="provider.empty.bookings.desc">Bookings will appear here once passengers book your trips — including walk-ins.</p>
             </div>
           </div>
         </div>
@@ -1131,51 +1131,55 @@
       <div class="admin-stage">
         <div class="provider-head">
           <div>
-            <h2>Administrator Console</h2>
-            <div class="lead">Provider gate · Trip oversight · Booking search · Pending payments</div>
+            <h2 data-i18n="admin.title">Administrator Console</h2>
+            <div class="lead" data-i18n="admin.lead">Provider gate · Trip oversight · Booking search · Pending payments</div>
           </div>
         </div>
         <div class="tab-bar admin-tabs">
-          <button data-tab="providers" class="active">Providers <span class="count" id="cnt-providers">0</span></button>
-          <button data-tab="trips">Trips <span class="count" id="cnt-trips">0</span></button>
-          <button data-tab="bookings">Bookings <span class="count" id="cnt-bookings">0</span></button>
-          <button data-tab="payments">Pending Payments <span class="count" id="cnt-payments">0</span></button>
+          <button data-tab="providers" class="active"><span data-i18n="admin.tab.providers">Providers</span> <span class="count" id="cnt-providers">0</span></button>
+          <button data-tab="trips"><span data-i18n="admin.tab.trips">Trips</span> <span class="count" id="cnt-trips">0</span></button>
+          <button data-tab="bookings"><span data-i18n="admin.tab.bookings">Bookings</span> <span class="count" id="cnt-bookings">0</span></button>
+          <button data-tab="payments"><span data-i18n="admin.tab.payments">Pending Payments</span> <span class="count" id="cnt-payments">0</span></button>
         </div>
         <div class="tab-content">
           <div data-tab-panel="providers" class="active">
             <div id="admin-provider-list"></div>
             <div class="empty-state hidden" id="admin-provider-empty">
-              <h3>No providers yet.</h3><p>Once operators register, they'll appear here.</p>
+              <h3 data-i18n="admin.providers.empty.title">No providers yet.</h3>
+              <p data-i18n="admin.providers.empty.desc">Once operators register, they'll appear here.</p>
             </div>
           </div>
           <div data-tab-panel="trips">
             <div id="admin-trip-list"></div>
             <div class="empty-state hidden" id="admin-trip-empty">
-              <h3>No trips in the system.</h3><p>An approved provider can add one from the Operator Console.</p>
+              <h3 data-i18n="admin.trips.empty.title">No trips in the system.</h3>
+              <p data-i18n="admin.trips.empty.desc">An approved provider can add one from the Operator Console.</p>
             </div>
           </div>
           <div data-tab-panel="bookings">
             <div class="filter-strip">
-              <input type="text" id="ab-q" placeholder="Search by customer name, passenger, billing ref, booking id…" />
-              <input type="text" id="ab-origin" placeholder="Origin (e.g. Khartoum)" list="city-list" />
-              <input type="text" id="ab-destination" placeholder="Destination" list="city-list" />
+              <input type="text" id="ab-q" data-i18n-placeholder="admin.bookings.q" placeholder="Search by customer name, passenger, billing ref, booking id…" />
+              <input type="text" id="ab-origin" data-i18n-placeholder="admin.bookings.origin" placeholder="Origin (e.g. Khartoum)" list="city-list" />
+              <input type="text" id="ab-destination" data-i18n-placeholder="admin.bookings.destination" placeholder="Destination" list="city-list" />
               <select id="ab-status">
-                <option value="confirmed">Confirmed only</option>
-                <option value="committed_pending">Awaiting Payment</option>
-                <option value="pending">Pending lock</option>
-                <option value="expired">Expired</option>
-                <option value="any">Any status</option>
+                <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
+                <option value="committed_pending" data-i18n="status.filter.committed_pending">Awaiting Payment</option>
+                <option value="pending" data-i18n="status.filter.pending">Pending lock</option>
+                <option value="expired" data-i18n="status.filter.expired">Expired</option>
+                <option value="any" data-i18n="status.filter.any">Any status</option>
               </select>
             </div>
             <div id="admin-bookings-list"></div>
             <div class="empty-state hidden" id="admin-bookings-empty">
-              <h3>No bookings match.</h3><p>Try clearing or relaxing the filters.</p>
+              <h3 data-i18n="admin.bookings.empty.title">No bookings match.</h3>
+              <p data-i18n="admin.bookings.empty.desc">Try clearing or relaxing the filters.</p>
             </div>
           </div>
           <div data-tab-panel="payments">
             <div id="admin-payment-list"></div>
             <div class="empty-state hidden" id="admin-payment-empty">
-              <h3>No pending payments.</h3><p>Bookings settle here once a billing reference is issued.</p>
+              <h3 data-i18n="admin.payments.empty.title">No pending payments.</h3>
+              <p data-i18n="admin.payments.empty.desc">Bookings settle here once a billing reference is issued.</p>
             </div>
           </div>
         </div>
@@ -1188,63 +1192,63 @@
 <!-- Add Trip Modal -->
 <div id="add-trip-modal" class="modal-bg" role="dialog" aria-modal="true">
   <div class="modal-card">
-    <h3>Schedule a Trip</h3>
-    <div class="modal-sub">All seats are auto-generated from the fleet layout.</div>
+    <h3 data-i18n="addtrip.title">Schedule a Trip</h3>
+    <div class="modal-sub" data-i18n="addtrip.sub">All seats are auto-generated from the fleet layout.</div>
     <div class="modal-row">
-      <div class="field-block"><label>From</label><input type="text" id="nt-origin" placeholder="Khartoum" list="city-list" /></div>
-      <div class="field-block"><label>To</label><input type="text" id="nt-destination" placeholder="Port Sudan" list="city-list" /></div>
+      <div class="field-block"><label data-i18n="search.from">From</label><input type="text" id="nt-origin" placeholder="Khartoum" list="city-list" /></div>
+      <div class="field-block"><label data-i18n="search.to">To</label><input type="text" id="nt-destination" placeholder="Port Sudan" list="city-list" /></div>
     </div>
     <div class="modal-row">
       <div class="field-block full">
-        <label>Fleet layout</label>
+        <label data-i18n="addtrip.layout.label">Fleet layout</label>
         <div class="layout-pick">
-          <label class="active" data-seats="45"><input type="radio" name="nt-seats" value="45" checked><span class="l-num">45</span><span class="l-desc">2x2 · 5-Back</span></label>
-          <label data-seats="48"><input type="radio" name="nt-seats" value="48"><span class="l-num">48</span><span class="l-desc">3 Front · 2x2 · 5-Back</span></label>
+          <label class="active" data-seats="45"><input type="radio" name="nt-seats" value="45" checked><span class="l-num">45</span><span class="l-desc" data-i18n="addtrip.layout.45.desc">2x2 · 5-Back</span></label>
+          <label data-seats="48"><input type="radio" name="nt-seats" value="48"><span class="l-num">48</span><span class="l-desc" data-i18n="addtrip.layout.48.desc">3 Front · 2x2 · 5-Back</span></label>
         </div>
       </div>
     </div>
     <div class="modal-row">
-      <div class="field-block"><label>Departure <small style="opacity:0.5;">(must be in the future)</small></label><input type="datetime-local" id="nt-departure" /></div>
-      <div class="field-block"><label>Price (SDG)</label><input type="number" id="nt-price" min="1" value="15000" /></div>
+      <div class="field-block"><label><span data-i18n="addtrip.departure.label">Departure</span> <small style="opacity:0.5;">(<span data-i18n="addtrip.departure.hint">must be in the future</span>)</small></label><input type="datetime-local" id="nt-departure" /></div>
+      <div class="field-block"><label data-i18n="addtrip.price.label">Price (SDG)</label><input type="number" id="nt-price" min="1" value="15000" /></div>
     </div>
 
     <div class="modal-row">
       <div class="field-block full">
-        <label>Repeat</label>
+        <label data-i18n="addtrip.repeat.label">Repeat</label>
         <div class="repeat-pick">
-          <label class="active" data-repeat="once"><input type="radio" name="nt-repeat" value="once" checked><span>Once</span></label>
-          <label data-repeat="daily"><input type="radio" name="nt-repeat" value="daily"><span>Daily</span></label>
-          <label data-repeat="weekly"><input type="radio" name="nt-repeat" value="weekly"><span>Weekly</span></label>
-          <label data-repeat="custom"><input type="radio" name="nt-repeat" value="custom"><span>Custom days</span></label>
+          <label class="active" data-repeat="once"><input type="radio" name="nt-repeat" value="once" checked><span data-i18n="addtrip.repeat.once">Once</span></label>
+          <label data-repeat="daily"><input type="radio" name="nt-repeat" value="daily"><span data-i18n="addtrip.repeat.daily">Daily</span></label>
+          <label data-repeat="weekly"><input type="radio" name="nt-repeat" value="weekly"><span data-i18n="addtrip.repeat.weekly">Weekly</span></label>
+          <label data-repeat="custom"><input type="radio" name="nt-repeat" value="custom"><span data-i18n="addtrip.repeat.custom">Custom days</span></label>
         </div>
       </div>
     </div>
 
     <div class="modal-row hidden" id="nt-custom-days-row">
       <div class="field-block full">
-        <label>Days of week</label>
+        <label data-i18n="addtrip.dow.label">Days of week</label>
         <div class="dow-pick">
-          <label><input type="checkbox" data-dow="0"><span>Mon</span></label>
-          <label><input type="checkbox" data-dow="1"><span>Tue</span></label>
-          <label><input type="checkbox" data-dow="2"><span>Wed</span></label>
-          <label><input type="checkbox" data-dow="3"><span>Thu</span></label>
-          <label><input type="checkbox" data-dow="4"><span>Fri</span></label>
-          <label><input type="checkbox" data-dow="5"><span>Sat</span></label>
-          <label><input type="checkbox" data-dow="6"><span>Sun</span></label>
+          <label><input type="checkbox" data-dow="0"><span data-i18n="day.0">Mon</span></label>
+          <label><input type="checkbox" data-dow="1"><span data-i18n="day.1">Tue</span></label>
+          <label><input type="checkbox" data-dow="2"><span data-i18n="day.2">Wed</span></label>
+          <label><input type="checkbox" data-dow="3"><span data-i18n="day.3">Thu</span></label>
+          <label><input type="checkbox" data-dow="4"><span data-i18n="day.4">Fri</span></label>
+          <label><input type="checkbox" data-dow="5"><span data-i18n="day.5">Sat</span></label>
+          <label><input type="checkbox" data-dow="6"><span data-i18n="day.6">Sun</span></label>
         </div>
       </div>
     </div>
 
     <div class="modal-row hidden" id="nt-end-date-row">
       <div class="field-block full">
-        <label>Repeat until <small style="opacity:0.5;">(max 90 days out)</small></label>
+        <label><span data-i18n="addtrip.endsdate.label">Repeat until</span> <small style="opacity:0.5;">(<span data-i18n="addtrip.endsdate.hint">max 90 days out</span>)</small></label>
         <input type="date" id="nt-end-date" />
       </div>
     </div>
 
     <div class="modal-actions">
-      <button class="cta ghost" id="add-trip-cancel">Cancel</button>
-      <button class="cta alt" id="add-trip-submit">Create →</button>
+      <button class="cta ghost" id="add-trip-cancel" data-i18n="addtrip.cancel">Cancel</button>
+      <button class="cta alt" id="add-trip-submit" data-i18n="addtrip.create">Create →</button>
     </div>
   </div>
 </div>
@@ -1255,14 +1259,14 @@
     <div class="ticket-head">
       <div>
         <div class="brand-sm">Tazkirati.</div>
-        <div class="sub">Sudan Intercity Coach · Boarding Stub</div>
+        <div class="sub" data-i18n="ticket.brand.sub">Sudan Intercity Coach · Boarding Stub</div>
       </div>
       <div class="bok">
-        <div class="lbl">Billing Reference</div>
+        <div class="lbl" data-i18n="ticket.billingref">Billing Reference</div>
         <div class="code" id="t-bok">—</div>
       </div>
       <div class="qr-block">
-        <div class="qr-lbl">SCAN AT BOARDING</div>
+        <div class="qr-lbl" data-i18n="ticket.scan">SCAN AT BOARDING</div>
         <div class="qr-frame" id="t-qr-frame"></div>
       </div>
     </div>
@@ -1273,21 +1277,21 @@
       <div class="city right"><span id="t-destination">—</span><span class="meta" id="t-duration">—</span></div>
     </div>
     <div class="ticket-grid">
-      <div class="cell"><div class="k">Booking ID</div><div class="v mono" id="t-booking-id">—</div></div>
-      <div class="cell"><div class="k">Channel</div><div class="v" id="t-channel">—</div></div>
-      <div class="cell"><div class="k">Status</div><div class="v" id="t-status">—</div></div>
-      <div class="cell"><div class="k">Issued</div><div class="v mono" id="t-issued">—</div></div>
-      <div class="cell"><div class="k">Expires</div><div class="v mono" id="t-expires">—</div></div>
-      <div class="cell"><div class="k">Seat Map</div><div class="v mono" id="t-seats">—</div></div>
+      <div class="cell"><div class="k" data-i18n="ticket.bookingid">Booking ID</div><div class="v mono" id="t-booking-id">—</div></div>
+      <div class="cell"><div class="k" data-i18n="ticket.channel">Channel</div><div class="v" id="t-channel">—</div></div>
+      <div class="cell"><div class="k" data-i18n="ticket.status">Status</div><div class="v" id="t-status">—</div></div>
+      <div class="cell"><div class="k" data-i18n="ticket.issued">Issued</div><div class="v mono" id="t-issued">—</div></div>
+      <div class="cell"><div class="k" data-i18n="ticket.expires">Expires</div><div class="v mono" id="t-expires">—</div></div>
+      <div class="cell"><div class="k" data-i18n="ticket.seatmap">Seat Map</div><div class="v mono" id="t-seats">—</div></div>
     </div>
-    <div class="pax-block"><h4>Manifest</h4><ul class="pax-list" id="t-pax-list"></ul></div>
+    <div class="pax-block"><h4 data-i18n="ticket.manifest">Manifest</h4><ul class="pax-list" id="t-pax-list"></ul></div>
     <div class="ticket-foot">
       <div class="stamp" id="t-stamp">Settle Within 30 Min</div>
       <div class="total"><span class="cur">SDG</span><span id="t-total">—</span></div>
     </div>
     <div class="ticket-actions">
-      <button id="t-close">Close</button>
-      <button id="t-print" class="primary">Print Receipt</button>
+      <button id="t-close" data-i18n="ticket.close">Close</button>
+      <button id="t-print" class="primary" data-i18n="ticket.print">Print Receipt</button>
     </div>
   </div>
 </div>
@@ -1299,61 +1303,299 @@
  *  Tazkirati — multi-role web portal
  * ========================================================================== */
 
-/* ---------- i18n: minimal English/Arabic table for the most-visible UI ---- */
+/* ---------- i18n: full EN/AR table ----------------------------------------
+ * Keys are dot-namespaced by area. Anything added via t('key') OR a
+ * `data-i18n="key"` attribute on HTML.
+ */
 const I18N = {
   en: {
-    'signout':            'Sign out',
-    'welcome.title':      'Welcome aboard.',
-    'welcome.lead':       'Sudan Intercity Coach Authority · Sign in to your account or create a new one.',
-    'welcome.returning':  'Returning',
-    'welcome.signin':     'Sign in',
-    'welcome.signin.desc':'Use your email and password.',
-    'welcome.new':        'New here',
-    'welcome.register':   'Create account',
+    // top bar / nav
+    'signout': 'Sign out', 'nav.search': 'Search', 'nav.mytickets': 'My Tickets',
+    'role.customer': 'Passenger', 'role.provider': 'Operator', 'role.admin': 'Administrator',
+    'back': '← Back',
+    // welcome
+    'welcome.title': 'Welcome aboard.',
+    'welcome.lead': 'Sudan Intercity Coach Authority · Sign in to your account or create a new one.',
+    'welcome.returning': 'Returning', 'welcome.signin': 'Sign in',
+    'welcome.signin.desc': 'Use your email and password.',
+    'welcome.new': 'New here', 'welcome.register': 'Create account',
     'welcome.register.desc': 'Register as a passenger or a counter operator.',
-    'signin.title':       'Sign in.',
-    'signin.lead':        "Email + password. We'll route you to the right place.",
-    'signin.helper':      'Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.',
-    'form.email':         'Email',
-    'form.password':      'Password',
-    'action.continue':    'Continue →',
-    'search.title':       'Where are we going today?',
-    'search.lead':        'Sudan Intercity Coach Network',
-    'search.from':        'From',
-    'search.to':          'To',
-    'search.cta':         'Find Trips →',
-    'mytickets.title':    'My Tickets',
-    'mytickets.lead':     'Your bookings — across the whole journey lifecycle.',
-    'mytickets.awaiting': 'Awaiting Payment',
-    'mytickets.upcoming': 'Upcoming',
-    'mytickets.past':     'Past',
+    // sign-in
+    'signin.title': 'Sign in.',
+    'signin.lead': "Email + password. We'll route you to the right place.",
+    'signin.helper': 'Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.',
+    'action.continue': 'Continue →',
+    // register
+    'register.title': 'Create an account.',
+    'register.lead': 'Role is set now and stays with the account. A different role means a different sign-up.',
+    'register.cta': 'Create account →',
+    'register.helper': 'Operator accounts require admin approval before they can host trips.<br>Already have an account? <a href="#" id="goto-signin" class="text-link">Sign in</a>.',
+    'register.role.label': 'Account type',
+    'register.role.passenger': 'Passenger', 'register.role.passenger.desc': 'Search · Book · Pay',
+    'register.role.operator': 'Operator', 'register.role.operator.desc': 'Counter · Add Trips',
+    // verify
+    'verify.title': 'Check your email.',
+    'verify.lead': 'We sent a 6-digit code to',
+    'verify.code': '6-digit code', 'verify.cta': 'Verify & continue →',
+    'verify.resend': 'Resend code',
+    // provider-pending
+    'pending.title': 'Approval pending.',
+    'pending.lead': 'Thanks for registering as an operator. An administrator will review your application shortly.',
+    'pending.next': 'What happens next?',
+    'pending.steps': '• Admin reviews your account at <b>/admin · Providers</b><br>• Once approved, you\'ll get access to Trip Inventory and Walk-In booking<br>• You can keep this tab open — refresh status when you think you\'ve been approved',
+    'pending.refresh': 'Refresh status',
+    // form labels
+    'form.email': 'Email', 'form.password': 'Password',
+    'form.fullname': 'Full name', 'form.phone': 'Phone (optional)',
+    // search
+    'search.title': 'Where are we going today?',
+    'search.lead': 'Sudan Intercity Coach Network',
+    'search.from': 'From', 'search.to': 'To', 'search.cta': 'Find Trips →',
+    'search.placeholder.from': 'e.g. Khartoum', 'search.placeholder.to': 'e.g. Port Sudan',
+    // customer trips list
+    'trips.tap': 'Tap a trip to pick your seats.',
+    'trips.empty.title': 'No trips found.',
+    'trips.empty.desc': 'Try a different origin / destination.',
+    'trips.operated_by': 'Operated by',
+    'trips.available_of': 'available', 'trips.layout': 'layout',
+    'trips.sdg_per_seat': 'SDG / SEAT',
+    'trips.action.select': 'Select Seats →', 'trips.action.walkin': 'Walk-in Book →',
+    'trips.action.delete': 'Delete Trip',
+    // booking screen
+    'book.selection': 'Selection',
+    'book.tapseats': 'Tap seats to select',
+    'book.pax': 'Passenger Details',
+    'book.fillnames': 'Select seats to fill in passenger names.',
+    'book.fullname.placeholder': 'Full name',
+    'book.total': 'Total', 'book.seats': 'seats', 'book.seat': 'seat',
+    'book.lock': 'Lock Seats', 'book.walkin': 'Issue Walk-In',
+    'book.hold': 'Active Hold',
+    'book.expires_in': 'HOLD EXPIRES IN', 'book.expired': 'EXPIRED',
+    'book.billing.cta': 'Generate Billing Reference →',
+    'book.restart': 'Start New Booking',
+    'book.bus.front': 'FRONT',
+    'book.legend.available': 'Available', 'book.legend.locked': 'Locked',
+    'book.legend.booked': 'Booked', 'book.legend.selected': 'Selected',
+    // my tickets
+    'mytickets.title': 'My Tickets',
+    'mytickets.lead': 'Your bookings — across the whole journey lifecycle.',
+    'mytickets.awaiting': 'Awaiting Payment', 'mytickets.upcoming': 'Upcoming', 'mytickets.past': 'Past',
+    'mytickets.viewticket': 'View Ticket',
+    'mytickets.empty.awaiting': 'No bookings awaiting payment.',
+    'mytickets.empty.upcoming': 'No upcoming trips.',
+    'mytickets.empty.past': 'No past bookings yet.',
+    // provider home
+    'provider.title': 'Operator Console',
+    'provider.lead': 'Your trips and your bookings.',
+    'provider.newtrip': '+ New Trip',
+    'provider.tab.trips': 'My Trips', 'provider.tab.bookings': 'My Bookings',
+    'provider.empty.trips.title': 'No trips yet.',
+    'provider.empty.trips.desc': 'Tap "New Trip" to add the first one.',
+    'provider.empty.bookings.title': 'No bookings yet.',
+    'provider.empty.bookings.desc': 'Bookings will appear here once passengers book your trips — including walk-ins.',
+    // add-trip modal
+    'addtrip.title': 'Schedule a Trip',
+    'addtrip.sub': 'All seats are auto-generated from the fleet layout.',
+    'addtrip.layout.label': 'Fleet layout',
+    'addtrip.layout.45.desc': '2x2 · 5-Back', 'addtrip.layout.48.desc': '3 Front · 2x2 · 5-Back',
+    'addtrip.departure.label': 'Departure',
+    'addtrip.departure.hint': 'must be in the future',
+    'addtrip.price.label': 'Price (SDG)',
+    'addtrip.repeat.label': 'Repeat',
+    'addtrip.repeat.once': 'Once', 'addtrip.repeat.daily': 'Daily',
+    'addtrip.repeat.weekly': 'Weekly', 'addtrip.repeat.custom': 'Custom days',
+    'addtrip.dow.label': 'Days of week',
+    'addtrip.endsdate.label': 'Repeat until',
+    'addtrip.endsdate.hint': 'max 90 days out',
+    'addtrip.cancel': 'Cancel', 'addtrip.create': 'Create →',
+    // admin
+    'admin.title': 'Administrator Console',
+    'admin.lead': 'Provider gate · Trip oversight · Booking search · Pending payments',
+    'admin.tab.providers': 'Providers', 'admin.tab.trips': 'Trips',
+    'admin.tab.bookings': 'Bookings', 'admin.tab.payments': 'Pending Payments',
+    'admin.providers.empty.title': 'No providers yet.',
+    'admin.providers.empty.desc': "Once operators register, they'll appear here.",
+    'admin.trips.empty.title': 'No trips in the system.',
+    'admin.trips.empty.desc': 'An approved provider can add one from the Operator Console.',
+    'admin.bookings.q': 'Search by customer name, passenger, billing ref, booking id…',
+    'admin.bookings.origin': 'Origin (e.g. Khartoum)',
+    'admin.bookings.destination': 'Destination',
+    'admin.bookings.empty.title': 'No bookings match.',
+    'admin.bookings.empty.desc': 'Try clearing or relaxing the filters.',
+    'admin.payments.empty.title': 'No pending payments.',
+    'admin.payments.empty.desc': 'Bookings settle here once a billing reference is issued.',
+    'admin.action.approve': 'Approve', 'admin.action.block': 'Block',
+    'admin.action.markpaid': 'Mark Paid',
+    'admin.row.joined': 'joined', 'admin.row.trips': 'trip(s)',
+    // status filter
+    'status.filter.confirmed': 'Confirmed only', 'status.filter.committed_pending': 'Awaiting Payment',
+    'status.filter.pending': 'Pending lock', 'status.filter.expired': 'Expired',
+    'status.filter.any': 'Any status',
+    // status labels (returned by backend)
+    'status.pending': 'pending', 'status.active': 'active', 'status.blocked': 'blocked',
+    'status.confirmed': 'confirmed', 'status.committed_pending': 'committed pending',
+    'status.expired': 'expired',
+    'channel.walkin': 'walk-in', 'channel.online': 'online',
+    // ticket modal
+    'ticket.brand.sub': 'Sudan Intercity Coach · Boarding Stub',
+    'ticket.billingref': 'Billing Reference',
+    'ticket.scan': 'SCAN AT BOARDING',
+    'ticket.bookingid': 'Booking ID', 'ticket.channel': 'Channel',
+    'ticket.status': 'Status', 'ticket.issued': 'Issued',
+    'ticket.expires': 'Expires', 'ticket.seatmap': 'Seat Map',
+    'ticket.manifest': 'Manifest',
+    'ticket.stamp.settle': 'Settle Within 30 Min', 'ticket.stamp.confirmed': 'Payment Confirmed',
+    'ticket.delivered': '📧 RECEIPT SENT TO',
+    'ticket.close': 'Close', 'ticket.print': 'Print Receipt',
+    // misc
+    'driver.dep': 'DEP', 'driver.route': 'ROUTE A',
+    // days of week
+    'day.0': 'Mon', 'day.1': 'Tue', 'day.2': 'Wed', 'day.3': 'Thu',
+    'day.4': 'Fri', 'day.5': 'Sat', 'day.6': 'Sun',
   },
   ar: {
-    'signout':            'تسجيل الخروج',
-    'welcome.title':      'أهلاً بك على متن الرحلة.',
-    'welcome.lead':       'هيئة السودان للنقل بين المدن · سجّل الدخول أو أنشئ حساباً جديداً.',
-    'welcome.returning':  'مستخدم سابق',
-    'welcome.signin':     'تسجيل الدخول',
-    'welcome.signin.desc':'استخدم بريدك وكلمة المرور.',
-    'welcome.new':        'مستخدم جديد',
-    'welcome.register':   'إنشاء حساب',
+    // top bar / nav
+    'signout': 'تسجيل الخروج', 'nav.search': 'بحث', 'nav.mytickets': 'تذاكري',
+    'role.customer': 'راكب', 'role.provider': 'موظف', 'role.admin': 'مدير',
+    'back': 'رجوع →',
+    // welcome
+    'welcome.title': 'أهلاً بك على متن الرحلة.',
+    'welcome.lead': 'هيئة السودان للنقل بين المدن · سجّل الدخول أو أنشئ حساباً جديداً.',
+    'welcome.returning': 'مستخدم سابق', 'welcome.signin': 'تسجيل الدخول',
+    'welcome.signin.desc': 'استخدم بريدك وكلمة المرور.',
+    'welcome.new': 'مستخدم جديد', 'welcome.register': 'إنشاء حساب',
     'welcome.register.desc': 'سجّل كراكب أو كموظف تذاكر.',
-    'signin.title':       'تسجيل الدخول.',
-    'signin.lead':        'البريد وكلمة المرور. سنوجّهك إلى المكان المناسب.',
-    'signin.helper':      'تحتاج إلى حساب؟ <a href="#" id="goto-register" class="text-link">أنشئ واحداً</a>.',
-    'form.email':         'البريد الإلكتروني',
-    'form.password':      'كلمة المرور',
-    'action.continue':    '→ متابعة',
-    'search.title':       'إلى أين نسافر اليوم؟',
-    'search.lead':        'شبكة السودان للنقل بين المدن',
-    'search.from':        'من',
-    'search.to':          'إلى',
-    'search.cta':         '→ البحث عن رحلات',
-    'mytickets.title':    'تذاكري',
-    'mytickets.lead':     'حجوزاتك عبر كامل دورة الرحلة.',
-    'mytickets.awaiting': 'بانتظار الدفع',
-    'mytickets.upcoming': 'القادمة',
-    'mytickets.past':     'السابقة',
+    // sign-in
+    'signin.title': 'تسجيل الدخول.',
+    'signin.lead': 'البريد وكلمة المرور. سنوجّهك إلى المكان المناسب.',
+    'signin.helper': 'تحتاج إلى حساب؟ <a href="#" id="goto-register" class="text-link">أنشئ واحداً</a>.',
+    'action.continue': '→ متابعة',
+    // register
+    'register.title': 'إنشاء حساب.',
+    'register.lead': 'الدور يُحدّد الآن ويبقى مع الحساب. لتغيير الدور تحتاج إلى تسجيل حساب جديد.',
+    'register.cta': '→ إنشاء حساب',
+    'register.helper': 'حسابات الموظفين تحتاج إلى موافقة المدير قبل إضافة الرحلات.<br>لديك حساب؟ <a href="#" id="goto-signin" class="text-link">سجّل الدخول</a>.',
+    'register.role.label': 'نوع الحساب',
+    'register.role.passenger': 'راكب', 'register.role.passenger.desc': 'بحث · حجز · دفع',
+    'register.role.operator': 'موظف', 'register.role.operator.desc': 'تذاكر · إضافة رحلات',
+    // verify
+    'verify.title': 'تحقق من بريدك.',
+    'verify.lead': 'أرسلنا رمزاً مكوّناً من 6 أرقام إلى',
+    'verify.code': 'رمز من 6 أرقام', 'verify.cta': '→ التحقق والمتابعة',
+    'verify.resend': 'إعادة إرسال الرمز',
+    // provider-pending
+    'pending.title': 'بانتظار الموافقة.',
+    'pending.lead': 'شكراً لتسجيلك كموظف. سيراجع المدير حسابك قريباً.',
+    'pending.next': 'الخطوات التالية؟',
+    'pending.steps': '• المدير يراجع حسابك من <b>/admin · Providers</b><br>• بعد الموافقة، يمكنك الوصول إلى إدارة الرحلات والحجز عند المنفذ<br>• ابقَ على هذه الصفحة — اضغط تحديث عند توقّع الموافقة',
+    'pending.refresh': 'تحديث الحالة',
+    // form labels
+    'form.email': 'البريد الإلكتروني', 'form.password': 'كلمة المرور',
+    'form.fullname': 'الاسم الكامل', 'form.phone': 'رقم الهاتف (اختياري)',
+    // search
+    'search.title': 'إلى أين نسافر اليوم؟',
+    'search.lead': 'شبكة السودان للنقل بين المدن',
+    'search.from': 'من', 'search.to': 'إلى', 'search.cta': '→ البحث عن رحلات',
+    'search.placeholder.from': 'مثلاً الخرطوم', 'search.placeholder.to': 'مثلاً بورتسودان',
+    // customer trips list
+    'trips.tap': 'اضغط على رحلة لاختيار المقاعد.',
+    'trips.empty.title': 'لا توجد رحلات.',
+    'trips.empty.desc': 'جرّب مدينة مغادرة أو وجهة مختلفة.',
+    'trips.operated_by': 'تشغيل',
+    'trips.available_of': 'متاح', 'trips.layout': 'مقعد',
+    'trips.sdg_per_seat': 'ج.س / مقعد',
+    'trips.action.select': '→ اختر المقاعد', 'trips.action.walkin': '→ حجز عند المنفذ',
+    'trips.action.delete': 'حذف الرحلة',
+    // booking screen
+    'book.selection': 'الاختيار',
+    'book.tapseats': 'اضغط على المقاعد للاختيار',
+    'book.pax': 'بيانات الركاب',
+    'book.fillnames': 'اختر مقاعد لتعبئة أسماء الركاب.',
+    'book.fullname.placeholder': 'الاسم الكامل',
+    'book.total': 'الإجمالي', 'book.seats': 'مقاعد', 'book.seat': 'مقعد',
+    'book.lock': 'حجز المقاعد', 'book.walkin': 'حجز عند المنفذ',
+    'book.hold': 'حجز نشط',
+    'book.expires_in': 'الحجز ينتهي خلال', 'book.expired': 'منتهي',
+    'book.billing.cta': '→ إنشاء رقم الفاتورة',
+    'book.restart': 'بدء حجز جديد',
+    'book.bus.front': 'الأمام',
+    'book.legend.available': 'متاح', 'book.legend.locked': 'محجوز مؤقتاً',
+    'book.legend.booked': 'محجوز', 'book.legend.selected': 'مختار',
+    // my tickets
+    'mytickets.title': 'تذاكري',
+    'mytickets.lead': 'حجوزاتك عبر كامل دورة الرحلة.',
+    'mytickets.awaiting': 'بانتظار الدفع', 'mytickets.upcoming': 'القادمة', 'mytickets.past': 'السابقة',
+    'mytickets.viewticket': 'عرض التذكرة',
+    'mytickets.empty.awaiting': 'لا حجوزات بانتظار الدفع.',
+    'mytickets.empty.upcoming': 'لا رحلات قادمة.',
+    'mytickets.empty.past': 'لا حجوزات سابقة بعد.',
+    // provider home
+    'provider.title': 'لوحة الموظف',
+    'provider.lead': 'رحلاتك وحجوزاتك.',
+    'provider.newtrip': '+ رحلة جديدة',
+    'provider.tab.trips': 'رحلاتي', 'provider.tab.bookings': 'حجوزاتي',
+    'provider.empty.trips.title': 'لا توجد رحلات بعد.',
+    'provider.empty.trips.desc': 'اضغط "رحلة جديدة" لإضافة الأولى.',
+    'provider.empty.bookings.title': 'لا حجوزات بعد.',
+    'provider.empty.bookings.desc': 'ستظهر الحجوزات هنا فور أن يحجز الركاب رحلاتك — بما فيها حجوزات المنفذ.',
+    // add-trip modal
+    'addtrip.title': 'جدولة رحلة',
+    'addtrip.sub': 'يتم توليد المقاعد تلقائياً وفق نوع الحافلة.',
+    'addtrip.layout.label': 'تخطيط الحافلة',
+    'addtrip.layout.45.desc': '2x2 · 5 خلفي', 'addtrip.layout.48.desc': '3 أمامي · 2x2 · 5 خلفي',
+    'addtrip.departure.label': 'وقت المغادرة',
+    'addtrip.departure.hint': 'يجب أن يكون في المستقبل',
+    'addtrip.price.label': 'السعر (ج.س)',
+    'addtrip.repeat.label': 'التكرار',
+    'addtrip.repeat.once': 'مرة واحدة', 'addtrip.repeat.daily': 'يومياً',
+    'addtrip.repeat.weekly': 'أسبوعياً', 'addtrip.repeat.custom': 'أيام مخصصة',
+    'addtrip.dow.label': 'أيام الأسبوع',
+    'addtrip.endsdate.label': 'كرّر حتى',
+    'addtrip.endsdate.hint': 'حد أقصى 90 يوماً',
+    'addtrip.cancel': 'إلغاء', 'addtrip.create': '→ إنشاء',
+    // admin
+    'admin.title': 'لوحة المدير',
+    'admin.lead': 'إدارة الموظفين · مراجعة الرحلات · بحث الحجوزات · المدفوعات المعلّقة',
+    'admin.tab.providers': 'الموظفون', 'admin.tab.trips': 'الرحلات',
+    'admin.tab.bookings': 'الحجوزات', 'admin.tab.payments': 'مدفوعات معلّقة',
+    'admin.providers.empty.title': 'لا يوجد موظفون بعد.',
+    'admin.providers.empty.desc': 'بمجرد تسجيل الموظفين سيظهرون هنا.',
+    'admin.trips.empty.title': 'لا توجد رحلات في النظام.',
+    'admin.trips.empty.desc': 'يمكن لأي موظف معتمد إضافة رحلة من لوحته.',
+    'admin.bookings.q': 'بحث بالاسم، الراكب، رقم الفاتورة، رقم الحجز…',
+    'admin.bookings.origin': 'المدينة (مثلاً الخرطوم)',
+    'admin.bookings.destination': 'الوجهة',
+    'admin.bookings.empty.title': 'لا حجوزات مطابقة.',
+    'admin.bookings.empty.desc': 'جرّب مسح أو تخفيف الفلاتر.',
+    'admin.payments.empty.title': 'لا مدفوعات معلّقة.',
+    'admin.payments.empty.desc': 'تظهر الحجوزات هنا بعد إصدار رقم فاتورة.',
+    'admin.action.approve': 'موافقة', 'admin.action.block': 'حظر',
+    'admin.action.markpaid': 'تأكيد الدفع',
+    'admin.row.joined': 'انضمّ في', 'admin.row.trips': 'رحلة',
+    // status filter
+    'status.filter.confirmed': 'مؤكدة فقط', 'status.filter.committed_pending': 'بانتظار الدفع',
+    'status.filter.pending': 'حجز مؤقت', 'status.filter.expired': 'منتهية',
+    'status.filter.any': 'أي حالة',
+    'status.pending': 'حجز مؤقت', 'status.active': 'نشط', 'status.blocked': 'محظور',
+    'status.confirmed': 'مؤكد', 'status.committed_pending': 'بانتظار الدفع',
+    'status.expired': 'منتهي',
+    'channel.walkin': 'منفذ', 'channel.online': 'إلكتروني',
+    // ticket modal
+    'ticket.brand.sub': 'النقل بين مدن السودان · تذكرة ركوب',
+    'ticket.billingref': 'رقم الفاتورة',
+    'ticket.scan': 'امسح عند الركوب',
+    'ticket.bookingid': 'رقم الحجز', 'ticket.channel': 'القناة',
+    'ticket.status': 'الحالة', 'ticket.issued': 'تاريخ الإصدار',
+    'ticket.expires': 'تنتهي في', 'ticket.seatmap': 'المقاعد',
+    'ticket.manifest': 'قائمة الركاب',
+    'ticket.stamp.settle': 'ادفع خلال 30 دقيقة', 'ticket.stamp.confirmed': 'تم الدفع',
+    'ticket.delivered': '📧 أُرسلت التذكرة إلى',
+    'ticket.close': 'إغلاق', 'ticket.print': 'طباعة',
+    // misc
+    'driver.dep': 'المغادرة', 'driver.route': 'خط أ',
+    // days of week
+    'day.0': 'الإثنين', 'day.1': 'الثلاثاء', 'day.2': 'الأربعاء', 'day.3': 'الخميس',
+    'day.4': 'الجمعة', 'day.5': 'السبت', 'day.6': 'الأحد',
   },
 };
 let LANG = localStorage.getItem('taz.lang') || 'en';
@@ -1363,7 +1605,7 @@ function t(key) { return (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key;
 function applyLanguage() {
   document.documentElement.lang = LANG;
   document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
-  // Update every tagged element
+  // Element text content
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.dataset.i18n;
     const html = el.dataset.i18nHtml === '1';
@@ -1371,20 +1613,47 @@ function applyLanguage() {
     if (html) el.innerHTML = value;
     else el.textContent = value;
   });
+  // Input placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
   // Reflect toggle button active state
   document.querySelectorAll('.lang-toggle button').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === LANG);
   });
   localStorage.setItem('taz.lang', LANG);
+
+  // Re-run paintChrome so the dynamic topbar nav + role badge re-translate
+  if (typeof paintChrome === 'function') paintChrome();
+  // Re-render any currently-visible list view that mixes static + dynamic strings
+  if (typeof refreshDynamicScreen === 'function') refreshDynamicScreen();
 }
 
 function setLanguage(lang) {
   if (!I18N[lang]) return;
   LANG = lang;
   applyLanguage();
-  // Re-wire any element that the i18n re-render may have replaced
+  // Re-wire elements that the helper-text re-render may have replaced
   const gotoReg = document.getElementById('goto-register');
   if (gotoReg) gotoReg.onclick = (e) => { e.preventDefault(); goto('register'); };
+  const gotoSi = document.getElementById('goto-signin');
+  if (gotoSi) gotoSi.onclick = (e) => { e.preventDefault(); goto('sign-in'); };
+}
+
+/* Translate a backend-supplied status / channel string. Falls back to the
+ * raw value if no translation is registered. */
+function tStatus(s) { return t('status.' + s) || s; }
+function tChannel(s) { return t('channel.' + s) || s; }
+
+/* Re-render whatever dynamic screen is currently visible so the
+ * JS-generated rows pick up the new language. Called from applyLanguage. */
+function refreshDynamicScreen() {
+  const s = STATE.screen;
+  if (s === 'customer-my-tickets') refreshMyTickets();
+  if (s === 'provider-home')       refreshProviderTab();
+  if (s === 'admin-home')          refreshAdminTab();
+  // Booking screen text labels are already i18n-tagged; the bus stays as-is.
+  if (s === 'customer-book' || s === 'provider-book') refreshSelectionUI();
 }
 
 const API = location.origin;
@@ -1434,12 +1703,18 @@ function parseUtc(iso) {
 }
 function fmtTime(iso) {
   const d = parseUtc(iso);
-  return d ? d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  if (!d) return '—';
+  // Arabic mode → Arabic-locale month + day names + numerals.
+  const locale = LANG === 'ar' ? 'ar' : undefined;
+  return d.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' });
 }
 function fmtDateOnly(iso) {
   const d = parseUtc(iso);
-  return d ? d.toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—';
+  if (!d) return '—';
+  const locale = LANG === 'ar' ? 'ar' : undefined;
+  return d.toLocaleDateString(locale, { dateStyle: 'medium' });
 }
+// Money stays in en-US digits regardless of language — clearer for receipts.
 function fmtMoney(n) { return Number(n).toLocaleString('en-US'); }
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1475,14 +1750,13 @@ function paintChrome() {
   if (auth) {
     session.hidden = false;
     topbar.classList.add('role-' + auth.user.role);
-    const roleLabel = { customer: 'Passenger', provider: 'Operator', admin: 'Administrator' }[auth.user.role] || auth.user.role;
-    $('#role-badge').textContent = roleLabel;
+    $('#role-badge').textContent = t(`role.${auth.user.role}`);
     $('#email-tag').textContent = auth.user.email;
     if (auth.user.role === 'customer') {
       nav.hidden = false;
       nav.innerHTML = `
-        <a class="nav-link" data-nav="customer-search">${LANG === 'ar' ? 'بحث' : 'Search'}</a>
-        <a class="nav-link" data-nav="customer-my-tickets">${LANG === 'ar' ? 'تذاكري' : 'My Tickets'}</a>
+        <a class="nav-link" data-nav="customer-search">${t('nav.search')}</a>
+        <a class="nav-link" data-nav="customer-my-tickets">${t('nav.mytickets')}</a>
       `;
       nav.querySelectorAll('a').forEach(a => {
         a.classList.toggle('active', STATE.screen === a.dataset.nav);
@@ -1674,35 +1948,35 @@ function renderCustomerTrips(trips, origin, destination) {
   trips.forEach(t => list.appendChild(makeTripCard(t, false)));
 }
 
-function makeTripCard(t, asProvider) {
+function makeTripCard(trip, asProvider) {
   const card = document.createElement('div');
   card.className = 'trip-card';
-  const providerLine = !asProvider && t.provider_name
-    ? `<div class="ff-mono" style="font-size: 10px; color: var(--ink-soft); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px;">Operated by <b style="color: var(--ink); font-weight: 600;">${escapeHtml(t.provider_name)}</b></div>`
+  const providerLine = !asProvider && trip.provider_name
+    ? `<div class="ff-mono" style="font-size: 10px; color: var(--ink-soft); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px;">${t('trips.operated_by')} <b style="color: var(--ink); font-weight: 600;">${escapeHtml(trip.provider_name)}</b></div>`
     : '';
   card.innerHTML = `
     <div>
       ${providerLine}
       <div class="meta-row">
-        <span class="chip-id">Trip #${t.trip_id}</span>
-        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(t.departure_time)}</span>
-        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${t.duration || '12H'}</span>
+        <span class="chip-id">Trip #${trip.trip_id}</span>
+        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(trip.departure_time)}</span>
+        <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${trip.duration || '12H'}</span>
       </div>
-      <div class="route">${escapeHtml(t.origin)} <span class="arrow">→</span> ${escapeHtml(t.destination)}</div>
-      <div class="stats"><b>${t.available_seats_count}</b>/${t.total_seats} available · <b>${t.total_seats}-seat</b> layout</div>
+      <div class="route">${escapeHtml(trip.origin)} <span class="arrow">→</span> ${escapeHtml(trip.destination)}</div>
+      <div class="stats"><b>${trip.available_seats_count}</b>/${trip.total_seats} ${t('trips.available_of')} · <b>${trip.total_seats}-${t('trips.layout')}</b></div>
     </div>
-    <div class="price">${fmtMoney(t.price)}<small>SDG / SEAT</small></div>
+    <div class="price">${fmtMoney(trip.price)}<small>${t('trips.sdg_per_seat')}</small></div>
     <div class="trip-card-actions">
       ${ asProvider
-          ? `<button class="btn-inline" data-action="book">Walk-in Book →</button>
-             <button class="btn-inline danger" data-action="delete">Delete Trip</button>`
-          : `<button class="btn-inline" data-action="book">Select Seats →</button>`
+          ? `<button class="btn-inline" data-action="book">${t('trips.action.walkin')}</button>
+             <button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>`
+          : `<button class="btn-inline" data-action="book">${t('trips.action.select')}</button>`
       }
     </div>
   `;
-  card.querySelector('[data-action="book"]').addEventListener('click', () => openBooking(t, asProvider));
+  card.querySelector('[data-action="book"]').addEventListener('click', () => openBooking(trip, asProvider));
   if (asProvider) {
-    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(t.trip_id, '/trips/'));
+    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(trip.trip_id, '/trips/'));
   }
   return card;
 }
@@ -1738,20 +2012,19 @@ function fillSection(prefix, rows, kind) {
 function makeMyTicketRow(b, kind) {
   const row = document.createElement('div');
   row.className = 'booking-row' + (b.is_past ? ' past' : '');
-  const statusKey = b.status;
   const refTag = b.billing_reference ? `· <b>${escapeHtml(b.billing_reference)}</b>` : '';
   const action = (kind === 'awaiting')
-    ? `<button class="btn-inline alt" data-action="open-ticket">View Ticket →</button>`
-    : `<button class="btn-inline ghost" data-action="open-ticket">View Ticket</button>`;
+    ? `<button class="btn-inline alt" data-action="open-ticket">${t('mytickets.viewticket')} →</button>`
+    : `<button class="btn-inline ghost" data-action="open-ticket">${t('mytickets.viewticket')}</button>`;
   row.innerHTML = `
     <div class="main">
       <div class="meta-row">
-        <span class="status-pill ${statusKey}">${statusKey.replace('_',' ')}</span>
+        <span class="status-pill ${b.status}">${tStatus(b.status)}</span>
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
       </div>
       <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
-      <div class="info-line">SEATS <b>${b.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}</div>
+      <div class="info-line">${t('ticket.seatmap').toUpperCase()} <b>${b.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}</div>
     </div>
     <div class="actions">${action}</div>
   `;
@@ -1815,13 +2088,13 @@ function makeProviderBookingRow(b) {
   const row = document.createElement('div');
   row.className = 'booking-row';
   const channelPill = b.channel === 'walkin'
-    ? `<span class="status-pill walkin">walk-in</span>`
-    : `<span class="status-pill" style="background: var(--paper-2); color: var(--ink-soft);">online</span>`;
+    ? `<span class="status-pill walkin">${tChannel('walkin')}</span>`
+    : `<span class="status-pill" style="background: var(--paper-2); color: var(--ink-soft);">${tChannel('online')}</span>`;
   const refTag = b.billing_reference ? `· <b>${escapeHtml(b.billing_reference)}</b>` : '';
   row.innerHTML = `
     <div class="main">
       <div class="meta-row">
-        <span class="status-pill ${b.status}">${b.status.replace('_',' ')}</span>
+        <span class="status-pill ${b.status}">${tStatus(b.status)}</span>
         ${channelPill}
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
@@ -1829,11 +2102,11 @@ function makeProviderBookingRow(b) {
       <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
       <div class="info-line">
         ${escapeHtml(b.customer_name || '—')} · ${escapeHtml(b.customer_email || '—')}<br>
-        SEATS <b>${b.seats.join(', ') || '—'}</b> · <b>${b.passenger_count}</b> passenger(s) · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
+        ${t('ticket.seatmap').toUpperCase()} <b>${b.seats.join(', ') || '—'}</b> · <b>${b.passenger_count}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
       </div>
     </div>
     <div class="actions">
-      ${b.billing_reference ? `<button class="btn-inline ghost" data-action="view-ticket">View Ticket</button>` : ''}
+      ${b.billing_reference ? `<button class="btn-inline ghost" data-action="view-ticket">${t('mytickets.viewticket')}</button>` : ''}
     </div>
   `;
   const viewBtn = row.querySelector('[data-action="view-ticket"]');
@@ -1950,7 +2223,7 @@ function openBooking(trip, asProvider) {
   $('#book-meta').innerHTML = `
     TRIP <b>#${trip.trip_id}</b><br>
     ${fmtTime(trip.departure_time)}<br>
-    <b>${trip.total_seats}-SEAT</b> · SDG <b>${fmtMoney(trip.price)}</b> / SEAT
+    <b>${trip.total_seats}</b> ${t('trips.layout').toUpperCase()} · SDG <b>${fmtMoney(trip.price)}</b> / ${t('book.seat').toUpperCase()}
   `;
   goto(asProvider ? 'provider-book' : 'customer-book');
   refreshSelectionUI();
@@ -2028,7 +2301,8 @@ function refreshSelectionUI() {
   else [...STATE.selected].sort(seatSortKey).forEach(s => {
     const c = document.createElement('div'); c.className = 'chip'; c.textContent = s; chips.appendChild(c);
   });
-  $('#select-count').textContent = STATE.selected.size + ' SEAT' + (STATE.selected.size === 1 ? '' : 'S');
+  const seatWord = STATE.selected.size === 1 ? t('book.seat') : t('book.seats');
+  $('#select-count').textContent = STATE.selected.size + ' ' + seatWord.toUpperCase();
 
   const body = $('#pax-body'); body.innerHTML = '';
   if (STATE.selected.size === 0) {
@@ -2039,7 +2313,7 @@ function refreshSelectionUI() {
       const defaultName = STATE.bookingFlow === 'customer' && STATE.selected.size === 1
         ? (STATE.auth?.user.full_name || '') : '';
       row.innerHTML = `<div class="seat-tag">${s}</div>
-        <input data-seat="${s}" placeholder="Full name" value="${escapeHtml(STATE.passengers[s]?.name || defaultName)}">`;
+        <input data-seat="${s}" placeholder="${t('book.fullname.placeholder')}" value="${escapeHtml(STATE.passengers[s]?.name || defaultName)}">`;
       body.appendChild(row);
     });
     body.querySelectorAll('input').forEach(inp => {
@@ -2052,12 +2326,11 @@ function refreshSelectionUI() {
   }
   const total = STATE.selected.size * (STATE.activeTrip?.price || 0);
   $('#total-amount').textContent = fmtMoney(total);
-  $('#seat-count').textContent = STATE.selected.size + (STATE.selected.size === 1 ? ' seat' : ' seats');
+  $('#seat-count').textContent = STATE.selected.size + ' ' + (STATE.selected.size === 1 ? t('book.seat') : t('book.seats'));
   const lockBtn = $('#lock-btn');
   lockBtn.disabled = STATE.selected.size === 0;
-  lockBtn.textContent = STATE.bookingFlow === 'provider'
-    ? `Issue Walk-In · SDG ${fmtMoney(total)} →`
-    : `Lock Seats · SDG ${fmtMoney(total)} →`;
+  const base = STATE.bookingFlow === 'provider' ? t('book.walkin') : t('book.lock');
+  lockBtn.textContent = `${base} · SDG ${fmtMoney(total)} →`;
 }
 function seatSortKey(s) {
   if (/^F/.test(s)) return '0_' + s;
@@ -2132,11 +2405,11 @@ async function doLock() {
 function showBookingPanel(b) {
   $('#booking-panel').classList.remove('hidden');
   $('#booking-id-label').textContent = '#' + b.booking_id;
-  $('#booking-channel').textContent = b.channel.toUpperCase();
+  $('#booking-channel').textContent = tChannel(b.channel === 'walkin' ? 'walkin' : 'online').toUpperCase();
   $('#booking-meta').innerHTML = `
-    SEATS: <b style="color: var(--ink);">${b.seats.join(', ')}</b><br>
-    TOTAL: <b style="color: var(--ink);">SDG ${fmtMoney(b.total_price)}</b><br>
-    STATUS: <b style="color: var(--ink);">${b.status.toUpperCase()}</b>
+    ${t('ticket.seatmap').toUpperCase()}: <b style="color: var(--ink);">${b.seats.join(', ')}</b><br>
+    ${t('book.total').toUpperCase()}: <b style="color: var(--ink);">SDG ${fmtMoney(b.total_price)}</b><br>
+    ${t('ticket.status').toUpperCase()}: <b style="color: var(--ink);">${tStatus(b.status).toUpperCase()}</b>
   `;
   startCountdown(b.expires_at);
   $('#lock-btn').disabled = true;
@@ -2149,7 +2422,7 @@ function startCountdown(expiresIso) {
   const tick = () => {
     const ms = target - Date.now();
     if (ms <= 0) {
-      $('#countdown-value').textContent = 'EXPIRED';
+      $('#countdown-value').textContent = t('book.expired');
       cd.classList.add('expired');
       clearInterval(STATE.countdownTimer);
       return;
@@ -2188,22 +2461,22 @@ function resetBookingState() {
 function restartFlow() { resetBookingState(); STATE.knownVersion = null; refreshSelectionUI(); }
 
 /* ---------- Ticket modal + QR ---------- */
-function renderTicket(t, { confirmed }) {
-  $('#t-bok').textContent = t.billing_reference || '—';
-  $('#t-origin').textContent = t.trip.origin;
-  $('#t-destination').textContent = t.trip.destination;
-  $('#t-departure').textContent = 'DEP ' + fmtTime(t.trip.departure_time);
-  $('#t-duration').textContent = (t.trip.duration || '12H') + ' · ROUTE A';
-  $('#t-booking-id').textContent = '#' + t.booking_id;
-  $('#t-channel').textContent = STATE.bookingFlow === 'provider' ? 'Walk-In' : 'Consumer';
-  $('#t-status').textContent = t.booking_status.replace('_', ' ');
-  $('#t-issued').textContent = fmtTime(t.bill_generated_at);
-  $('#t-expires').textContent = fmtTime(t.expires_at);
-  $('#t-seats').textContent = t.seats.join(' · ');
-  $('#t-total').textContent = fmtMoney(t.total_price);
+function renderTicket(ticket, { confirmed }) {
+  $('#t-bok').textContent = ticket.billing_reference || '—';
+  $('#t-origin').textContent = ticket.trip.origin;
+  $('#t-destination').textContent = ticket.trip.destination;
+  $('#t-departure').textContent = t('driver.dep') + ' ' + fmtTime(ticket.trip.departure_time);
+  $('#t-duration').textContent = (ticket.trip.duration || '12H') + ' · ' + t('driver.route');
+  $('#t-booking-id').textContent = '#' + ticket.booking_id;
+  $('#t-channel').textContent = STATE.bookingFlow === 'provider' ? tChannel('walkin') : tChannel('online');
+  $('#t-status').textContent = tStatus(ticket.booking_status);
+  $('#t-issued').textContent = fmtTime(ticket.bill_generated_at);
+  $('#t-expires').textContent = fmtTime(ticket.expires_at);
+  $('#t-seats').textContent = ticket.seats.join(' · ');
+  $('#t-total').textContent = fmtMoney(ticket.total_price);
 
   const ul = $('#t-pax-list'); ul.innerHTML = '';
-  t.passengers.forEach(p => {
+  ticket.passengers.forEach(p => {
     const li = document.createElement('li');
     li.innerHTML = `
       <div class="seat-stamp">${p.seat_number || '—'}</div>
@@ -2215,27 +2488,27 @@ function renderTicket(t, { confirmed }) {
 
   // Delivered banner
   const banner = $('#t-delivered');
-  if (t.delivered_to) {
+  if (ticket.delivered_to) {
     banner.classList.remove('hidden');
-    banner.innerHTML = `📧 RECEIPT SENT TO <b>${escapeHtml(t.delivered_to)}</b>`;
+    banner.innerHTML = `${t('ticket.delivered')} <b>${escapeHtml(ticket.delivered_to)}</b>`;
   } else { banner.classList.add('hidden'); }
 
   // Stamp swap when confirmed
   const stamp = $('#t-stamp');
   if (confirmed) {
-    stamp.textContent = 'Payment Confirmed';
+    stamp.textContent = t('ticket.stamp.confirmed');
     stamp.classList.add('confirmed');
   } else {
-    stamp.textContent = 'Settle Within 30 Min';
+    stamp.textContent = t('ticket.stamp.settle');
     stamp.classList.remove('confirmed');
   }
 
   // QR code (TKT-04)
   const qrFrame = $('#t-qr-frame');
   qrFrame.innerHTML = '';
-  if (typeof QRCode !== 'undefined' && t.qr_payload) {
+  if (typeof QRCode !== 'undefined' && ticket.qr_payload) {
     new QRCode(qrFrame, {
-      text: t.qr_payload,
+      text: ticket.qr_payload,
       width: 84, height: 84,
       colorDark: '#1A1814', colorLight: '#FBF6E7',
       correctLevel: QRCode.CorrectLevel.M,
@@ -2282,13 +2555,13 @@ async function renderAdminProviders() {
     const row = document.createElement('div'); row.className = 'admin-row';
     row.innerHTML = `
       <div class="main">
-        <div><span class="status-pill ${p.status}">${p.status}</span><span class="name">${escapeHtml(p.full_name)}</span></div>
-        <div class="sub">${escapeHtml(p.email)} · ${escapeHtml(p.phone_number || '—')} · joined ${fmtTime(p.created_at)} · <b>${p.trip_count}</b> trip(s)</div>
+        <div><span class="status-pill ${p.status}">${tStatus(p.status)}</span><span class="name">${escapeHtml(p.full_name)}</span></div>
+        <div class="sub">${escapeHtml(p.email)} · ${escapeHtml(p.phone_number || '—')} · ${t('admin.row.joined')} ${fmtTime(p.created_at)} · <b>${p.trip_count}</b> ${t('admin.row.trips')}</div>
       </div>
       <div class="actions">
         ${ p.status === 'active'
-            ? `<button class="btn-inline danger" data-action="block">Block</button>`
-            : `<button class="btn-inline success" data-action="approve">Approve</button>${p.status==='blocked' ? '' : ''}` }
+            ? `<button class="btn-inline danger" data-action="block">${t('admin.action.block')}</button>`
+            : `<button class="btn-inline success" data-action="approve">${t('admin.action.approve')}</button>` }
       </div>
     `;
     const approve = row.querySelector('[data-action="approve"]');
@@ -2314,27 +2587,27 @@ async function renderAdminTrips() {
   list.innerHTML = '';
   if (!trips.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
   empty.classList.add('hidden'); list.classList.remove('hidden');
-  trips.forEach(t => {
+  trips.forEach(trip => {
     const card = document.createElement('div'); card.className = 'trip-card';
-    const providerTag = t.provider_name
-      ? escapeHtml(t.provider_name)
-      : `Provider #${t.provider_id}`;
+    const providerTag = trip.provider_name
+      ? escapeHtml(trip.provider_name)
+      : `Provider #${trip.provider_id}`;
     card.innerHTML = `
       <div>
-        <div class="ff-mono" style="font-size: 10px; color: var(--ink-soft); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px;">Operated by <b style="color: var(--ink); font-weight: 600;">${providerTag}</b></div>
+        <div class="ff-mono" style="font-size: 10px; color: var(--ink-soft); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px;">${t('trips.operated_by')} <b style="color: var(--ink); font-weight: 600;">${providerTag}</b></div>
         <div class="meta-row">
-          <span class="chip-id">Trip #${t.trip_id}</span>
-          <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(t.departure_time)}</span>
+          <span class="chip-id">Trip #${trip.trip_id}</span>
+          <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(trip.departure_time)}</span>
         </div>
-        <div class="route">${escapeHtml(t.origin)} <span class="arrow">→</span> ${escapeHtml(t.destination)}</div>
-        <div class="stats"><b>${t.available_seats_count}</b>/${t.total_seats} available · <b>${t.total_seats}-seat</b> layout</div>
+        <div class="route">${escapeHtml(trip.origin)} <span class="arrow">→</span> ${escapeHtml(trip.destination)}</div>
+        <div class="stats"><b>${trip.available_seats_count}</b>/${trip.total_seats} ${t('trips.available_of')} · <b>${trip.total_seats}-${t('trips.layout')}</b></div>
       </div>
-      <div class="price">${fmtMoney(t.price)}<small>SDG / SEAT</small></div>
+      <div class="price">${fmtMoney(trip.price)}<small>${t('trips.sdg_per_seat')}</small></div>
       <div class="trip-card-actions">
-        <button class="btn-inline danger" data-action="delete">Delete Trip</button>
+        <button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>
       </div>
     `;
-    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(t.trip_id, '/admin/trips/'));
+    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(trip.trip_id, '/admin/trips/'));
     list.appendChild(card);
   });
 }
@@ -2365,12 +2638,12 @@ function makeAdminBookingRow(b) {
   row.className = 'booking-row';
   const refTag = b.billing_reference ? `· <b>${escapeHtml(b.billing_reference)}</b>` : '';
   const channelPill = b.channel === 'walkin'
-    ? `<span class="status-pill walkin">walk-in</span>`
-    : `<span class="status-pill" style="background: var(--paper-2); color: var(--ink-soft);">online</span>`;
+    ? `<span class="status-pill walkin">${tChannel('walkin')}</span>`
+    : `<span class="status-pill" style="background: var(--paper-2); color: var(--ink-soft);">${tChannel('online')}</span>`;
   row.innerHTML = `
     <div class="main">
       <div class="meta-row">
-        <span class="status-pill ${b.status}">${b.status.replace('_',' ')}</span>
+        <span class="status-pill ${b.status}">${tStatus(b.status)}</span>
         ${channelPill}
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
@@ -2378,12 +2651,12 @@ function makeAdminBookingRow(b) {
       <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
       <div class="info-line">
         ${escapeHtml(b.customer_name || '—')} · ${escapeHtml(b.customer_email || '—')}<br>
-        Provider: <b>${escapeHtml(b.provider_name || '#'+b.provider_id)}</b> · Passengers: ${escapeHtml(b.passenger_names.join(', ') || '—')}<br>
-        SEATS <b>${b.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
+        ${escapeHtml(b.provider_name || '#'+b.provider_id)}<br>
+        ${t('ticket.seatmap').toUpperCase()} <b>${b.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
       </div>
     </div>
     <div class="actions">
-      ${b.billing_reference ? `<button class="btn-inline ghost" data-action="view-ticket">View Ticket</button>` : ''}
+      ${b.billing_reference ? `<button class="btn-inline ghost" data-action="view-ticket">${t('mytickets.viewticket')}</button>` : ''}
     </div>
   `;
   const viewBtn = row.querySelector('[data-action="view-ticket"]');
@@ -2403,14 +2676,14 @@ async function renderAdminPayments() {
     const row = document.createElement('div'); row.className = 'admin-row';
     row.innerHTML = `
       <div class="main">
-        <div><span class="status-pill committed_pending">${p.status.replace('_',' ')}</span><span class="name">${escapeHtml(p.billing_reference || `#${p.booking_id}`)}</span></div>
+        <div><span class="status-pill committed_pending">${tStatus(p.status)}</span><span class="name">${escapeHtml(p.billing_reference || `#${p.booking_id}`)}</span></div>
         <div class="sub">
           ${escapeHtml(p.customer_name || '—')} · ${escapeHtml(p.customer_email || '—')}<br>
           ${escapeHtml(p.origin)} → ${escapeHtml(p.destination)} · ${fmtTime(p.departure_time)}<br>
-          SEATS <b>${p.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(p.total_price)}</b> · expires ${fmtTime(p.expires_at)}
+          ${t('ticket.seatmap').toUpperCase()} <b>${p.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(p.total_price)}</b> · ${t('ticket.expires')} ${fmtTime(p.expires_at)}
         </div>
       </div>
-      <div class="actions"><button class="btn-inline success" data-action="confirm">Mark Paid</button></div>
+      <div class="actions"><button class="btn-inline success" data-action="confirm">${t('admin.action.markpaid')}</button></div>
     `;
     row.querySelector('[data-action="confirm"]').addEventListener('click', () => adminConfirmPayment(p));
     list.appendChild(row);
