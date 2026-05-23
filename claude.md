@@ -22,13 +22,14 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 **Bookings:**
 - `POST /bookings/lock` (consumer) · `POST /bookings/walkin` (provider, on own trips only)
 - `POST /bookings/intent/billing` (Path B billing reference)
+- `POST /bookings/{id}/provider-confirm` (active provider on their own trip — one-shot cash confirm for walk-ins; P-PAY-03)
 - `GET /bookings/{id}/ticket` (re-fetch ticket payload, no state mutation)
 - `GET /bookings/me` (customer's own consumer bookings)
 - `GET /bookings/provider/mine` (active provider's bookings, both channels)
 - `GET /bookings/trips/{id}/seats/stream` (long-polling, version-stamped)
 - `GET /bookings/trips/{id}/manifest`
 
-**Admin:** `GET /admin/providers` · `POST /admin/providers/{id}/approve|block` · `GET /admin/trips` · `DELETE /admin/trips/{id}` · `GET /admin/bookings` (filterable by `status`, `q`, `origin`, `destination`) · `GET /admin/payments/pending` · `POST /admin/payments/{id}/confirm`
+**Admin:** `GET /admin/providers` · `POST /admin/providers/{id}/approve|block` · `GET /admin/trips` (filterable by `q`, `origin`, `destination`, `time`, `provider_id`) · `DELETE /admin/trips/{id}` · `GET /admin/bookings` (filterable by `status`, `q`, `origin`, `destination`) · `GET /admin/payments/pending` · `POST /admin/payments/{id}/confirm`
 
 ## ✂️ Deliberately deferred (V2)
 - Path A direct payments (SYS-01) — admin manual `POST /admin/payments/{id}/confirm` is the MVP substitute.
@@ -49,12 +50,14 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 5. **Provider data isolation** — server-side gate on cross-provider operations.
 6. **Admin oversight** — provider approval, trip oversight, all-bookings search/filter, manual payment confirmation.
 7. **Future-only departures + recurring schedules** — `POST /trips` accepts a `repeat` pattern (`once` / `daily` / `weekly` / `custom`) plus `end_date` and `days_of_week`. Past departures are rejected with 400. Capped at 60 trips / 90-day horizon per request.
+8. **Provider cash confirmation** (P-PAY-03) — `POST /bookings/{id}/provider-confirm` lets an active provider one-shot cash-confirm a walk-in on their own trip: status `pending|committed_pending` → `confirmed`, `payment_method='cash'`, seats `locked` → `booked`. Cross-provider attempts return 403.
 
 ## 🌐 Localization (EN / Arabic)
-- Topbar carries an `EN / عربي` toggle. Choice persists in `localStorage` (`taz.lang`).
-- Translation runtime: a small `I18N` table + `applyLanguage()` walks every `[data-i18n]` element and swaps text content. `data-i18n-html="1"` opts the element into `innerHTML` instead of `textContent` (for strings with embedded links).
-- Arabic mode flips `<html dir="rtl">`, swaps display font to **Amiri** (Google Fonts), and forces LTR direction on numeric / mono elements (seat map, prices, billing refs, codes).
-- Currently translated: welcome screen, sign-in form, search screen, My Tickets sections, topbar nav, sign-out. Other UI areas (admin, provider, modals) fall back to English — extend by adding keys to `I18N`.
+- Topbar carries an `EN / عربي` toggle (Fraunces 14px, prominent border). Choice persists in `localStorage` (`taz.lang`).
+- Translation runtime: a 130+ key `I18N` table + `applyLanguage()` walks every `[data-i18n]` element and swaps `textContent`. `data-i18n-html="1"` opts the element into `innerHTML` (for strings with embedded links). `data-i18n-placeholder` covers input placeholders.
+- Helpers: `t(key)`, `tStatus(s)` and `tChannel(s)` for backend-supplied enum strings (e.g. `status.pending`, `channel.walkin`).
+- Arabic mode flips `<html dir="rtl">`, swaps display font to **Amiri** (Google Fonts), and forces LTR direction on numeric / mono elements (seat map, prices, billing refs, codes). Dates render in Arabic locale (Arabic month names + Arabic-Indic numerals); money stays en-US digits for receipt clarity.
+- Coverage: welcome, sign-in, register (incl. password confirm), verify-email, provider-pending, customer search + trip cards, booking screen (panels, legend, lock/walk-in CTAs, countdown), My Tickets sections + pills, provider home tabs + bookings + add-trip modal (incl. repeat picker, day-of-week chips, end-date), admin console (4 tabs, both filter strips, all row actions), ticket modal (every field, stamps, delivered banner, buttons). Status + channel pills translate per-row.
 
 ## 🧪 Demo credentials (from `seed.py`)
 
@@ -111,6 +114,11 @@ The repo ships a `render.yaml` blueprint at the root. Dockerfile lives at repo r
 Frontend ships PWA bits: `manifest.json` + `sw.js` at `/app/`. Users can "Add to Home Screen" for an installable, fullscreen app on iOS/Android — same codebase. When native shell is needed, wrap with **Capacitor** for App Store distribution (no UI rebuild).
 
 ## 🐛 Recent fixes (most recent first)
+- **Top-bar UX polish**: nav links now render as bigger Fraunces serif chips with terracotta accent on active. "My Tickets" carries a count badge for pending / committed_pending bookings (refreshed on login + after every lock/billing). Language toggle scaled up. Awkward "PASSENGER · SEARCH" subhead hidden on all main landing screens — crumb only shows on sub-screens.
+- **Register password confirmation**: extra "Confirm password" field with client-side mismatch check and translated toast.
+- **Admin trip filtering**: Trips tab now has a filter strip matching Bookings — `q` / origin / destination / time (upcoming|past|all), 280ms debounced.
+- **Provider cash confirmation (P-PAY-03)**: provider can one-shot confirm a walk-in on their own trip via the new endpoint; renders as a green "Confirm Payment (Cash)" button on every unpaid walk-in row in the Provider Bookings tab.
+- **Comprehensive Arabic translation**: every visible control (~130 keys) translated. Adds `tStatus()` / `tChannel()` for backend enums, `data-i18n-placeholder` for input placeholders, and locale-aware date formatting.
 - **Future-only trips**: `POST /trips` refuses past `departure_time` (400). Frontend datetime input has `min=now+5m`.
 - **Recurring trips**: Add Trip modal exposes Once / Daily / Weekly / Custom-days picker; service expands the pattern and creates N trips atomically.
 - **EN / Arabic toggle**: `[data-i18n]` runtime + RTL direction flip + Amiri font for Arabic display.
