@@ -185,7 +185,12 @@ def list_all_bookings(
     return out
 
 
-def confirm_payment(db: Session, *, booking_id: int) -> tuple[Booking, Optional[str]]:
+def confirm_payment(
+    db: Session,
+    *,
+    booking_id: int,
+    payment_method: str = "admin_confirmed",
+) -> tuple[Booking, Optional[str]]:
     """
     Admin manually confirms that payment has cleared. Transitions:
       booking.status         committed_pending → confirmed
@@ -217,8 +222,10 @@ def confirm_payment(db: Session, *, booking_id: int) -> tuple[Booking, Optional[
 
     booking.status = "confirmed"
     booking.payment_status = "paid"
-    if not booking.payment_method:
-        booking.payment_method = "admin_confirmed"
+    # Always stamp the supplied payment_method on confirmation. A caller-set
+    # "cash" (provider walk-in) is more informative than the prior "billing_reference"
+    # for accounting / commission downstream.
+    booking.payment_method = payment_method
 
     db.commit()
     db.refresh(booking)

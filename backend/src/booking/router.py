@@ -179,6 +179,61 @@ def list_my_bookings(
 
 
 # ---------------------------------------------------------------------------
+# Provider walk-in payment confirmation (P-PAY-03 — cash is confirmed
+# immediately, no admin round-trip)
+# ---------------------------------------------------------------------------
+
+@router.post("/{booking_id}/provider-confirm")
+def provider_confirm_walkin(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_active_provider),
+):
+    """
+    Provider-only. Marks a walk-in booking as paid in one shot:
+      status   pending|committed_pending → confirmed
+      payment  unpaid                    → paid (method='cash')
+      seats    locked                    → booked (Reaper-immune)
+
+    Restricted to:
+      - bookings on trips owned by the calling provider
+      - channel='walkin' (consumer bookings still flow through Path B / admin)
+    """
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.channel != "walkin":
+        raise HTTPException(
+            status_code=400,
+            detail="Provider confirmation is only available for walk-in bookings.",
+        )
+
+    trip = db.query(Trip).filter(Trip.id == booking.trip_id).first()
+    if not trip or trip.provider_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only confirm bookings on your own trips.",
+        )
+
+    # Reuse the admin confirmation helper — the seat-state + booking-status
+    # transition is identical; only the payment_method differs.
+    from ..admin.service import confirm_payment
+    booking, delivered_to = confirm_payment(
+        db, booking_id=booking_id, payment_method="cash"
+    )
+
+    return {
+        "booking_id": booking.id,
+        "status": booking.status,
+        "payment_status": booking.payment_status,
+        "payment_method": booking.payment_method,
+        "delivered_to": delivered_to,
+        "message": f"Walk-in booking #{booking.id} confirmed (cash).",
+    }
+
+
+# ---------------------------------------------------------------------------
 # Provider "My Bookings" — every booking on trips owned by this provider
 # ---------------------------------------------------------------------------
 

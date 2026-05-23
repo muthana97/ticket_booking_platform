@@ -69,14 +69,53 @@ def block_provider(provider_id: int, db: Session = Depends(get_db)):
 @router.get("/trips", response_model=List[inv_schemas.TripSearchResponse])
 def list_trips(
     provider_id: Optional[int] = Query(default=None),
+    q: Optional[str] = Query(default=None, description="Fuzzy match on origin, destination, provider name, trip id"),
+    origin: Optional[str] = Query(default=None),
+    destination: Optional[str] = Query(default=None),
+    time: Optional[str] = Query(default=None, regex="^(upcoming|past|all)$"),
     db: Session = Depends(get_db),
 ):
-    """All trips in the system, optionally scoped to a single provider."""
-    from ..inventory.models import Trip
-    q = db.query(Trip)
+    """All trips in the system. Filters mirror /admin/bookings for parity."""
+    from datetime import datetime as _dt
+
+    from ..auth.models import User as _User
+    from ..inventory.models import Route, Trip
+
+    query = db.query(Trip).join(Route, Route.id == Trip.route_id)
     if provider_id is not None:
-        q = q.filter(Trip.provider_id == provider_id)
-    trips = q.order_by(Trip.departure_time.asc()).all()
+        query = query.filter(Trip.provider_id == provider_id)
+    if origin:
+        query = query.filter(Route.origin.ilike(f"%{origin}%"))
+    if destination:
+        query = query.filter(Route.destination.ilike(f"%{destination}%"))
+    if time == "upcoming":
+        query = query.filter(Trip.departure_time >= _dt.utcnow())
+    elif time == "past":
+        query = query.filter(Trip.departure_time < _dt.utcnow())
+    # time == "all" or None → no temporal filter
+
+    trips = query.order_by(Trip.departure_time.asc()).all()
+
+    # Fuzzy `q` against the decorated row (includes provider name) — applied
+    # in Python since it spans Route + User.
+    if q:
+        q_low = q.strip().lower()
+        rows = []
+        for trip in trips:
+            provider = (
+                db.query(_User).filter(_User.id == trip.provider_id).first()
+                if trip.provider_id else None
+            )
+            haystack = " ".join([
+                str(trip.id),
+                trip.route.origin,
+                trip.route.destination,
+                provider.full_name if provider else "",
+            ]).lower()
+            if q_low in haystack:
+                rows.append(trip)
+        trips = rows
+
     return [inv_service.decorate_trip_row(db, trip) for trip in trips]
 
 
