@@ -12,7 +12,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@300..600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@300..600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 
 <!-- QR code (~10KB, no deps) for TKT-04 -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -38,6 +38,68 @@
   }
 
   * { box-sizing: border-box; }
+  /* Respect the HTML `hidden` attribute even when the parent has an explicit
+     `display:` rule (otherwise topbar .session, .subhead, etc. stay visible). */
+  [hidden] { display: none !important; }
+
+  /* Arabic mode: switch to a serif that has proper Arabic glyphs and flip RTL */
+  html[lang="ar"] body {
+    font-family: 'Amiri', 'Hanken Grotesk', serif;
+  }
+  html[lang="ar"] .ff-display,
+  html[lang="ar"] .brand,
+  html[lang="ar"] .auth-stage h1,
+  html[lang="ar"] .search-stage h2,
+  html[lang="ar"] .provider-stage h2,
+  html[lang="ar"] .admin-stage h2,
+  html[lang="ar"] .book-head .route,
+  html[lang="ar"] .city,
+  html[lang="ar"] .trip-card .route,
+  html[lang="ar"] .role-card .title,
+  html[lang="ar"] .booking-row .route-line,
+  html[lang="ar"] .mt-section h3 {
+    font-family: 'Amiri', serif;
+  }
+  /* Force the seat-map + price + monospace numerics to stay LTR even in RTL */
+  html[lang="ar"] .ff-mono,
+  html[lang="ar"] .seat,
+  html[lang="ar"] .bus-frame,
+  html[lang="ar"] .price,
+  html[lang="ar"] .countdown,
+  html[lang="ar"] .booking-id,
+  html[lang="ar"] .chip-id,
+  html[lang="ar"] .status-pill,
+  html[lang="ar"] .ticket-foot .total,
+  html[lang="ar"] .ticket-head .bok .code,
+  html[lang="ar"] code {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  /* Language toggle pill */
+  .lang-toggle {
+    display: inline-flex;
+    border: 1.5px solid currentColor;
+    overflow: hidden;
+    user-select: none;
+    margin-right: 6px;
+  }
+  .lang-toggle button {
+    appearance: none; background: transparent;
+    border: 0; color: inherit;
+    padding: 4px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em;
+    cursor: pointer; text-transform: uppercase;
+    transition: background 160ms, color 160ms;
+  }
+  .lang-toggle button.active {
+    background: currentColor;
+    color: var(--paper);
+  }
+  .topbar.role-provider .lang-toggle button.active { color: var(--ink); }
+  .topbar.role-admin    .lang-toggle button.active { color: var(--admin); }
+
   html, body {
     margin: 0; padding: 0;
     background: var(--paper);
@@ -98,6 +160,9 @@
   }
   .topbar.role-provider .topbar-nav a.nav-link.active { color: var(--ink); background: var(--bone); }
   .topbar.role-admin    .topbar-nav a.nav-link.active { color: var(--admin); background: var(--bone); }
+  .topbar-right {
+    display: flex; align-items: center; gap: 14px;
+  }
   .topbar .session {
     display: flex; align-items: center; gap: 14px;
     font-family: 'JetBrains Mono', monospace;
@@ -585,6 +650,36 @@
   .modal-actions { display: flex; gap: 10px; margin-top: 12px; }
   .modal-actions .cta { margin-top: 0; }
 
+  /* Repeat-pattern picker + day-of-week chips */
+  .repeat-pick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .repeat-pick label {
+    cursor: pointer;
+    border: 1.5px solid var(--rule);
+    padding: 10px;
+    background: var(--paper);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    transition: background 180ms, color 180ms, transform 180ms;
+  }
+  .repeat-pick label:hover { transform: translateY(-1px); }
+  .repeat-pick input { display: none; }
+  .repeat-pick label.active { background: var(--ink); color: var(--bone); border-color: var(--ink); }
+
+  .dow-pick { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .dow-pick label {
+    cursor: pointer;
+    border: 1.5px solid var(--rule);
+    padding: 8px 4px;
+    background: var(--paper);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    transition: background 180ms, color 180ms;
+  }
+  .dow-pick input { display: none; }
+  .dow-pick label:has(input:checked) { background: var(--terra); color: var(--bone); border-color: var(--terra); }
+
   /* ───── Toast ───── */
   .toast {
     position: fixed; bottom: 24px; left: 50%;
@@ -754,17 +849,22 @@
   <header class="topbar" id="topbar">
     <div class="brand" id="brand-home">Tazkirati. <small>تذكرتي</small></div>
     <nav class="topbar-nav" id="topbar-nav" hidden></nav>
-    <div class="session" id="session" hidden>
-      <span class="badge" id="role-badge">—</span>
-      <span id="email-tag">—</span>
-      <button class="signout" id="signout-btn">Sign out</button>
+    <div class="topbar-right">
+      <span class="lang-toggle" id="lang-toggle">
+        <button data-lang="en" class="active">EN</button>
+        <button data-lang="ar">عربي</button>
+      </span>
+      <div class="session" id="session" hidden>
+        <span class="badge" id="role-badge">—</span>
+        <span id="email-tag">—</span>
+        <button class="signout" id="signout-btn" data-i18n="signout">Sign out</button>
+      </div>
     </div>
   </header>
 
   <div class="subhead" id="subhead" hidden>
     <button class="back" id="back-btn">← Back</button>
     <span id="crumb">—</span>
-    <span class="live"><span class="dot" id="conn-dot"></span><span id="conn-text">Live</span></span>
   </div>
 
   <main class="canvas">
@@ -772,18 +872,18 @@
     <!-- Welcome -->
     <section class="screen" id="screen-welcome">
       <div class="auth-stage wide">
-        <h1>Welcome aboard.</h1>
-        <div class="lead">Sudan Intercity Coach Authority · Sign in to your account or create a new one.</div>
+        <h1 data-i18n="welcome.title">Welcome aboard.</h1>
+        <div class="lead" data-i18n="welcome.lead">Sudan Intercity Coach Authority · Sign in to your account or create a new one.</div>
         <div class="welcome-grid">
           <button class="welcome-card" data-act="sign-in">
-            <span class="lbl">Returning</span>
-            <span class="ttl">Sign in</span>
-            <span class="dsc">Use your email and password.</span>
+            <span class="lbl" data-i18n="welcome.returning">Returning</span>
+            <span class="ttl" data-i18n="welcome.signin">Sign in</span>
+            <span class="dsc" data-i18n="welcome.signin.desc">Use your email and password.</span>
           </button>
           <button class="welcome-card" data-act="register">
-            <span class="lbl">New here</span>
-            <span class="ttl">Create account</span>
-            <span class="dsc">Register as a passenger or a counter operator.</span>
+            <span class="lbl" data-i18n="welcome.new">New here</span>
+            <span class="ttl" data-i18n="welcome.register">Create account</span>
+            <span class="dsc" data-i18n="welcome.register.desc">Register as a passenger or a counter operator.</span>
           </button>
         </div>
         <div class="helper" id="welcome-helper" hidden>
@@ -797,12 +897,12 @@
     <!-- Sign in -->
     <section class="screen" id="screen-sign-in">
       <div class="auth-stage">
-        <h1>Sign in.</h1>
-        <div class="lead">Email + password. We'll route you to the right place.</div>
-        <div class="field"><label for="si-email">Email</label><input type="email" id="si-email" autocomplete="email" /></div>
-        <div class="field"><label for="si-password">Password</label><input type="password" id="si-password" autocomplete="current-password" /></div>
-        <button class="cta" id="sign-in-btn">Continue →</button>
-        <div class="helper">Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.</div>
+        <h1 data-i18n="signin.title">Sign in.</h1>
+        <div class="lead" data-i18n="signin.lead">Email + password. We'll route you to the right place.</div>
+        <div class="field"><label for="si-email" data-i18n="form.email">Email</label><input type="email" id="si-email" autocomplete="email" /></div>
+        <div class="field"><label for="si-password" data-i18n="form.password">Password</label><input type="password" id="si-password" autocomplete="current-password" /></div>
+        <button class="cta" id="sign-in-btn" data-i18n="action.continue">Continue →</button>
+        <div class="helper" data-i18n="signin.helper" data-i18n-html="1">Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.</div>
       </div>
     </section>
 
@@ -867,20 +967,20 @@
     <!-- Customer search -->
     <section class="screen" id="screen-customer-search">
       <div class="search-stage">
-        <h2>Where are we going today?</h2>
-        <div class="lead" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 22px;">
+        <h2 data-i18n="search.title">Where are we going today?</h2>
+        <div class="lead" data-i18n="search.lead" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 22px;">
           Sudan Intercity Coach Network
         </div>
         <div class="row">
-          <div class="field-block"><label>From</label><input type="text" id="search-origin" placeholder="e.g. Khartoum" list="city-list" /></div>
-          <div class="field-block"><label>To</label><input type="text" id="search-destination" placeholder="e.g. Port Sudan" list="city-list" /></div>
+          <div class="field-block"><label data-i18n="search.from">From</label><input type="text" id="search-origin" placeholder="e.g. Khartoum" list="city-list" /></div>
+          <div class="field-block"><label data-i18n="search.to">To</label><input type="text" id="search-destination" placeholder="e.g. Port Sudan" list="city-list" /></div>
         </div>
         <datalist id="city-list">
           <option value="Khartoum"><option value="Port Sudan"><option value="Atbara">
           <option value="Wadi Halfa"><option value="Kassala"><option value="Nyala">
           <option value="El Obeid"><option value="Dongola">
         </datalist>
-        <button class="cta" id="search-btn" style="margin-top: 16px;">Find Trips →</button>
+        <button class="cta" id="search-btn" style="margin-top: 16px;" data-i18n="search.cta">Find Trips →</button>
       </div>
     </section>
 
@@ -904,11 +1004,11 @@
     <!-- Customer My Tickets -->
     <section class="screen" id="screen-customer-my-tickets">
       <div class="my-tickets-stage">
-        <h2>My Tickets</h2>
-        <div class="lead">Your bookings — across the whole journey lifecycle.</div>
+        <h2 data-i18n="mytickets.title">My Tickets</h2>
+        <div class="lead" data-i18n="mytickets.lead">Your bookings — across the whole journey lifecycle.</div>
 
         <div class="mt-section awaiting">
-          <h3>Awaiting Payment <span class="count" id="mt-awaiting-count">0</span></h3>
+          <h3><span data-i18n="mytickets.awaiting">Awaiting Payment</span> <span class="count" id="mt-awaiting-count">0</span></h3>
           <div id="mt-awaiting-list"></div>
           <div class="empty-state hidden" id="mt-awaiting-empty" style="margin: 12px 0;">
             <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No bookings awaiting payment.</p>
@@ -916,7 +1016,7 @@
         </div>
 
         <div class="mt-section upcoming">
-          <h3>Upcoming <span class="count" id="mt-upcoming-count">0</span></h3>
+          <h3><span data-i18n="mytickets.upcoming">Upcoming</span> <span class="count" id="mt-upcoming-count">0</span></h3>
           <div id="mt-upcoming-list"></div>
           <div class="empty-state hidden" id="mt-upcoming-empty" style="margin: 12px 0;">
             <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No upcoming trips.</p>
@@ -924,7 +1024,7 @@
         </div>
 
         <div class="mt-section past">
-          <h3>Past <span class="count" id="mt-past-count">0</span></h3>
+          <h3><span data-i18n="mytickets.past">Past</span> <span class="count" id="mt-past-count">0</span></h3>
           <div id="mt-past-list"></div>
           <div class="empty-state hidden" id="mt-past-empty" style="margin: 12px 0;">
             <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft);">No past bookings yet.</p>
@@ -1104,9 +1204,44 @@
       </div>
     </div>
     <div class="modal-row">
-      <div class="field-block"><label>Departure</label><input type="datetime-local" id="nt-departure" /></div>
+      <div class="field-block"><label>Departure <small style="opacity:0.5;">(must be in the future)</small></label><input type="datetime-local" id="nt-departure" /></div>
       <div class="field-block"><label>Price (SDG)</label><input type="number" id="nt-price" min="1" value="15000" /></div>
     </div>
+
+    <div class="modal-row">
+      <div class="field-block full">
+        <label>Repeat</label>
+        <div class="repeat-pick">
+          <label class="active" data-repeat="once"><input type="radio" name="nt-repeat" value="once" checked><span>Once</span></label>
+          <label data-repeat="daily"><input type="radio" name="nt-repeat" value="daily"><span>Daily</span></label>
+          <label data-repeat="weekly"><input type="radio" name="nt-repeat" value="weekly"><span>Weekly</span></label>
+          <label data-repeat="custom"><input type="radio" name="nt-repeat" value="custom"><span>Custom days</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-row hidden" id="nt-custom-days-row">
+      <div class="field-block full">
+        <label>Days of week</label>
+        <div class="dow-pick">
+          <label><input type="checkbox" data-dow="0"><span>Mon</span></label>
+          <label><input type="checkbox" data-dow="1"><span>Tue</span></label>
+          <label><input type="checkbox" data-dow="2"><span>Wed</span></label>
+          <label><input type="checkbox" data-dow="3"><span>Thu</span></label>
+          <label><input type="checkbox" data-dow="4"><span>Fri</span></label>
+          <label><input type="checkbox" data-dow="5"><span>Sat</span></label>
+          <label><input type="checkbox" data-dow="6"><span>Sun</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-row hidden" id="nt-end-date-row">
+      <div class="field-block full">
+        <label>Repeat until <small style="opacity:0.5;">(max 90 days out)</small></label>
+        <input type="date" id="nt-end-date" />
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="cta ghost" id="add-trip-cancel">Cancel</button>
       <button class="cta alt" id="add-trip-submit">Create →</button>
@@ -1164,6 +1299,94 @@
  *  Tazkirati — multi-role web portal
  * ========================================================================== */
 
+/* ---------- i18n: minimal English/Arabic table for the most-visible UI ---- */
+const I18N = {
+  en: {
+    'signout':            'Sign out',
+    'welcome.title':      'Welcome aboard.',
+    'welcome.lead':       'Sudan Intercity Coach Authority · Sign in to your account or create a new one.',
+    'welcome.returning':  'Returning',
+    'welcome.signin':     'Sign in',
+    'welcome.signin.desc':'Use your email and password.',
+    'welcome.new':        'New here',
+    'welcome.register':   'Create account',
+    'welcome.register.desc': 'Register as a passenger or a counter operator.',
+    'signin.title':       'Sign in.',
+    'signin.lead':        "Email + password. We'll route you to the right place.",
+    'signin.helper':      'Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.',
+    'form.email':         'Email',
+    'form.password':      'Password',
+    'action.continue':    'Continue →',
+    'search.title':       'Where are we going today?',
+    'search.lead':        'Sudan Intercity Coach Network',
+    'search.from':        'From',
+    'search.to':          'To',
+    'search.cta':         'Find Trips →',
+    'mytickets.title':    'My Tickets',
+    'mytickets.lead':     'Your bookings — across the whole journey lifecycle.',
+    'mytickets.awaiting': 'Awaiting Payment',
+    'mytickets.upcoming': 'Upcoming',
+    'mytickets.past':     'Past',
+  },
+  ar: {
+    'signout':            'تسجيل الخروج',
+    'welcome.title':      'أهلاً بك على متن الرحلة.',
+    'welcome.lead':       'هيئة السودان للنقل بين المدن · سجّل الدخول أو أنشئ حساباً جديداً.',
+    'welcome.returning':  'مستخدم سابق',
+    'welcome.signin':     'تسجيل الدخول',
+    'welcome.signin.desc':'استخدم بريدك وكلمة المرور.',
+    'welcome.new':        'مستخدم جديد',
+    'welcome.register':   'إنشاء حساب',
+    'welcome.register.desc': 'سجّل كراكب أو كموظف تذاكر.',
+    'signin.title':       'تسجيل الدخول.',
+    'signin.lead':        'البريد وكلمة المرور. سنوجّهك إلى المكان المناسب.',
+    'signin.helper':      'تحتاج إلى حساب؟ <a href="#" id="goto-register" class="text-link">أنشئ واحداً</a>.',
+    'form.email':         'البريد الإلكتروني',
+    'form.password':      'كلمة المرور',
+    'action.continue':    '→ متابعة',
+    'search.title':       'إلى أين نسافر اليوم؟',
+    'search.lead':        'شبكة السودان للنقل بين المدن',
+    'search.from':        'من',
+    'search.to':          'إلى',
+    'search.cta':         '→ البحث عن رحلات',
+    'mytickets.title':    'تذاكري',
+    'mytickets.lead':     'حجوزاتك عبر كامل دورة الرحلة.',
+    'mytickets.awaiting': 'بانتظار الدفع',
+    'mytickets.upcoming': 'القادمة',
+    'mytickets.past':     'السابقة',
+  },
+};
+let LANG = localStorage.getItem('taz.lang') || 'en';
+
+function t(key) { return (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key; }
+
+function applyLanguage() {
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  // Update every tagged element
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const html = el.dataset.i18nHtml === '1';
+    const value = t(key);
+    if (html) el.innerHTML = value;
+    else el.textContent = value;
+  });
+  // Reflect toggle button active state
+  document.querySelectorAll('.lang-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === LANG);
+  });
+  localStorage.setItem('taz.lang', LANG);
+}
+
+function setLanguage(lang) {
+  if (!I18N[lang]) return;
+  LANG = lang;
+  applyLanguage();
+  // Re-wire any element that the i18n re-render may have replaced
+  const gotoReg = document.getElementById('goto-register');
+  if (gotoReg) gotoReg.onclick = (e) => { e.preventDefault(); goto('register'); };
+}
+
 const API = location.origin;
 const POLL_INTERVAL_MS = 200;
 const ADMIN_REFRESH_MS = 4000;
@@ -1200,10 +1423,9 @@ function toast(msg, isErr = false) {
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.remove('show'), 2800);
 }
-function setConn(ok) {
-  $('#conn-dot').classList.toggle('idle', !ok);
-  $('#conn-text').textContent = ok ? 'Live' : 'Reconnecting…';
-}
+// Live indicator removed from the subhead; keep this as a no-op so the
+// long-poll loop's existing setConn() calls don't break.
+function setConn(_ok) { /* no-op */ }
 
 /* ---------- Time helpers (UTC-safe) ---------- */
 function parseUtc(iso) {
@@ -1259,8 +1481,8 @@ function paintChrome() {
     if (auth.user.role === 'customer') {
       nav.hidden = false;
       nav.innerHTML = `
-        <a class="nav-link" data-nav="customer-search">Search</a>
-        <a class="nav-link" data-nav="customer-my-tickets">My Tickets</a>
+        <a class="nav-link" data-nav="customer-search">${LANG === 'ar' ? 'بحث' : 'Search'}</a>
+        <a class="nav-link" data-nav="customer-my-tickets">${LANG === 'ar' ? 'تذاكري' : 'My Tickets'}</a>
       `;
       nav.querySelectorAll('a').forEach(a => {
         a.classList.toggle('active', STATE.screen === a.dataset.nav);
@@ -1279,8 +1501,12 @@ function paintChrome() {
       nav.hidden = true;
     }
   } else {
+    // Logged-out state: clear the role/email/badge text completely so they
+    // don't linger if some stylesheet ignored `hidden`.
     session.hidden = true;
     nav.hidden = true;
+    $('#role-badge').textContent = '';
+    $('#email-tag').textContent = '';
   }
 
   const noSubHead = ['welcome','sign-in','register','verify-email','provider-pending'].includes(STATE.screen);
@@ -1629,14 +1855,40 @@ async function deleteTrip(tripId, basePath) {
 /* ---------- Add Trip ---------- */
 function openAddTrip() {
   const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0);
-  $('#nt-departure').value = d.toISOString().slice(0, 16);
+  // Datetime-local strings have no timezone — produce the local-time ISO slice.
+  const pad = (n) => String(n).padStart(2, '0');
+  const localIso = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  $('#nt-departure').value = localIso;
+
+  // min = now (5 min in the future to avoid the clock-skew race)
+  const now = new Date(); now.setMinutes(now.getMinutes() + 5);
+  $('#nt-departure').min = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  // Default end date for repeat: 30 days out, max 90.
+  const endDefault = new Date(); endDefault.setDate(endDefault.getDate() + 30);
+  $('#nt-end-date').value = `${endDefault.getFullYear()}-${pad(endDefault.getMonth()+1)}-${pad(endDefault.getDate())}`;
+  const endMax = new Date(); endMax.setDate(endMax.getDate() + 90);
+  $('#nt-end-date').max = `${endMax.getFullYear()}-${pad(endMax.getMonth()+1)}-${pad(endMax.getDate())}`;
+
   $('#nt-origin').value = ''; $('#nt-destination').value = '';
   $('#nt-price').value = 15000;
   $$('.layout-pick label').forEach((l, i) => l.classList.toggle('active', i === 0));
   $$('input[name="nt-seats"]').forEach((r, i) => r.checked = (i === 0));
+  // Reset repeat pattern to "once"
+  $$('.repeat-pick label').forEach((l, i) => l.classList.toggle('active', i === 0));
+  $$('input[name="nt-repeat"]').forEach((r, i) => r.checked = (i === 0));
+  $$('.dow-pick input').forEach(c => c.checked = false);
+  syncRepeatUi();
   $('#add-trip-modal').classList.add('show');
   setTimeout(() => $('#nt-origin').focus(), 50);
 }
+
+function syncRepeatUi() {
+  const kind = $$('input[name="nt-repeat"]').find(r => r.checked)?.value || 'once';
+  $('#nt-custom-days-row').classList.toggle('hidden', kind !== 'custom');
+  $('#nt-end-date-row').classList.toggle('hidden', kind === 'once');
+}
+
 function closeAddTrip() { $('#add-trip-modal').classList.remove('show'); }
 
 async function submitAddTrip() {
@@ -1645,17 +1897,41 @@ async function submitAddTrip() {
   const total_seats = parseInt($$('input[name="nt-seats"]').find(r => r.checked).value, 10);
   const departure = $('#nt-departure').value;
   const price = parseFloat($('#nt-price').value);
+  const repeatKind = $$('input[name="nt-repeat"]').find(r => r.checked).value;
+  const endDate = $('#nt-end-date').value;
+  const daysOfWeek = $$('.dow-pick input').filter(c => c.checked).map(c => parseInt(c.dataset.dow, 10));
+
   if (!origin || !destination) return toast('Origin and destination required', true);
   if (!departure)              return toast('Pick a departure time', true);
   if (!(price > 0))            return toast('Price must be positive', true);
+
+  // Future check
+  const depDate = new Date(departure);
+  if (depDate <= new Date()) return toast('Departure must be in the future', true);
+
+  // Recurring validation
+  if (repeatKind !== 'once') {
+    if (!endDate) return toast('Pick an end date for the recurring schedule', true);
+    if (repeatKind === 'custom' && daysOfWeek.length === 0) {
+      return toast('Pick at least one day of the week', true);
+    }
+  }
+
+  const body = {
+    origin, destination, total_seats,
+    departure_time: depDate.toISOString(),
+    price,
+    repeat: {
+      kind: repeatKind,
+      end_date: endDate ? new Date(endDate + 'T23:59:59').toISOString() : null,
+      days_of_week: daysOfWeek,
+    },
+  };
+
   try {
-    const r = await api('/trips', {
-      method: 'POST',
-      body: JSON.stringify({ origin, destination, total_seats,
-        departure_time: new Date(departure).toISOString(), price }),
-    });
+    const r = await api('/trips', { method: 'POST', body: JSON.stringify(body) });
     closeAddTrip();
-    toast(`Trip #${r.trip_id} created`);
+    toast(r.count > 1 ? `${r.count} trips created` : `Trip #${r.trips[0].trip_id} created`);
     refreshProviderTrips();
   } catch (e) { toast(e.message, true); }
 }
@@ -2207,6 +2483,12 @@ function wire() {
     lbl.classList.add('active');
     const r = lbl.querySelector('input'); if (r) r.checked = true;
   }));
+  $$('.repeat-pick label').forEach(lbl => lbl.addEventListener('click', () => {
+    $$('.repeat-pick label').forEach(l => l.classList.remove('active'));
+    lbl.classList.add('active');
+    const r = lbl.querySelector('input'); if (r) r.checked = true;
+    syncRepeatUi();
+  }));
   $('#add-trip-modal').addEventListener('click', e => { if (e.target.id === 'add-trip-modal') closeAddTrip(); });
 
   $('#lock-btn').addEventListener('click', doLock);
@@ -2256,7 +2538,15 @@ function showDemoHelperIfRequested() {
   `;
 }
 
+// Language toggle wiring (event delegation — works for any button in either toggle group)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.lang-toggle button');
+  if (!btn) return;
+  setLanguage(btn.dataset.lang);
+});
+
 wire();
+applyLanguage();
 paintChrome();
 showDemoHelperIfRequested();
 </script>

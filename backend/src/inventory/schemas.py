@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -28,6 +28,20 @@ class TripSearchResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 FleetSize = Literal[45, 48]
+RepeatKind = Literal["once", "daily", "weekly", "custom"]
+
+
+class RepeatPattern(BaseModel):
+    """How to schedule recurring trips. `kind="once"` ignores everything else.
+
+    For `daily`:  one trip per day from departure_time → end_date (inclusive).
+    For `weekly`: same weekday as departure_time, week by week, until end_date.
+    For `custom`: one trip on each `days_of_week` (0=Mon..6=Sun) from departure
+                  date until end_date.
+    """
+    kind: RepeatKind = "once"
+    end_date: Optional[datetime] = None   # last date trips may be created on
+    days_of_week: List[int] = Field(default_factory=list)  # 0=Mon..6=Sun
 
 
 class CreateTripRequest(BaseModel):
@@ -36,6 +50,7 @@ class CreateTripRequest(BaseModel):
     total_seats: FleetSize
     departure_time: datetime
     price: float = Field(..., gt=0)
+    repeat: RepeatPattern = Field(default_factory=RepeatPattern)
 
 
 class TripCreatedResponse(BaseModel):
@@ -45,4 +60,11 @@ class TripCreatedResponse(BaseModel):
     departure_time: datetime
     total_seats: int
     price: float
+    message: str
+
+
+class TripsCreatedResponse(BaseModel):
+    """Returned when one CreateTripRequest produces N trips (recurring)."""
+    count: int
+    trips: List[TripCreatedResponse]
     message: str

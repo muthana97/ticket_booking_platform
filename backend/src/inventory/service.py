@@ -1,12 +1,17 @@
 """Inventory service — fleet layout helper + trip create/delete."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from . import models
 from ..auth.models import User
 from ..booking.models import Booking
+
+
+# Recurring trip safety cap — refuse to create more than this many in one shot.
+MAX_RECURRING_TRIPS = 60
+MAX_RECURRING_DAYS_HORIZON = 90
 
 
 def decorate_trip_row(db: Session, trip: models.Trip) -> dict:
@@ -132,6 +137,15 @@ def create_trip(
         raise HTTPException(status_code=400, detail="Origin and destination must differ")
     if price <= 0:
         raise HTTPException(status_code=400, detail="Price must be positive")
+    # Departures must be in the future. Compare naive UTC to match how the
+    # rest of the codebase stores timestamps.
+    now_utc_naive = datetime.utcnow()
+    dep_naive = departure_time.replace(tzinfo=None) if departure_time.tzinfo else departure_time
+    if dep_naive <= now_utc_naive:
+        raise HTTPException(
+            status_code=400,
+            detail="Departure time must be in the future.",
+        )
 
     route = _get_or_create_route(db, origin.strip(), destination.strip())
 
@@ -160,6 +174,76 @@ def create_trip(
     db.commit()
     db.refresh(trip)
     return trip
+
+
+def expand_repeat_pattern(
+    *,
+    start: datetime,
+    kind: str,
+    end_date: datetime | None,
+    days_of_week: list[int] | None,
+) -> list[datetime]:
+    """Return the full list of departure datetimes implied by a repeat pattern.
+    Includes `start` itself. Returns [start] for kind='once'.
+    """
+    if kind == "once":
+        return [start]
+
+    if end_date is None:
+        raise HTTPException(
+            status_code=400,
+            detail="end_date is required when repeat is daily / weekly / custom.",
+        )
+    start_naive = start.replace(tzinfo=None) if start.tzinfo else start
+    end_naive = end_date.replace(tzinfo=None) if end_date.tzinfo else end_date
+    if end_naive <= start_naive:
+        raise HTTPException(status_code=400, detail="end_date must be after departure.")
+    horizon = start_naive + timedelta(days=MAX_RECURRING_DAYS_HORIZON)
+    if end_naive > horizon:
+        raise HTTPException(
+            status_code=400,
+            detail=f"end_date must be within {MAX_RECURRING_DAYS_HORIZON} days of departure.",
+        )
+
+    departures: list[datetime] = [start_naive]
+    cursor = start_naive
+
+    if kind == "daily":
+        while True:
+            cursor = cursor + timedelta(days=1)
+            if cursor > end_naive:
+                break
+            departures.append(cursor)
+    elif kind == "weekly":
+        while True:
+            cursor = cursor + timedelta(days=7)
+            if cursor > end_naive:
+                break
+            departures.append(cursor)
+    elif kind == "custom":
+        if not days_of_week:
+            raise HTTPException(
+                status_code=400,
+                detail="custom repeat requires days_of_week (0=Mon..6=Sun).",
+            )
+        wanted = {d for d in days_of_week if 0 <= d <= 6}
+        cursor = start_naive
+        # Walk one day at a time so we hit each requested weekday between
+        # start (exclusive — already added) and end_date (inclusive).
+        while cursor < end_naive:
+            cursor = cursor + timedelta(days=1)
+            if cursor.weekday() in wanted and cursor <= end_naive:
+                departures.append(cursor)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown repeat kind: {kind}")
+
+    if len(departures) > MAX_RECURRING_TRIPS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Refusing to create {len(departures)} trips in one shot "
+                   f"(cap is {MAX_RECURRING_TRIPS}).",
+        )
+    return departures
 
 
 def delete_trip(db: Session, *, trip_id: int) -> None:

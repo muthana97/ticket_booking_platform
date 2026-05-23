@@ -52,34 +52,52 @@ def search_trips(
 # Provider-only: create / delete trips
 # ---------------------------------------------------------------------------
 
-@router.post("", response_model=schemas.TripCreatedResponse, status_code=201)
+@router.post("", response_model=schemas.TripsCreatedResponse, status_code=201)
 def create_trip(
     payload: schemas.CreateTripRequest,
     db: Session = Depends(get_db),
     provider=Depends(require_active_provider),
 ):
     """
-    Provider-only. Creates a Route (reused if origin/destination already
-    exists), a Bus with the validated 45- or 48-seat layout, the Trip itself,
-    and all Seat rows — atomically.
+    Provider-only. Creates one Trip, or many if `repeat.kind != "once"`.
+    Each trip gets its own Bus + Seats, sharing the underlying Route.
     """
-    trip = service.create_trip(
-        db=db,
-        origin=payload.origin,
-        destination=payload.destination,
-        total_seats=payload.total_seats,
-        departure_time=payload.departure_time,
-        price=payload.price,
-        provider_id=provider.id,
+    departures = service.expand_repeat_pattern(
+        start=payload.departure_time,
+        kind=payload.repeat.kind,
+        end_date=payload.repeat.end_date,
+        days_of_week=payload.repeat.days_of_week,
     )
+
+    created = []
+    for dep in departures:
+        trip = service.create_trip(
+            db=db,
+            origin=payload.origin,
+            destination=payload.destination,
+            total_seats=payload.total_seats,
+            departure_time=dep,
+            price=payload.price,
+            provider_id=provider.id,
+        )
+        created.append({
+            "trip_id": trip.id,
+            "origin": payload.origin,
+            "destination": payload.destination,
+            "departure_time": trip.departure_time,
+            "total_seats": payload.total_seats,
+            "price": trip.price,
+            "message": f"Trip {trip.id} created.",
+        })
+
     return {
-        "trip_id": trip.id,
-        "origin": payload.origin,
-        "destination": payload.destination,
-        "departure_time": trip.departure_time,
-        "total_seats": payload.total_seats,
-        "price": trip.price,
-        "message": f"Trip {trip.id} created with {payload.total_seats} seats.",
+        "count": len(created),
+        "trips": created,
+        "message": (
+            f"Created {len(created)} trip(s)."
+            if len(created) > 1
+            else f"Trip {created[0]['trip_id']} created with {payload.total_seats} seats."
+        ),
     }
 
 
