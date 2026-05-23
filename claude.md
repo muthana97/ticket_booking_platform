@@ -17,7 +17,7 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 ## 🗺️ Endpoint map
 **Auth:** `POST /auth/register` · `POST /auth/verify-email` · `POST /auth/resend-otp` · `POST /auth/login` · `GET /auth/me`
 
-**Trips:** `GET /trips/search` (open) · `GET /trips/mine` (active provider, own trips only) · `POST /trips` (active provider) · `DELETE /trips/{id}` (active provider, own only)
+**Trips:** `GET /trips/search` (open) · `GET /trips/mine` (active provider, own trips only) · `POST /trips` (active provider — accepts a `repeat` pattern + `days_of_week` + `end_date`; returns `TripsCreatedResponse` with the list of created trips) · `DELETE /trips/{id}` (active provider, own only)
 
 **Bookings:**
 - `POST /bookings/lock` (consumer) · `POST /bookings/walkin` (provider, on own trips only)
@@ -48,6 +48,13 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 4. **Real-time State Sync** — long-polling at sub-second latency on change.
 5. **Provider data isolation** — server-side gate on cross-provider operations.
 6. **Admin oversight** — provider approval, trip oversight, all-bookings search/filter, manual payment confirmation.
+7. **Future-only departures + recurring schedules** — `POST /trips` accepts a `repeat` pattern (`once` / `daily` / `weekly` / `custom`) plus `end_date` and `days_of_week`. Past departures are rejected with 400. Capped at 60 trips / 90-day horizon per request.
+
+## 🌐 Localization (EN / Arabic)
+- Topbar carries an `EN / عربي` toggle. Choice persists in `localStorage` (`taz.lang`).
+- Translation runtime: a small `I18N` table + `applyLanguage()` walks every `[data-i18n]` element and swaps text content. `data-i18n-html="1"` opts the element into `innerHTML` instead of `textContent` (for strings with embedded links).
+- Arabic mode flips `<html dir="rtl">`, swaps display font to **Amiri** (Google Fonts), and forces LTR direction on numeric / mono elements (seat map, prices, billing refs, codes).
+- Currently translated: welcome screen, sign-in form, search screen, My Tickets sections, topbar nav, sign-out. Other UI areas (admin, provider, modals) fall back to English — extend by adding keys to `I18N`.
 
 ## 🧪 Demo credentials (from `seed.py`)
 
@@ -103,11 +110,17 @@ The repo ships a `render.yaml` blueprint at the root. Dockerfile lives at repo r
 ## 📱 Mobile path
 Frontend ships PWA bits: `manifest.json` + `sw.js` at `/app/`. Users can "Add to Home Screen" for an installable, fullscreen app on iOS/Android — same codebase. When native shell is needed, wrap with **Capacitor** for App Store distribution (no UI rebuild).
 
-## 🐛 Recent fixes
-- **Auth UX**: re-registration on unverified emails no longer blocks — overwrites the stale record with fresh password + new OTP.
-- **SMTP transport**: real email delivery wired via `smtplib` when `SMTP_*` env vars are set, console fallback otherwise.
-- **Auto-seed**: lifespan startup seeds the DB if no admin exists (workaround for free-tier no-Shell).
-- **Env-overridable admin creds**: `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars take precedence over committed defaults.
+## 🐛 Recent fixes (most recent first)
+- **Future-only trips**: `POST /trips` refuses past `departure_time` (400). Frontend datetime input has `min=now+5m`.
+- **Recurring trips**: Add Trip modal exposes Once / Daily / Weekly / Custom-days picker; service expands the pattern and creates N trips atomically.
+- **EN / Arabic toggle**: `[data-i18n]` runtime + RTL direction flip + Amiri font for Arabic display.
+- **Signout persistence fix**: `[hidden] { display: none !important; }` rule so logged-out chrome doesn't linger when CSS has `display: flex`. Email tag explicitly cleared on logout too.
+- **Live indicator removed** from the subhead (was confusing). `setConn()` kept as a no-op so existing call sites stay intact.
+- **Admin reconciliation on startup**: lifespan compares the admin row to `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars and updates it if they've changed. Means rotating admin creds in Render's UI actually takes effect on next deploy without DB access.
+- **Re-registration on unverified emails**: stale unverified record gets overwritten with fresh password + new OTP. 409 only fires on fully verified accounts.
+- **SMTP transport**: real email delivery via `smtplib` when `SMTP_*` env vars are set, console fallback otherwise. (Currently blocked on Render free tier — see Known Limitations.)
+- **Auto-seed**: lifespan startup seeds the DB if no admin exists. Required because free tier has no Shell to run `python seed.py` manually.
+- **Env-overridable admin creds**: `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars take precedence over committed defaults in `seed.py`.
 - **Dev OTP gate**: `dev_otp` no longer in API responses when `DEBUG=false`.
 - **Welcome screen hardened**: credentials display moved behind `?demo=1` query param.
 - **Provider name display**: `inventory.service.decorate_trip_row()` joins User → displays "Operated by ..." on customer + admin trip cards.
