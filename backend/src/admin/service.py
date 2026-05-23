@@ -226,6 +226,12 @@ def confirm_payment(
     # "cash" (provider walk-in) is more informative than the prior "billing_reference"
     # for accounting / commission downstream.
     booking.payment_method = payment_method
+    # Cash walk-ins may have skipped billing intent and lack a reference. Mint
+    # one so every confirmed booking has a printable ticket + QR.
+    if not booking.billing_reference:
+        from ..booking.service import _generate_billing_reference
+        booking.billing_reference = _generate_billing_reference()
+        booking.bill_generated_at = _now_utc_naive()
 
     db.commit()
     db.refresh(booking)

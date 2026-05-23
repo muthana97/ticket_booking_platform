@@ -39,6 +39,40 @@ def _send_email(to: str, subject: str, html: str, text: str) -> bool:
 
 
 def _generate_email_otp(db: Session, email: str) -> str:
+    # Rate limit (NFR-08 / ERR-04):
+    #   - 30 second cooldown between successive requests for the same email
+    #   - max 3 codes per email per hour
+    now = datetime.utcnow()
+    last = (
+        db.query(models.EmailOTP)
+        .filter(models.EmailOTP.email == email.lower())
+        .order_by(models.EmailOTP.id.desc())
+        .first()
+    )
+    if last is not None:
+        elapsed = (now - last.created_at).total_seconds()
+        if elapsed < 30:
+            wait = int(30 - elapsed) + 1
+            raise HTTPException(
+                status_code=429,
+                detail=f"Please wait {wait} seconds before requesting another code.",
+            )
+
+    hour_ago = now - timedelta(hours=1)
+    recent = (
+        db.query(models.EmailOTP)
+        .filter(
+            models.EmailOTP.email == email.lower(),
+            models.EmailOTP.created_at > hour_ago,
+        )
+        .count()
+    )
+    if recent >= 3:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many verification requests. Try again in an hour.",
+        )
+
     code = f"{random.randint(100000, 999999)}"
     rec = models.EmailOTP(
         email=email,

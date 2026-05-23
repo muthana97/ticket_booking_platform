@@ -103,16 +103,36 @@ def create_trip(
 
 @router.get("/mine", response_model=List[schemas.TripSearchResponse])
 def list_my_trips(
+    q: Optional[str] = Query(default=None),
+    origin: Optional[str] = Query(default=None),
+    destination: Optional[str] = Query(default=None),
+    time: Optional[str] = Query(default=None, regex="^(upcoming|past|all)$"),
     db: Session = Depends(get_db),
     provider=Depends(require_active_provider),
 ):
-    """Provider's own trips only — enforces data isolation between providers."""
-    trips = (
-        db.query(models.Trip)
-        .filter(models.Trip.provider_id == provider.id)
-        .order_by(models.Trip.departure_time.asc())
-        .all()
+    """Provider's own trips only — enforces data isolation between providers.
+    Same filter shape as /admin/trips for consistency in the UI."""
+    from datetime import datetime as _dt
+    query = db.query(models.Trip).join(models.Route).filter(
+        models.Trip.provider_id == provider.id
     )
+    if origin:
+        query = query.filter(models.Route.origin.ilike(f"%{origin}%"))
+    if destination:
+        query = query.filter(models.Route.destination.ilike(f"%{destination}%"))
+    if time == "upcoming":
+        query = query.filter(models.Trip.departure_time >= _dt.utcnow())
+    elif time == "past":
+        query = query.filter(models.Trip.departure_time < _dt.utcnow())
+    trips = query.order_by(models.Trip.departure_time.asc()).all()
+
+    if q:
+        q_low = q.strip().lower()
+        trips = [
+            t for t in trips
+            if q_low in " ".join([str(t.id), t.route.origin, t.route.destination]).lower()
+        ]
+
     return [service.decorate_trip_row(db, trip) for trip in trips]
 
 

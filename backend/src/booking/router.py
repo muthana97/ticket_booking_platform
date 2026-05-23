@@ -239,11 +239,36 @@ def provider_confirm_walkin(
 
 @router.get("/provider/mine", response_model=list[schemas.ProviderBookingItem])
 def list_provider_bookings(
+    q: str | None = Query(default=None),
+    origin: str | None = Query(default=None),
+    destination: str | None = Query(default=None),
+    status: str | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_active_provider),
 ):
-    """P-EXT-04 / P-EXT-05: bookings on this provider's trips (both channels)."""
-    return service.list_provider_bookings(db=db, provider_id=current_user.id)
+    """P-EXT-04 / P-EXT-05: bookings on this provider's trips (both channels).
+    Filter params parallel /admin/bookings."""
+    rows = service.list_provider_bookings(db=db, provider_id=current_user.id)
+    # Filter in Python — the result set is small per provider.
+    if status and status != "any":
+        rows = [r for r in rows if r["status"] == status]
+    if origin:
+        o = origin.lower(); rows = [r for r in rows if o in r["origin"].lower()]
+    if destination:
+        d = destination.lower(); rows = [r for r in rows if d in r["destination"].lower()]
+    if q:
+        q_low = q.strip().lower()
+        rows = [
+            r for r in rows
+            if q_low in " ".join([
+                str(r["booking_id"]),
+                r.get("billing_reference") or "",
+                r.get("customer_name") or "",
+                r.get("customer_email") or "",
+                r["origin"], r["destination"],
+            ]).lower()
+        ]
+    return rows
 
 
 # ---------------------------------------------------------------------------

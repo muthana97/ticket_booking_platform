@@ -851,6 +851,36 @@
 
   .hidden { display: none !important; }
 
+  /* Loading spinner — used inline on any button while an API call is in flight */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+    vertical-align: -2px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Slightly larger spinner for the big CTAs */
+  .cta .spinner { width: 16px; height: 16px; }
+  /* Subtle pulse on the loading bar that appears under the masthead while
+     any request is pending. Adds a low-key "I'm working" cue. */
+  .global-loader {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--terra);
+    transform-origin: left;
+    animation: glide 1.4s ease-in-out infinite;
+    z-index: 400; display: none;
+  }
+  .global-loader.show { display: block; }
+  @keyframes glide {
+    0% { transform: scaleX(0); transform-origin: left; }
+    50% { transform: scaleX(1); transform-origin: left; }
+    51% { transform: scaleX(1); transform-origin: right; }
+    100% { transform: scaleX(0); transform-origin: right; }
+  }
+
   @media (max-width: 880px) {
     .book-grid, .modal-row, .role-pick, .welcome-grid, .search-stage .row, .filter-strip {
       grid-template-columns: 1fr;
@@ -1106,6 +1136,8 @@
                 <div class="countdown" id="countdown"><small data-i18n="book.expires_in">HOLD EXPIRES IN</small><span id="countdown-value">10:00</span></div>
               </div>
             </div>
+            <!-- Provider-only: cash one-shot confirm — only shows when bookingFlow === 'provider' -->
+            <button id="cash-confirm-btn" class="cta hidden" style="margin-top: 10px; background: var(--moss);" data-i18n="book.cash.cta">Confirm Cash Payment →</button>
             <button id="billing-btn" class="cta alt" style="margin-top: 10px;" data-i18n="book.billing.cta">Generate Billing Reference →</button>
             <button id="restart-flow-btn" class="cta ghost" style="margin-top: 10px;" data-i18n="book.restart">Start New Booking</button>
           </div>
@@ -1129,6 +1161,16 @@
         </div>
         <div class="tab-content" id="provider-tab-content">
           <div data-ptab-panel="trips" class="active">
+            <div class="filter-strip">
+              <input type="text" id="pt-q" data-i18n-placeholder="provider.trips.q" placeholder="Search by origin, destination, trip id…" />
+              <input type="text" id="pt-origin" data-i18n-placeholder="admin.bookings.origin" placeholder="Origin" list="city-list" />
+              <input type="text" id="pt-destination" data-i18n-placeholder="admin.bookings.destination" placeholder="Destination" list="city-list" />
+              <select id="pt-time">
+                <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
+                <option value="past" data-i18n="admin.trips.time.past">Past</option>
+                <option value="all" data-i18n="admin.trips.time.all">All</option>
+              </select>
+            </div>
             <div class="trip-list" id="provider-trip-list"></div>
             <div class="empty-state hidden" id="provider-trip-empty">
               <h3 data-i18n="provider.empty.trips.title">No trips yet.</h3>
@@ -1136,6 +1178,18 @@
             </div>
           </div>
           <div data-ptab-panel="bookings">
+            <div class="filter-strip">
+              <input type="text" id="pb-q" data-i18n-placeholder="provider.bookings.q" placeholder="Search by customer, billing ref, booking id…" />
+              <input type="text" id="pb-origin" data-i18n-placeholder="admin.bookings.origin" placeholder="Origin" list="city-list" />
+              <input type="text" id="pb-destination" data-i18n-placeholder="admin.bookings.destination" placeholder="Destination" list="city-list" />
+              <select id="pb-status">
+                <option value="any" data-i18n="status.filter.any">Any status</option>
+                <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
+                <option value="committed_pending" data-i18n="status.filter.committed_pending">Awaiting Payment</option>
+                <option value="pending" data-i18n="status.filter.pending">Pending lock</option>
+                <option value="expired" data-i18n="status.filter.expired">Expired</option>
+              </select>
+            </div>
             <div id="provider-bookings-list"></div>
             <div class="empty-state hidden" id="provider-bookings-empty">
               <h3 data-i18n="provider.empty.bookings.title">No bookings yet.</h3>
@@ -1326,6 +1380,7 @@
   </div>
 </div>
 
+<div id="global-loader" class="global-loader"></div>
 <div id="toast" class="toast">—</div>
 
 <script>
@@ -1368,6 +1423,11 @@ const I18N = {
     'verify.lead': 'We sent a 6-digit code to',
     'verify.code': '6-digit code', 'verify.cta': 'Verify & continue →',
     'verify.resend': 'Resend code',
+    'verify.cooldown.label': 'Resend in {s}s',
+    'verify.cooldown.wait': 'Please wait {s}s before requesting another code',
+    'verify.hint.checkemail': 'Check your email — we sent the 6-digit code there.',
+    'verify.hint.new_code_sent': 'New code sent. Check your email.',
+    'verify.toast.new_code': 'New code issued',
     // provider-pending
     'pending.title': 'Approval pending.',
     'pending.lead': 'Thanks for registering as an operator. An administrator will review your application shortly.',
@@ -1404,6 +1464,7 @@ const I18N = {
     'book.fullname.placeholder': 'Full name',
     'book.total': 'Total', 'book.seats': 'seats', 'book.seat': 'seat',
     'book.lock': 'Lock Seats', 'book.walkin': 'Issue Walk-In',
+    'book.cash.cta': 'Confirm Cash Payment →',
     'book.hold': 'Active Hold',
     'book.expires_in': 'HOLD EXPIRES IN', 'book.expired': 'EXPIRED',
     'book.billing.cta': 'Generate Billing Reference →',
@@ -1430,6 +1491,8 @@ const I18N = {
     'provider.empty.bookings.desc': 'Bookings will appear here once passengers book your trips — including walk-ins.',
     'provider.action.confirm': 'Confirm Payment (Cash)',
     'provider.confirm.prompt': 'Confirm cash payment for booking #{id}? Seats will be marked as booked.',
+    'provider.trips.q': 'Search by origin, destination, trip id…',
+    'provider.bookings.q': 'Search by customer, billing ref, booking id…',
     // add-trip modal
     'addtrip.title': 'Schedule a Trip',
     'addtrip.sub': 'All seats are auto-generated from the fleet layout.',
@@ -1522,6 +1585,11 @@ const I18N = {
     'verify.lead': 'أرسلنا رمزاً مكوّناً من 6 أرقام إلى',
     'verify.code': 'رمز من 6 أرقام', 'verify.cta': '→ التحقق والمتابعة',
     'verify.resend': 'إعادة إرسال الرمز',
+    'verify.cooldown.label': 'إعادة الإرسال خلال {s} ث',
+    'verify.cooldown.wait': 'يرجى الانتظار {s} ث قبل طلب رمز آخر',
+    'verify.hint.checkemail': 'تحقق من بريدك — أرسلنا الرمز المكوّن من 6 أرقام إلى هناك.',
+    'verify.hint.new_code_sent': 'تم إرسال رمز جديد. تحقق من بريدك.',
+    'verify.toast.new_code': 'تم إصدار رمز جديد',
     // provider-pending
     'pending.title': 'بانتظار الموافقة.',
     'pending.lead': 'شكراً لتسجيلك كموظف. سيراجع المدير حسابك قريباً.',
@@ -1558,6 +1626,7 @@ const I18N = {
     'book.fullname.placeholder': 'الاسم الكامل',
     'book.total': 'الإجمالي', 'book.seats': 'مقاعد', 'book.seat': 'مقعد',
     'book.lock': 'حجز المقاعد', 'book.walkin': 'حجز عند المنفذ',
+    'book.cash.cta': '→ تأكيد الدفع نقداً',
     'book.hold': 'حجز نشط',
     'book.expires_in': 'الحجز ينتهي خلال', 'book.expired': 'منتهي',
     'book.billing.cta': '→ إنشاء رقم الفاتورة',
@@ -1584,6 +1653,8 @@ const I18N = {
     'provider.empty.bookings.desc': 'ستظهر الحجوزات هنا فور أن يحجز الركاب رحلاتك — بما فيها حجوزات المنفذ.',
     'provider.action.confirm': 'تأكيد الدفع (نقداً)',
     'provider.confirm.prompt': 'تأكيد الدفع النقدي للحجز #{id}؟ سيتم تثبيت المقاعد.',
+    'provider.trips.q': 'بحث بالمدينة، الوجهة، رقم الرحلة…',
+    'provider.bookings.q': 'بحث بالعميل، رقم الفاتورة، رقم الحجز…',
     // add-trip modal
     'addtrip.title': 'جدولة رحلة',
     'addtrip.sub': 'يتم توليد المقاعد تلقائياً وفق نوع الحافلة.',
@@ -1727,6 +1798,8 @@ const STATE = {
   adminRefreshTimer: null,
   adminBookingsTimer: null,
   awaitingCount: 0,        // count of pending+committed_pending bookings (nav badge)
+  resendCooldownSecs: 0,   // OTP resend cooldown
+  resendTimer: null,
 };
 
 /* ---------- DOM utils ---------- */
@@ -1853,21 +1926,49 @@ function paintChrome() {
   $('#crumb').textContent = crumbs[STATE.screen] || '';
 }
 
-/* ---------- API ---------- */
+/* ---------- API + loading indication ---------- */
+
+let _pendingRequests = 0;
+function _bumpPending(delta) {
+  _pendingRequests = Math.max(0, _pendingRequests + delta);
+  $('#global-loader').classList.toggle('show', _pendingRequests > 0);
+}
+
 async function api(path, opts = {}) {
   const headers = Object.assign(
     { 'Content-Type': 'application/json' },
     STATE.auth?.token ? { 'Authorization': 'Bearer ' + STATE.auth.token } : {},
     opts.headers || {}
   );
-  const res = await fetch(API + path, { ...opts, headers });
-  if (!res.ok) {
-    let detail = '';
-    try { detail = (await res.json()).detail || ''; } catch (_) {}
-    throw new Error(`${res.status} ${res.statusText}${detail ? ' — ' + detail : ''}`);
+  _bumpPending(1);
+  try {
+    const res = await fetch(API + path, { ...opts, headers });
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json()).detail || ''; } catch (_) {}
+      throw new Error(`${res.status} ${res.statusText}${detail ? ' — ' + detail : ''}`);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  } finally {
+    _bumpPending(-1);
   }
-  if (res.status === 204) return null;
-  return res.json();
+}
+
+/* Wraps a button so it shows an inline spinner while `fn` is running.
+ * Prevents multi-click spam (e.g. OTP resend). */
+async function withLoading(button, fn) {
+  if (!button) return fn();
+  const originalHTML = button.innerHTML;
+  const originalDisabled = button.disabled;
+  button.disabled = true;
+  button.innerHTML = `<span class="spinner"></span>`;
+  try {
+    return await fn();
+  } finally {
+    button.innerHTML = originalHTML;
+    button.disabled = originalDisabled;
+  }
 }
 
 /* ---------- Auth ---------- */
@@ -1875,13 +1976,15 @@ async function doSignIn() {
   const email = $('#si-email').value.trim().toLowerCase();
   const password = $('#si-password').value;
   if (!email || !password) return toast('Email and password required', true);
-  try {
-    const r = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-    STATE.auth = { token: r.access_token, user: r.user };
-    STATE.history = [];
-    routeAfterAuth();
-    toast(`Welcome, ${r.user.full_name}`);
-  } catch (e) { toast(e.message, true); }
+  await withLoading($('#sign-in-btn'), async () => {
+    try {
+      const r = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+      STATE.auth = { token: r.access_token, user: r.user };
+      STATE.history = [];
+      routeAfterAuth();
+      toast(`Welcome, ${r.user.full_name}`);
+    } catch (e) { toast(e.message, true); }
+  });
 }
 
 async function doRegister() {
@@ -1895,48 +1998,88 @@ async function doRegister() {
   if (!email)     return toast(t('toast.email_required'), true);
   if (password.length < 6) return toast(t('toast.password_min'), true);
   if (password !== password_confirm) return toast(t('toast.password_mismatch'), true);
-  try {
-    const r = await api('/auth/register', { method: 'POST', body: JSON.stringify({ full_name, email, password, phone_number, role }) });
-    STATE.pendingRegister = { email: r.email, role: r.role };
-    $('#vf-email').textContent = r.email;
-    if (r.dev_otp) {
-      $('#vf-dev-hint').innerHTML = `DEV MODE · code is <code>${r.dev_otp}</code> (auto-prefilled)`;
-      $('#vf-input').value = r.dev_otp;
-    } else {
-      $('#vf-dev-hint').textContent = 'Check your email — we sent the 6-digit code there.';
-      $('#vf-input').value = '';
-    }
-    goto('verify-email');
-    setTimeout(() => $('#vf-input').focus(), 60);
-  } catch (e) { toast(e.message, true); }
+  await withLoading($('#register-btn'), async () => {
+    try {
+      const r = await api('/auth/register', { method: 'POST', body: JSON.stringify({ full_name, email, password, phone_number, role }) });
+      STATE.pendingRegister = { email: r.email, role: r.role };
+      $('#vf-email').textContent = r.email;
+      if (r.dev_otp) {
+        $('#vf-dev-hint').innerHTML = `DEV MODE · code is <code>${r.dev_otp}</code> (auto-prefilled)`;
+        $('#vf-input').value = r.dev_otp;
+      } else {
+        $('#vf-dev-hint').textContent = t('verify.hint.checkemail');
+        $('#vf-input').value = '';
+      }
+      armResendCooldown();
+      goto('verify-email');
+      setTimeout(() => $('#vf-input').focus(), 60);
+    } catch (e) { toast(e.message, true); }
+  });
 }
 
 async function doVerify() {
   const code = $('#vf-input').value.trim();
   if (!/^\d{6}$/.test(code)) return toast('Enter the 6-digit code', true);
   if (!STATE.pendingRegister) { toast('Restart registration', true); return goto('register'); }
-  try {
-    const r = await api('/auth/verify-email', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email, otp_code: code }) });
-    STATE.auth = { token: r.access_token, user: r.user };
-    STATE.pendingRegister = null;
-    STATE.history = [];
-    routeAfterAuth();
-    toast(`Welcome aboard, ${r.user.full_name}`);
-  } catch (e) { toast(e.message, true); }
+  await withLoading($('#verify-btn'), async () => {
+    try {
+      const r = await api('/auth/verify-email', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email, otp_code: code }) });
+      STATE.auth = { token: r.access_token, user: r.user };
+      STATE.pendingRegister = null;
+      STATE.history = [];
+      stopResendCooldown();
+      routeAfterAuth();
+      toast(`Welcome aboard, ${r.user.full_name}`);
+    } catch (e) { toast(e.message, true); }
+  });
 }
 
 async function doResendOtp() {
   if (!STATE.pendingRegister) return;
-  try {
-    const r = await api('/auth/resend-otp', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email }) });
-    if (r.dev_otp) {
-      $('#vf-input').value = r.dev_otp;
-      $('#vf-dev-hint').innerHTML = `New code · <code>${r.dev_otp}</code>`;
-    } else {
-      $('#vf-dev-hint').textContent = 'New code sent. Check your email.';
-    }
-    toast('New code issued');
-  } catch (e) { toast(e.message, true); }
+  // Guard against rapid double-clicks even if the timer hasn't ticked yet.
+  if (STATE.resendCooldownSecs > 0) {
+    return toast(t('verify.cooldown.wait').replace('{s}', STATE.resendCooldownSecs), true);
+  }
+  await withLoading($('#resend-btn'), async () => {
+    try {
+      const r = await api('/auth/resend-otp', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email }) });
+      if (r.dev_otp) {
+        $('#vf-input').value = r.dev_otp;
+        $('#vf-dev-hint').innerHTML = `New code · <code>${r.dev_otp}</code>`;
+      } else {
+        $('#vf-dev-hint').textContent = t('verify.hint.new_code_sent');
+      }
+      armResendCooldown();
+      toast(t('verify.toast.new_code'));
+    } catch (e) { toast(e.message, true); }
+  });
+}
+
+/* ---------- OTP resend cooldown (30s between requests; matches backend) --- */
+function armResendCooldown() {
+  STATE.resendCooldownSecs = 30;
+  paintResendButton();
+  clearInterval(STATE.resendTimer);
+  STATE.resendTimer = setInterval(() => {
+    STATE.resendCooldownSecs = Math.max(0, STATE.resendCooldownSecs - 1);
+    paintResendButton();
+    if (STATE.resendCooldownSecs === 0) clearInterval(STATE.resendTimer);
+  }, 1000);
+}
+function stopResendCooldown() {
+  clearInterval(STATE.resendTimer);
+  STATE.resendCooldownSecs = 0;
+  paintResendButton();
+}
+function paintResendButton() {
+  const btn = $('#resend-btn'); if (!btn) return;
+  if (STATE.resendCooldownSecs > 0) {
+    btn.disabled = true;
+    btn.textContent = t('verify.cooldown.label').replace('{s}', STATE.resendCooldownSecs);
+  } else {
+    btn.disabled = false;
+    btn.textContent = t('verify.resend');
+  }
 }
 
 async function refreshPendingStatus() {
@@ -1988,12 +2131,14 @@ async function doSearch() {
   const origin = $('#search-origin').value.trim();
   const destination = $('#search-destination').value.trim();
   if (!origin || !destination) return toast('Enter both cities', true);
-  try {
-    const params = new URLSearchParams({ origin, destination });
-    const trips = await api('/trips/search?' + params);
-    renderCustomerTrips(trips, origin, destination);
-    goto('customer-trips');
-  } catch (e) { toast(e.message, true); }
+  await withLoading($('#search-btn'), async () => {
+    try {
+      const params = new URLSearchParams({ origin, destination });
+      const trips = await api('/trips/search?' + params);
+      renderCustomerTrips(trips, origin, destination);
+      goto('customer-trips');
+    } catch (e) { toast(e.message, true); }
+  });
 }
 
 function renderCustomerTrips(trips, origin, destination) {
@@ -2131,8 +2276,17 @@ function switchProviderTab(tab) {
 }
 
 async function refreshProviderTrips() {
+  const q = $('#pt-q')?.value.trim() || '';
+  const origin = $('#pt-origin')?.value.trim() || '';
+  const destination = $('#pt-destination')?.value.trim() || '';
+  const time = $('#pt-time')?.value || 'upcoming';
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (origin) params.set('origin', origin);
+  if (destination) params.set('destination', destination);
+  if (time) params.set('time', time);
   try {
-    const trips = await api('/trips/mine');   // <-- only this provider's trips
+    const trips = await api('/trips/mine?' + params);
     $('#pcnt-trips').textContent = trips.length;
     const list = $('#provider-trip-list');
     const empty = $('#provider-trip-empty');
@@ -2140,14 +2294,23 @@ async function refreshProviderTrips() {
     if (!trips.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
     empty.classList.add('hidden'); list.classList.remove('hidden');
     trips.forEach(t => list.appendChild(makeTripCard(t, true)));
-    // Update bookings count quietly too
+    // Sibling tab count (unfiltered) for the badge
     api('/bookings/provider/mine').then(bs => $('#pcnt-bookings').textContent = bs.length).catch(()=>{});
   } catch (e) { toast(e.message, true); }
 }
 
 async function refreshProviderBookings() {
+  const q = $('#pb-q')?.value.trim() || '';
+  const origin = $('#pb-origin')?.value.trim() || '';
+  const destination = $('#pb-destination')?.value.trim() || '';
+  const status = $('#pb-status')?.value || 'any';
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (origin) params.set('origin', origin);
+  if (destination) params.set('destination', destination);
+  if (status) params.set('status', status);
   try {
-    const bookings = await api('/bookings/provider/mine');
+    const bookings = await api('/bookings/provider/mine?' + params);
     $('#pcnt-bookings').textContent = bookings.length;
     const list = $('#provider-bookings-list');
     const empty = $('#provider-bookings-empty');
@@ -2155,7 +2318,6 @@ async function refreshProviderBookings() {
     if (!bookings.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
     empty.classList.add('hidden'); list.classList.remove('hidden');
     bookings.forEach(b => list.appendChild(makeProviderBookingRow(b)));
-    // Also refresh trips count quietly
     api('/trips/mine').then(ts => $('#pcnt-trips').textContent = ts.length).catch(()=>{});
   } catch (e) { toast(e.message, true); }
 }
@@ -2491,14 +2653,16 @@ async function doLock() {
     passengers,
   };
   const endpoint = STATE.bookingFlow === 'provider' ? '/bookings/walkin' : '/bookings/lock';
-  try {
-    const r = await api(endpoint, { method: 'POST', body: JSON.stringify(body) });
-    STATE.currentBooking = r;
-    showBookingPanel(r);
-    STATE.knownVersion = null;
-    refreshAwaitingBadge();
-    toast(`Booking #${r.booking_id} locked`);
-  } catch (e) { toast(e.message, true); }
+  await withLoading($('#lock-btn'), async () => {
+    try {
+      const r = await api(endpoint, { method: 'POST', body: JSON.stringify(body) });
+      STATE.currentBooking = r;
+      showBookingPanel(r);
+      STATE.knownVersion = null;
+      refreshAwaitingBadge();
+      toast(`Booking #${r.booking_id} locked`);
+    } catch (e) { toast(e.message, true); }
+  });
 }
 
 function showBookingPanel(b) {
@@ -2512,6 +2676,25 @@ function showBookingPanel(b) {
   `;
   startCountdown(b.expires_at);
   $('#lock-btn').disabled = true;
+  // Provider flow: surface the one-click cash confirm in the post-lock panel
+  // so operators don't need to navigate to the Bookings tab for the common case.
+  $('#cash-confirm-btn').classList.toggle('hidden', STATE.bookingFlow !== 'provider');
+}
+
+async function doCashConfirm() {
+  if (!STATE.currentBooking) return;
+  await withLoading($('#cash-confirm-btn'), async () => {
+    try {
+      const r = await api(`/bookings/${STATE.currentBooking.booking_id}/provider-confirm`, { method: 'POST' });
+      toast(r.message);
+      // Pull the full ticket for the (now-confirmed) booking and show the modal.
+      const ticket = await api('/bookings/' + STATE.currentBooking.booking_id + '/ticket');
+      renderTicket(ticket, { confirmed: true });
+      $('#ticket-modal').classList.add('show');
+      // Refresh the seat-state stream so the bus repaints those seats as booked.
+      STATE.knownVersion = null;
+    } catch (e) { toast(e.message, true); }
+  });
 }
 
 function startCountdown(expiresIso) {
@@ -2537,16 +2720,19 @@ function startCountdown(expiresIso) {
 
 async function doBilling() {
   if (!STATE.currentBooking) return;
-  try {
-    const ticket = await api('/bookings/intent/billing', {
-      method: 'POST',
-      body: JSON.stringify({ booking_id: STATE.currentBooking.booking_id }),
-    });
-    renderTicket(ticket, { confirmed: false });
-    $('#ticket-modal').classList.add('show');
-    startCountdown(ticket.expires_at);
-    toast('Billing reference issued');
-  } catch (e) { toast(e.message, true); }
+  await withLoading($('#billing-btn'), async () => {
+    try {
+      const ticket = await api('/bookings/intent/billing', {
+        method: 'POST',
+        body: JSON.stringify({ booking_id: STATE.currentBooking.booking_id }),
+      });
+      renderTicket(ticket, { confirmed: false });
+      $('#ticket-modal').classList.add('show');
+      startCountdown(ticket.expires_at);
+      refreshAwaitingBadge();
+      toast('Billing reference issued');
+    } catch (e) { toast(e.message, true); }
+  });
 }
 
 function resetBookingState() {
@@ -2874,6 +3060,7 @@ function wire() {
 
   $('#lock-btn').addEventListener('click', doLock);
   $('#billing-btn').addEventListener('click', doBilling);
+  $('#cash-confirm-btn').addEventListener('click', doCashConfirm);
   $('#restart-flow-btn').addEventListener('click', restartFlow);
 
   $('#t-close').addEventListener('click', closeTicket);
@@ -2902,6 +3089,26 @@ function wire() {
     });
   });
   $('#at-time').addEventListener('change', renderAdminTrips);
+
+  // Provider trips filter strip
+  let providerTripFilterTimer = null;
+  ['#pt-q', '#pt-origin', '#pt-destination'].forEach(sel => {
+    $(sel).addEventListener('input', () => {
+      clearTimeout(providerTripFilterTimer);
+      providerTripFilterTimer = setTimeout(refreshProviderTrips, 280);
+    });
+  });
+  $('#pt-time').addEventListener('change', refreshProviderTrips);
+
+  // Provider bookings filter strip
+  let providerBookingFilterTimer = null;
+  ['#pb-q', '#pb-origin', '#pb-destination'].forEach(sel => {
+    $(sel).addEventListener('input', () => {
+      clearTimeout(providerBookingFilterTimer);
+      providerBookingFilterTimer = setTimeout(refreshProviderBookings, 280);
+    });
+  });
+  $('#pb-status').addEventListener('change', refreshProviderBookings);
 }
 
 /* PWA service worker (no-op on initial fail) */
