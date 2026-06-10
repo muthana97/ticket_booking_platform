@@ -17,7 +17,7 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 ## 🗺️ Endpoint map
 **Auth:** `POST /auth/register` · `POST /auth/verify-email` · `POST /auth/resend-otp` · `POST /auth/login` · `GET /auth/me`
 
-**Trips:** `GET /trips/search` (open) · `GET /trips/mine` (active provider, own trips only) · `POST /trips` (active provider — accepts a `repeat` pattern + `days_of_week` + `end_date`; returns `TripsCreatedResponse` with the list of created trips) · `DELETE /trips/{id}` (active provider, own only)
+**Trips:** `GET /trips/search` (open) · `GET /trips/mine` (active provider, own trips only — accepts `q` / `origin` / `destination` / `time`) · `POST /trips` (active provider — accepts a `repeat` pattern + `days_of_week` + `end_date`; returns `TripsCreatedResponse` with the list of created trips) · `DELETE /trips/{id}` (active provider, own only)
 
 **Bookings:**
 - `POST /bookings/lock` (consumer) · `POST /bookings/walkin` (provider, on own trips only)
@@ -25,7 +25,7 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 - `POST /bookings/{id}/provider-confirm` (active provider on their own trip — one-shot cash confirm for walk-ins; P-PAY-03)
 - `GET /bookings/{id}/ticket` (re-fetch ticket payload, no state mutation)
 - `GET /bookings/me` (customer's own consumer bookings)
-- `GET /bookings/provider/mine` (active provider's bookings, both channels)
+- `GET /bookings/provider/mine` (active provider's bookings, both channels — accepts `q` / `origin` / `destination` / `status`)
 - `GET /bookings/trips/{id}/seats/stream` (long-polling, version-stamped)
 - `GET /bookings/trips/{id}/manifest`
 
@@ -50,7 +50,8 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 5. **Provider data isolation** — server-side gate on cross-provider operations.
 6. **Admin oversight** — provider approval, trip oversight, all-bookings search/filter, manual payment confirmation.
 7. **Future-only departures + recurring schedules** — `POST /trips` accepts a `repeat` pattern (`once` / `daily` / `weekly` / `custom`) plus `end_date` and `days_of_week`. Past departures are rejected with 400. Capped at 60 trips / 90-day horizon per request.
-8. **Provider cash confirmation** (P-PAY-03) — `POST /bookings/{id}/provider-confirm` lets an active provider one-shot cash-confirm a walk-in on their own trip: status `pending|committed_pending` → `confirmed`, `payment_method='cash'`, seats `locked` → `booked`. Cross-provider attempts return 403.
+8. **Provider cash confirmation** (P-PAY-03) — `POST /bookings/{id}/provider-confirm` lets an active provider one-shot cash-confirm a walk-in on their own trip: status `pending|committed_pending` → `confirmed`, `payment_method='cash'`, seats `locked` → `booked`. A billing reference + `bill_generated_at` is minted on confirmation if absent, so cash bookings still get a printable ticket + QR. Cross-provider attempts return 403. Surfaced two ways in the UI: inline `Confirm Cash Payment` CTA on the post-lock booking panel **and** per-row button on the Provider Bookings tab.
+9. **Email-OTP rate limit** (NFR-08 / ERR-04) — `_generate_email_otp` enforces 30-second cooldown between requests for the same email + max 3 codes per email per hour. Returns 429 with a human-readable detail. Frontend mirrors the cooldown via a live `Resend in 23s` countdown on the resend button.
 
 ## 🌐 Localization (EN / Arabic)
 - Topbar carries an `EN / عربي` toggle (Fraunces 14px, prominent border). Choice persists in `localStorage` (`taz.lang`).
@@ -114,6 +115,11 @@ The repo ships a `render.yaml` blueprint at the root. Dockerfile lives at repo r
 Frontend ships PWA bits: `manifest.json` + `sw.js` at `/app/`. Users can "Add to Home Screen" for an installable, fullscreen app on iOS/Android — same codebase. When native shell is needed, wrap with **Capacitor** for App Store distribution (no UI rebuild).
 
 ## 🐛 Recent fixes (most recent first)
+- **Loading indication everywhere**: a `withLoading()` helper disables async-bound buttons (sign in, register, verify, resend, search, lock, billing, cash confirm) and shows an inline spinner during the request. Plus a thin terracotta progress bar at the top of the viewport that pulses while any request is in flight. Was added because users were spamming OTP resends thinking the server hadn't responded.
+- **OTP rate limit + cooldown UI**: 30-second cooldown between resends + 3-per-hour cap on the backend; resend button shows a live `Resend in 23s` countdown and is disabled until it expires.
+- **Cash confirm on the booking screen**: provider walk-in flow now exposes the green `Confirm Cash Payment` CTA directly on the post-lock panel alongside `Generate Billing Reference`. One click confirms + opens the ticket modal with the "Payment Confirmed" stamp.
+- **Provider tab filters**: both `My Trips` and `My Bookings` gain admin-style filter strips (`q` / origin / destination / time-or-status), 280ms debounced. Backend `/trips/mine` and `/bookings/provider/mine` accept the matching query params.
+- **`confirm_payment` mints billing ref when missing**: cash walk-ins that skipped billing intent now get a `BOK-XXXX-XX` ref + `bill_generated_at` at confirmation time, so every confirmed booking is QR-printable.
 - **Top-bar UX polish**: nav links now render as bigger Fraunces serif chips with terracotta accent on active. "My Tickets" carries a count badge for pending / committed_pending bookings (refreshed on login + after every lock/billing). Language toggle scaled up. Awkward "PASSENGER · SEARCH" subhead hidden on all main landing screens — crumb only shows on sub-screens.
 - **Register password confirmation**: extra "Confirm password" field with client-side mismatch check and translated toast.
 - **Admin trip filtering**: Trips tab now has a filter strip matching Bookings — `q` / origin / destination / time (upcoming|past|all), 280ms debounced.
