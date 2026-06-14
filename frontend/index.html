@@ -14,8 +14,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@300..600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 
-<!-- QR code (~10KB, no deps) for TKT-04 -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<!-- QR code (~20KB, no deps) for TKT-04. Bundled locally so the QR still
+     renders inside Capacitor on cellular or first-launch (no CDN dependency).
+     Relative path resolves correctly on both contexts: web (served at /app/)
+     and Capacitor webview (served at capacitor://localhost/). -->
+<script src="vendor/qrcode.min.js"></script>
 
 <style>
   :root {
@@ -1442,6 +1445,7 @@ const I18N = {
     'toast.email_required': 'Email required',
     'toast.password_min': 'Password must be at least 6 characters',
     'toast.password_mismatch': "Passwords don't match",
+    'toast.waking_server': 'Waking up the server… this can take up to 30 seconds on the first request.',
     // search
     'search.title': 'Where are we going today?',
     'search.lead': 'Sudan Intercity Coach Network',
@@ -1604,6 +1608,7 @@ const I18N = {
     'toast.email_required': 'البريد الإلكتروني مطلوب',
     'toast.password_min': 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
     'toast.password_mismatch': 'كلمتا المرور غير متطابقتين',
+    'toast.waking_server': 'جارٍ تشغيل الخادم… قد يستغرق ذلك حتى 30 ثانية في أول طلب.',
     // search
     'search.title': 'إلى أين نسافر اليوم؟',
     'search.lead': 'شبكة السودان للنقل بين المدن',
@@ -1775,9 +1780,63 @@ function refreshDynamicScreen() {
   if (s === 'customer-book' || s === 'provider-book') refreshSelectionUI();
 }
 
-const API = location.origin;
+/* API base URL resolver.
+ *
+ * Web: hits the same origin that served the page (current behavior).
+ * Capacitor (iOS/Android): the webview origin is capacitor://localhost or
+ *   https://localhost, so we must point at the real deployed backend.
+ *
+ * Override order:
+ *   1. window.__TAZ_API__   — set this before this script runs (e.g. injected
+ *      by the Capacitor build, or a <script> tag in the head) to flip between
+ *      prod / staging without rebuilding.
+ *   2. TAZ_API_NATIVE_DEFAULT — baked-in fallback for native builds. Update
+ *      this string to your Render URL before submitting to the stores.
+ *   3. location.origin — web fallback.
+ */
+const TAZ_API_NATIVE_DEFAULT = 'https://tazkirati-web.onrender.com';
+function resolveApiBase() {
+  if (typeof window !== 'undefined' && window.__TAZ_API__) return window.__TAZ_API__;
+  const proto = location.protocol || '';
+  const isNative = proto.startsWith('capacitor') || proto.startsWith('ionic')
+    || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  return isNative ? TAZ_API_NATIVE_DEFAULT : location.origin;
+}
+const API = resolveApiBase();
 const POLL_INTERVAL_MS = 200;
 const ADMIN_REFRESH_MS = 4000;
+
+/* Native-only persistent auth storage.
+ *
+ * Web keeps the existing in-memory STATE.auth (session resets on refresh —
+ * known limitation, tracked separately). Inside Capacitor we persist via the
+ * @capacitor/preferences plugin so the user stays signed in across app kills.
+ * The plugin is accessed via the global Capacitor.Plugins.Preferences so this
+ * file stays buildless — no bundler required. */
+const tazStore = {
+  KEY: 'taz.auth',
+  isNative() {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  },
+  prefs() {
+    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences;
+  },
+  async save(auth) {
+    if (!this.isNative() || !this.prefs() || !auth) return;
+    try { await this.prefs().set({ key: this.KEY, value: JSON.stringify(auth) }); } catch (_) { /* best-effort */ }
+  },
+  async load() {
+    if (!this.isNative() || !this.prefs()) return null;
+    try {
+      const { value } = await this.prefs().get({ key: this.KEY });
+      return value ? JSON.parse(value) : null;
+    } catch (_) { return null; }
+  },
+  async clear() {
+    if (!this.isNative() || !this.prefs()) return;
+    try { await this.prefs().remove({ key: this.KEY }); } catch (_) { /* best-effort */ }
+  },
+};
 
 const STATE = {
   screen: 'welcome',
@@ -1790,6 +1849,7 @@ const STATE = {
   knownVersion: null,
   pollAbort: null,
   loopRunning: false,
+  streamPaused: false,  // long-poll pauses when the Capacitor app is backgrounded
   currentBooking: null,
   countdownTimer: null,
   history: [],
@@ -1934,6 +1994,13 @@ function _bumpPending(delta) {
   $('#global-loader').classList.toggle('show', _pendingRequests > 0);
 }
 
+/* Cold-start hint: Render's free tier sleeps after 15 min and takes ~30s to
+ * wake on the next request. Without feedback that looks like a dead app. We
+ * fire a single toast 2.5s into the first non-stream request, then disable
+ * the hint for the rest of the session. */
+let _serverWoken = false;
+let _coldStartTimer = null;
+
 async function api(path, opts = {}) {
   const headers = Object.assign(
     { 'Content-Type': 'application/json' },
@@ -1941,8 +2008,19 @@ async function api(path, opts = {}) {
     opts.headers || {}
   );
   _bumpPending(1);
+  // Skip long-poll endpoints — they're expected to take seconds and would
+  // otherwise trigger the "waking up" hint on every poll.
+  const skipColdHint = path.includes('/seats/stream');
+  if (!_serverWoken && !skipColdHint && _coldStartTimer === null) {
+    _coldStartTimer = setTimeout(() => {
+      if (!_serverWoken) toast(t('toast.waking_server'));
+      _coldStartTimer = null;
+    }, 2500);
+  }
   try {
     const res = await fetch(API + path, { ...opts, headers });
+    _serverWoken = true;
+    if (_coldStartTimer !== null) { clearTimeout(_coldStartTimer); _coldStartTimer = null; }
     if (!res.ok) {
       let detail = '';
       try { detail = (await res.json()).detail || ''; } catch (_) {}
@@ -1980,6 +2058,7 @@ async function doSignIn() {
     try {
       const r = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
       STATE.auth = { token: r.access_token, user: r.user };
+      tazStore.save(STATE.auth);
       STATE.history = [];
       routeAfterAuth();
       toast(`Welcome, ${r.user.full_name}`);
@@ -2025,6 +2104,7 @@ async function doVerify() {
     try {
       const r = await api('/auth/verify-email', { method: 'POST', body: JSON.stringify({ email: STATE.pendingRegister.email, otp_code: code }) });
       STATE.auth = { token: r.access_token, user: r.user };
+      tazStore.save(STATE.auth);
       STATE.pendingRegister = null;
       STATE.history = [];
       stopResendCooldown();
@@ -2086,6 +2166,7 @@ async function refreshPendingStatus() {
   try {
     const r = await api('/auth/me');
     STATE.auth.user = r;
+    tazStore.save(STATE.auth);
     if (r.status === 'active') {
       toast('Approved! Welcome aboard.');
       routeAfterAuth();
@@ -2115,6 +2196,7 @@ function routeAfterAuth() {
 
 function logout() {
   STATE.auth = null;
+  tazStore.clear();
   STATE.pendingRegister = null;
   STATE.history = [];
   stopStreamLoop(); stopAdminRefresh();
@@ -2625,6 +2707,11 @@ async function startStreamLoop() {
   STATE.loopRunning = true;
   await refreshSeatMatrix({ immediate: true });
   while (STATE.loopRunning && STATE.activeTrip) {
+    if (STATE.streamPaused) {
+      // Backgrounded — idle in a long sleep, don't burn battery long-polling.
+      await new Promise(r => setTimeout(r, 1000));
+      continue;
+    }
     await refreshSeatMatrix();
     await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
   }
@@ -2633,7 +2720,18 @@ function stopStreamLoop() {
   STATE.loopRunning = false;
   STATE.pollAbort?.abort?.();
   STATE.activeTrip = null;
+  STATE.streamPaused = false;
   clearInterval(STATE.countdownTimer);
+}
+/* Pause without tearing down activeTrip — used when Capacitor backgrounds the
+ * app. The loop keeps iterating but skips the network call until resumed. */
+function pauseStreamLoop() {
+  STATE.streamPaused = true;
+  STATE.pollAbort?.abort?.();
+}
+function resumeStreamLoop() {
+  STATE.streamPaused = false;
+  // If the loop was stopped (e.g. user left the screen) don't auto-restart it.
 }
 
 /* ---------- Lock + billing ---------- */
@@ -3111,8 +3209,12 @@ function wire() {
   $('#pb-status').addEventListener('change', refreshProviderBookings);
 }
 
-/* PWA service worker (no-op on initial fail) */
-if ('serviceWorker' in navigator) {
+/* PWA service worker (no-op on initial fail).
+ * Skipped inside Capacitor — the native wrap doesn't benefit from SW caching
+ * and an active SW can cause routing oddities when paths differ between web
+ * (/app/...) and native (root). */
+if ('serviceWorker' in navigator
+    && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/app/sw.js').catch(() => { /* ignore */ });
   });
@@ -3145,6 +3247,41 @@ document.addEventListener('click', (e) => {
 
 wire();
 applyLanguage();
+
+/* Native-only: rehydrate persisted auth on cold launch and route the user back
+ * to their last role surface. Token is verified against /auth/me so a revoked
+ * or expired token clears itself instead of poisoning the UI. */
+(async () => {
+  if (!tazStore.isNative()) return;
+  const saved = await tazStore.load();
+  if (!saved || !saved.token || !saved.user) return;
+  STATE.auth = saved;
+  try {
+    const me = await api('/auth/me');
+    STATE.auth.user = me;
+    tazStore.save(STATE.auth);
+    routeAfterAuth();
+    if (me.role === 'customer') refreshAwaitingBadge();
+  } catch (_) {
+    STATE.auth = null;
+    await tazStore.clear();
+  }
+})();
+
+/* Native-only: pause the seat-stream long-poll when the OS backgrounds the
+ * app (battery + cellular savings) and resume on foreground. The Capacitor
+ * App plugin emits these events via Plugins.App.addListener. */
+(function wireAppLifecycle() {
+  const Cap = window.Capacitor;
+  if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;
+  const App = Cap.Plugins && Cap.Plugins.App;
+  if (!App || typeof App.addListener !== 'function') return;
+  App.addListener('appStateChange', (s) => {
+    if (!s) return;
+    if (s.isActive === false) pauseStreamLoop();
+    else if (s.isActive === true) resumeStreamLoop();
+  });
+})();
 paintChrome();
 showDemoHelperIfRequested();
 </script>

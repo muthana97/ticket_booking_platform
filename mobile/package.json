@@ -1,0 +1,29 @@
+{
+  "name": "tazkirati-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor wrap of the Tazkirati web portal. webDir points at ../frontend so the native shell stays in sync with the web build.",
+  "scripts": {
+    "sync": "cap sync",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android",
+    "build:ios": "cap sync ios",
+    "build:android": "cap sync android",
+    "assets": "capacitor-assets generate"
+  },
+  "dependencies": {
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/ios": "^6.1.0",
+    "@capacitor/network": "^6.0.0",
+    "@capacitor/preferences": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.0",
+    "typescript": "^5.4.0"
+  }
+}

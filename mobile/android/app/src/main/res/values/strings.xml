@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tazkirati</string>
+    <string name="title_activity_main">Tazkirati</string>
+    <string name="package_name">app.tazkirati</string>
+    <string name="custom_url_scheme">app.tazkirati</string>
+</resources>

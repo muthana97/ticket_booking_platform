@@ -6,6 +6,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 current_dir = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(current_dir, "..", ".env")
 
+# Capacitor webview schemes — iOS uses capacitor://localhost, Android uses
+# https://localhost (or http://localhost in dev). ionic://localhost covers
+# older Ionic shells if the app is ever rebranded.
+_CAPACITOR_ORIGINS = (
+    "capacitor://localhost",
+    "https://localhost",
+    "http://localhost",
+    "ionic://localhost",
+)
+
 
 class Settings(BaseSettings):
     # ----- App -----
@@ -30,6 +40,8 @@ class Settings(BaseSettings):
     # ----- CORS -----
     # Comma-separated list of allowed origins. Use "*" in dev / set explicit
     # origins in production (e.g. "https://tazkirati.onrender.com").
+    # Capacitor webview schemes are always appended when a strict list is set,
+    # so the iOS + Android wrappers can hit the API.
     CORS_ALLOWED_ORIGINS: str = "*"
 
     # ----- SMTP (optional — if unset we fall back to console-logged OTPs) -----
@@ -46,7 +58,13 @@ class Settings(BaseSettings):
         raw = self.CORS_ALLOWED_ORIGINS.strip()
         if raw == "*" or not raw:
             return ["*"]
-        return [o.strip() for o in raw.split(",") if o.strip()]
+        configured = [o.strip() for o in raw.split(",") if o.strip()]
+        # Always allow Capacitor webview origins so native apps can reach the API
+        # without the operator having to remember to list them.
+        for scheme in _CAPACITOR_ORIGINS:
+            if scheme not in configured:
+                configured.append(scheme)
+        return configured
 
 
 settings = Settings()
