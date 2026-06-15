@@ -12,10 +12,12 @@
     "assets": "capacitor-assets generate"
   },
   "dependencies": {
-    "@capacitor/app": "^6.0.0",
     "@capacitor/android": "^6.1.0",
+    "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.1.0",
+    "@capacitor/haptics": "^6.0.3",
     "@capacitor/ios": "^6.1.0",
+    "@capacitor/keyboard": "^6.0.4",
     "@capacitor/network": "^6.0.0",
     "@capacitor/preferences": "^6.0.0",
     "@capacitor/splash-screen": "^6.0.0",

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Tazkirati — Sudan Intercity Coach</title>
 
 <link rel="manifest" href="/app/manifest.json">
@@ -74,6 +74,8 @@
   html[lang="ar"] .status-pill,
   html[lang="ar"] .ticket-foot .total,
   html[lang="ar"] .ticket-head .bok .code,
+  html[lang="ar"] #email-tag,
+  html[lang="ar"] .email,
   html[lang="ar"] code {
     direction: ltr;
     unicode-bidi: isolate;
@@ -113,6 +115,8 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     min-height: 100vh;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
   }
   body::before {
     content: '';
@@ -206,6 +210,247 @@
   .topbar .session button.signout:hover { background: currentColor; color: var(--paper); }
   .topbar.role-provider .session button.signout:hover { color: var(--ink); }
   .topbar.role-admin    .session button.signout:hover { color: var(--admin); }
+
+  /* Phone breakpoint — top bar = compact identity row, nav moves to a fixed
+     bottom tab bar (native iOS/Android pattern). */
+  @media (max-width: 640px) {
+    .topbar {
+      padding: 10px 14px;
+      gap: 10px;
+    }
+    .topbar .brand { font-size: 18px; line-height: 1; }
+    .topbar .brand small { display: none; }
+
+    .topbar-right { gap: 8px; flex-wrap: nowrap; }
+    .lang-toggle button { padding: 5px 9px; font-size: 12px; }
+
+    .topbar .session { gap: 8px; }
+    .topbar .session .badge { display: none; }
+    .topbar .session #email-tag {
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    .topbar .session button.signout {
+      padding: 5px 9px;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+    }
+
+    /* Customer nav becomes a fixed bottom tab bar. */
+    .topbar-nav:not([hidden]) {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 50;
+      flex: none;
+      justify-content: space-around;
+      gap: 0;
+      background: var(--paper);
+      border-top: 1px solid var(--rule);
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+    }
+    .topbar-nav a.nav-link {
+      flex: 1;
+      justify-content: center;
+      font-size: 15px;
+      padding: 10px 6px;
+      border: 0;
+      color: var(--ink-soft);
+      letter-spacing: 0;
+    }
+    .topbar-nav a.nav-link:hover { transform: none; border-color: transparent; }
+    .topbar-nav a.nav-link.active {
+      background: transparent;
+      color: var(--terra);
+      border: 0;
+      font-weight: 800;
+    }
+    .topbar-nav a.nav-link .count { background: var(--terra); color: var(--bone); }
+
+    /* Reserve canvas bottom padding on every screen that shows a fixed
+       bottom tab bar. Customer's topbar-nav is visible across ALL customer
+       screens (search results, booking flow, my tickets), so scope it by
+       role. Provider/admin tab bars only appear on their home screen, so
+       scope those by screen. */
+    .topbar.role-customer ~ main.canvas,
+    body[data-screen="provider-home"] main.canvas,
+    body[data-screen="admin-home"] main.canvas {
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+
+    .subhead { padding: 8px 14px; flex-wrap: wrap; }
+    .screen { padding: 20px 14px; }
+
+    /* ── Shrink display headings + cards ── */
+    .auth-stage { margin: 24px auto; }
+    .auth-stage h1 { font-size: 32px; line-height: 1; }
+    .auth-stage .lead { font-size: 13px; }
+    .welcome-card { padding: 16px; }
+    .welcome-card .ttl { font-size: 19px; }
+    .welcome-card .dsc { font-size: 12px; }
+    .role-pick label .rp-title { font-size: 17px; }
+    .pending-card h3 { font-size: 22px; }
+
+    .search-stage h2, .panel h2,
+    .provider-stage h2, .admin-stage h2 { font-size: 26px; margin-bottom: 10px; }
+    .my-tickets-stage h2 { font-size: 26px; }
+    .my-tickets-stage .lead { margin-bottom: 14px; }
+    .mt-section h3 { font-size: 17px; }
+
+    .trip-card { padding: 12px; gap: 10px; margin-bottom: 0; }
+    .trip-list { gap: 10px; }
+    .trip-card .meta-row { gap: 8px; margin-bottom: 4px; }
+    .trip-card .chip-id { font-size: 9px; padding: 2px 6px; letter-spacing: 0.14em; }
+    .trip-card .route { font-size: 17px; line-height: 1; }
+    .trip-card .route .arrow { margin: 0 6px; }
+    .trip-card .stats { font-size: 10px; margin-top: 4px; letter-spacing: 0.04em; }
+    .trip-card .price { font-size: 18px; line-height: 1; }
+    .trip-card .price small { font-size: 8px; margin-top: 2px; letter-spacing: 0.16em; }
+    .trip-card-actions { padding-top: 10px; margin-top: 2px; gap: 8px; }
+    .btn-inline { padding: 7px 11px; font-size: 10px; letter-spacing: 0.14em; }
+    .empty-state { margin: 32px auto; }
+    .empty-state h3 { font-size: 22px; }
+
+    .book-head .route { font-size: 26px; }
+    .summary-row .v { font-size: 19px; }
+    .booking-id { font-size: 19px; }
+
+    /* ── Modal + ticket card ── */
+    .modal-bg { padding: 12px; }
+    .modal-card { padding: 18px; }
+    .modal-card h3 { font-size: 22px; }
+    .layout-pick label .l-num { font-size: 20px; }
+
+    .admin-row { padding: 12px 14px; gap: 10px; margin-bottom: 8px; }
+    .admin-row .name { font-size: 17px; }
+    .admin-row .sub { font-size: 10px; }
+
+    /* Booking rows (admin Bookings tab + provider My Bookings) — shrink to match
+       the customer trip-card density. */
+    .booking-row { padding: 12px 14px; gap: 10px; margin-bottom: 8px; }
+    .booking-row .route-line { font-size: 17px; }
+    .booking-row .route-line .arrow { margin: 0 6px; }
+    .booking-row .info-line { font-size: 10px; line-height: 1.55; }
+    .booking-row .actions { gap: 6px; }
+
+    /* Admin + provider in-page tab strips become fixed bottom tab bars
+       (matches the customer topbar-nav pattern for native feel). */
+    .admin-stage .tab-bar.admin-tabs,
+    .provider-stage .tab-bar.provider-tabs {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 50;
+      margin: 0;
+      padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+      background: var(--paper);
+      border-top: 1px solid var(--rule);
+      border-bottom: 0;
+      justify-content: space-around;
+      gap: 0;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+    }
+    .admin-stage .tab-bar button,
+    .provider-stage .tab-bar button {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      border-bottom: 0;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      line-height: 1.15;
+    }
+    .admin-stage .tab-bar button.active,
+    .provider-stage .tab-bar button.active {
+      border-bottom: 0;
+      font-weight: 700;
+    }
+    .admin-stage .tab-bar button .count,
+    .provider-stage .tab-bar button .count {
+      margin-left: 0;
+      padding: 1px 6px;
+      font-size: 9px;
+    }
+    .admin-stage .provider-head,
+    .provider-stage .provider-head { margin-bottom: 4px; }
+
+    /* Ticket head: 2-column grid (brand + booking ref). QR is hoisted out
+       and absolutely positioned next to the cities row, per design ask. */
+    .ticket-head {
+      padding: 12px 14px 10px;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+    .ticket-head .brand-sm { font-size: 20px; }
+    .ticket-head .sub { font-size: 9px; margin-top: 4px; }
+    .ticket-head .bok .lbl { font-size: 8px; }
+    .ticket-head .bok .code { font-size: 13px; padding: 4px 8px; }
+
+    /* QR floats over the route row, on the right side. */
+    .ticket-head .qr-block {
+      position: absolute;
+      top: 70px;
+      right: 14px;
+      z-index: 3;
+      text-align: center;
+      padding-top: 0;
+    }
+    .ticket-head .qr-block .qr-lbl { font-size: 7px; margin-bottom: 3px; }
+    .ticket-head .qr-block .qr-frame canvas,
+    .ticket-head .qr-block .qr-frame img { width: 78px; height: 78px; }
+
+    .delivered-banner { padding: 6px 14px; font-size: 10px; }
+
+    /* Cities stack vertically on the LEFT; right side reserved for the QR. */
+    .ticket-route {
+      padding: 14px 14px;
+      grid-template-columns: 1fr;
+      gap: 4px;
+      padding-right: 110px;
+    }
+    .ticket .ticket-route .city,
+    .ticket .ticket-route .city.right { font-size: 16px; text-align: left; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ticket .ticket-route .city .meta { margin-top: 2px; font-size: 9px; white-space: normal; }
+    /* Replace the rotated → with a clean downward chevron — no transform games. */
+    .ticket-route .arrow { font-size: 0; line-height: 1; margin: 2px 0; transform: none; width: auto; }
+    .ticket-route .arrow::before {
+      content: '↓';
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      color: var(--terra-dim);
+      display: inline-block;
+    }
+    .ticket-grid { padding: 14px 16px; gap: 12px; grid-template-columns: 1fr 1fr; }
+    .ticket-grid .cell .v { font-size: 14px; }
+    .ticket-grid .cell .v.mono { font-size: 12px; }
+    .pax-list .name { font-size: 14px; }
+    .ticket-foot { padding: 14px 16px; gap: 12px; }
+    .ticket-foot .total { font-size: 22px; }
+    .ticket-actions { padding: 0 16px 16px; }
+
+    /* Welcome screen has minimal content — center it vertically so the page
+       fills the viewport without any scrollable overflow (no wobble).
+       Capacitor's contentInset:'always' already handles the safe area, so we
+       only subtract the mobile topbar height (~58px). */
+    body[data-screen="welcome"] main.canvas {
+      display: flex;
+      flex-direction: column;
+    }
+    body[data-screen="welcome"] #screen-welcome {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    body[data-screen="welcome"] #screen-welcome .auth-stage { margin: 0; width: 100%; }
+  }
 
   .subhead {
     padding: 10px 32px;
@@ -656,6 +901,24 @@
   .field-block input:focus { border-color: var(--nile); background: var(--bone); }
   .field-block.full { grid-column: 1 / -1; }
 
+  /* Native city dropdowns — render as system picker on iOS/Android, custom chevron on web. */
+  .field-block select, .auth-stage select {
+    width: 100%;
+    background: var(--paper); border: 1.5px solid var(--rule);
+    padding: 10px 36px 10px 12px;
+    font-family: 'Hanken Grotesk', sans-serif; font-size: 15px;
+    color: var(--ink); outline: none;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%232D261B' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 12px 8px;
+    cursor: pointer;
+  }
+  .auth-stage select { padding: 13px 38px 13px 16px; font-size: 17px; background: var(--bone); }
+  .field-block select:focus, .auth-stage select:focus { border-color: var(--nile); background: var(--bone); }
+  .field-block select:invalid, .auth-stage select:invalid { color: var(--ink-soft); }
+
   .layout-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .layout-pick label {
     cursor: pointer; border: 1.5px solid var(--rule);
@@ -1025,14 +1288,9 @@
           Sudan Intercity Coach Network
         </div>
         <div class="row">
-          <div class="field-block"><label data-i18n="search.from">From</label><input type="text" id="search-origin" data-i18n-placeholder="search.placeholder.from" placeholder="e.g. Khartoum" list="city-list" /></div>
-          <div class="field-block"><label data-i18n="search.to">To</label><input type="text" id="search-destination" data-i18n-placeholder="search.placeholder.to" placeholder="e.g. Port Sudan" list="city-list" /></div>
+          <div class="field-block"><label data-i18n="search.from">From</label><select class="city-select" id="search-origin" required></select></div>
+          <div class="field-block"><label data-i18n="search.to">To</label><select class="city-select" id="search-destination" required></select></div>
         </div>
-        <datalist id="city-list">
-          <option value="Khartoum"><option value="Port Sudan"><option value="Atbara">
-          <option value="Wadi Halfa"><option value="Kassala"><option value="Nyala">
-          <option value="El Obeid"><option value="Dongola">
-        </datalist>
         <button class="cta" id="search-btn" style="margin-top: 16px;" data-i18n="search.cta">Find Trips →</button>
       </div>
     </section>
@@ -1166,8 +1424,8 @@
           <div data-ptab-panel="trips" class="active">
             <div class="filter-strip">
               <input type="text" id="pt-q" data-i18n-placeholder="provider.trips.q" placeholder="Search by origin, destination, trip id…" />
-              <input type="text" id="pt-origin" data-i18n-placeholder="admin.bookings.origin" placeholder="Origin" list="city-list" />
-              <input type="text" id="pt-destination" data-i18n-placeholder="admin.bookings.destination" placeholder="Destination" list="city-list" />
+              <select class="city-select" id="pt-origin" data-optional="1"></select>
+              <select class="city-select" id="pt-destination" data-optional="1"></select>
               <select id="pt-time">
                 <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
                 <option value="past" data-i18n="admin.trips.time.past">Past</option>
@@ -1183,8 +1441,8 @@
           <div data-ptab-panel="bookings">
             <div class="filter-strip">
               <input type="text" id="pb-q" data-i18n-placeholder="provider.bookings.q" placeholder="Search by customer, billing ref, booking id…" />
-              <input type="text" id="pb-origin" data-i18n-placeholder="admin.bookings.origin" placeholder="Origin" list="city-list" />
-              <input type="text" id="pb-destination" data-i18n-placeholder="admin.bookings.destination" placeholder="Destination" list="city-list" />
+              <select class="city-select" id="pb-origin" data-optional="1"></select>
+              <select class="city-select" id="pb-destination" data-optional="1"></select>
               <select id="pb-status">
                 <option value="any" data-i18n="status.filter.any">Any status</option>
                 <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
@@ -1229,8 +1487,8 @@
           <div data-tab-panel="trips">
             <div class="filter-strip">
               <input type="text" id="at-q" data-i18n-placeholder="admin.trips.q" placeholder="Search by origin, destination, provider, trip id…" />
-              <input type="text" id="at-origin" data-i18n-placeholder="admin.bookings.origin" placeholder="Origin (e.g. Khartoum)" list="city-list" />
-              <input type="text" id="at-destination" data-i18n-placeholder="admin.bookings.destination" placeholder="Destination" list="city-list" />
+              <select class="city-select" id="at-origin" data-optional="1"></select>
+              <select class="city-select" id="at-destination" data-optional="1"></select>
               <select id="at-time">
                 <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
                 <option value="past" data-i18n="admin.trips.time.past">Past</option>
@@ -1246,8 +1504,8 @@
           <div data-tab-panel="bookings">
             <div class="filter-strip">
               <input type="text" id="ab-q" data-i18n-placeholder="admin.bookings.q" placeholder="Search by customer name, passenger, billing ref, booking id…" />
-              <input type="text" id="ab-origin" data-i18n-placeholder="admin.bookings.origin" placeholder="Origin (e.g. Khartoum)" list="city-list" />
-              <input type="text" id="ab-destination" data-i18n-placeholder="admin.bookings.destination" placeholder="Destination" list="city-list" />
+              <select class="city-select" id="ab-origin" data-optional="1"></select>
+              <select class="city-select" id="ab-destination" data-optional="1"></select>
               <select id="ab-status">
                 <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
                 <option value="committed_pending" data-i18n="status.filter.committed_pending">Awaiting Payment</option>
@@ -1282,8 +1540,8 @@
     <h3 data-i18n="addtrip.title">Schedule a Trip</h3>
     <div class="modal-sub" data-i18n="addtrip.sub">All seats are auto-generated from the fleet layout.</div>
     <div class="modal-row">
-      <div class="field-block"><label data-i18n="search.from">From</label><input type="text" id="nt-origin" placeholder="Khartoum" list="city-list" /></div>
-      <div class="field-block"><label data-i18n="search.to">To</label><input type="text" id="nt-destination" placeholder="Port Sudan" list="city-list" /></div>
+      <div class="field-block"><label data-i18n="search.from">From</label><select class="city-select" id="nt-origin" required></select></div>
+      <div class="field-block"><label data-i18n="search.to">To</label><select class="city-select" id="nt-destination" required></select></div>
     </div>
     <div class="modal-row">
       <div class="field-block full">
@@ -1451,6 +1709,7 @@ const I18N = {
     'search.lead': 'Sudan Intercity Coach Network',
     'search.from': 'From', 'search.to': 'To', 'search.cta': 'Find Trips →',
     'search.placeholder.from': 'e.g. Khartoum', 'search.placeholder.to': 'e.g. Port Sudan',
+    'city.select': 'Select a city', 'city.any': 'All cities',
     // customer trips list
     'trips.tap': 'Tap a trip to pick your seats.',
     'trips.empty.title': 'No trips found.',
@@ -1614,6 +1873,7 @@ const I18N = {
     'search.lead': 'شبكة السودان للنقل بين المدن',
     'search.from': 'من', 'search.to': 'إلى', 'search.cta': '→ البحث عن رحلات',
     'search.placeholder.from': 'مثلاً الخرطوم', 'search.placeholder.to': 'مثلاً بورتسودان',
+    'city.select': 'اختر مدينة', 'city.any': 'كل المدن',
     // customer trips list
     'trips.tap': 'اضغط على رحلة لاختيار المقاعد.',
     'trips.empty.title': 'لا توجد رحلات.',
@@ -1873,7 +2133,42 @@ function toast(msg, isErr = false) {
   el.classList.add('show');
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.remove('show'), 2800);
+  hapticNotify(isErr ? 'ERROR' : 'SUCCESS');
 }
+
+/* ---------- Native polish: haptics + status bar ----------
+ * Safe no-ops on web. Single global tap listener gives every button a light
+ * impact; .cta primary buttons get a medium impact. Toasts get notification
+ * haptics (SUCCESS / ERROR). Status bar style updates per role chrome. */
+function hapticTap(style) {
+  const H = window.Capacitor?.Plugins?.Haptics;
+  if (H?.impact) H.impact({ style: style || 'LIGHT' });
+}
+function hapticNotify(type) {
+  const H = window.Capacitor?.Plugins?.Haptics;
+  if (H?.notification) H.notification({ type: type || 'SUCCESS' });
+}
+function applyStatusBarStyle(role) {
+  const SB = window.Capacitor?.Plugins?.StatusBar;
+  if (!SB?.setStyle) return;
+  // LIGHT = light text (used on dark backgrounds — provider/admin chrome).
+  // DARK  = dark text (used on light/paper backgrounds — customer + logged-out).
+  const lightText = role === 'provider' || role === 'admin';
+  SB.setStyle({ style: lightText ? 'LIGHT' : 'DARK' });
+  if (SB.setBackgroundColor) {
+    SB.setBackgroundColor({ color: lightText ? '#0F2A47' : '#F2EAD3' });
+  }
+}
+(function wireGlobalHaptics() {
+  const Cap = window.Capacitor;
+  if (!Cap?.isNativePlatform?.()) return;
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button, a.nav-link, label.welcome-card, .role-pick label, .layout-pick label, .repeat-pick label, .dow-pick label');
+    if (!t || t.disabled) return;
+    if (t.classList.contains('cta')) hapticTap('MEDIUM');
+    else hapticTap('LIGHT');
+  }, true);
+})();
 // Live indicator removed from the subhead; keep this as a no-op so the
 // long-poll loop's existing setConn() calls don't break.
 function setConn(_ok) { /* no-op */ }
@@ -1966,6 +2261,7 @@ function paintChrome() {
     $('#role-badge').textContent = '';
     $('#email-tag').textContent = '';
   }
+  applyStatusBarStyle(auth?.user?.role);
 
   // Hide the subhead on screens where the back button isn't useful (main
   // landing screens for each role + the auth flow). Only sub-screens that
@@ -3099,6 +3395,29 @@ function stopAdminRefresh() {
 }
 
 /* ==========================================================================
+ *  City dropdowns — fixed list of Sudanese intercity hubs. Edit CITIES below
+ *  to add/remove cities. Selects with class="city-select" are populated on
+ *  wire() and re-translated as language changes (empty option only).
+ * ========================================================================== */
+const CITIES = [
+  'Atbara', 'Damazin', 'Dongola', 'El Fasher', 'El Obeid',
+  'Gedaref', 'Geneina', 'Kadugli', 'Kassala', 'Khartoum',
+  'Kosti', 'Nyala', 'Port Sudan', 'Sennar', 'Wad Madani', 'Wadi Halfa',
+];
+
+function populateCitySelects() {
+  document.querySelectorAll('select.city-select').forEach(sel => {
+    if (sel.dataset.populated === '1') return;
+    const optional = sel.dataset.optional === '1';
+    const key = optional ? 'city.any' : 'city.select';
+    const fallback = optional ? 'All cities' : 'Select a city';
+    const head = `<option value="" data-i18n="${key}"${optional ? '' : ' disabled selected'}>${fallback}</option>`;
+    sel.innerHTML = head + CITIES.map(c => `<option value="${c}">${c}</option>`).join('');
+    sel.dataset.populated = '1';
+  });
+}
+
+/* ==========================================================================
  *  Wire-up
  * ========================================================================== */
 function wire() {
@@ -3137,8 +3456,7 @@ function wire() {
   });
 
   $('#search-btn').addEventListener('click', doSearch);
-  $('#search-origin').addEventListener('keydown', e => { if (e.key === 'Enter') $('#search-destination').focus(); });
-  $('#search-destination').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  populateCitySelects();
 
   $('#add-trip-open-btn').addEventListener('click', openAddTrip);
   $('#add-trip-cancel').addEventListener('click', closeAddTrip);
