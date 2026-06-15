@@ -12,7 +12,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@300..600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@300..600&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <!-- QR code (~20KB, no deps) for TKT-04. Bundled locally so the QR still
      renders inside Capacitor on cellular or first-launch (no CDN dependency).
@@ -45,9 +45,11 @@
      `display:` rule (otherwise topbar .session, .subhead, etc. stay visible). */
   [hidden] { display: none !important; }
 
-  /* Arabic mode: switch to a serif that has proper Arabic glyphs and flip RTL */
+  /* Arabic mode: use Cairo (modern sans-serif, the most common Arabic UI font
+     in mobile apps) instead of Amiri (which is a calligraphic serif and hard
+     to read at small sizes). Flip the page to RTL via dir=rtl in JS. */
   html[lang="ar"] body {
-    font-family: 'Amiri', 'Hanken Grotesk', serif;
+    font-family: 'Cairo', 'Hanken Grotesk', sans-serif;
   }
   html[lang="ar"] .ff-display,
   html[lang="ar"] .brand,
@@ -60,8 +62,84 @@
   html[lang="ar"] .trip-card .route,
   html[lang="ar"] .role-card .title,
   html[lang="ar"] .booking-row .route-line,
-  html[lang="ar"] .mt-section h3 {
-    font-family: 'Amiri', serif;
+  html[lang="ar"] .mt-section h3,
+  html[lang="ar"] .ticket-route .city,
+  html[lang="ar"] .ticket-head .brand-sm {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 800;
+  }
+  /* Arabic glyphs have generous ascenders/descenders — line-height: 1 (the
+     default for big Fraunces headings) clips top-line characters. Give
+     them breathing room. */
+  html[lang="ar"] .auth-stage h1,
+  html[lang="ar"] .search-stage h2,
+  html[lang="ar"] .provider-stage h2,
+  html[lang="ar"] .admin-stage h2,
+  html[lang="ar"] .my-tickets-stage h2,
+  html[lang="ar"] .book-head .route,
+  html[lang="ar"] .trip-card .route,
+  html[lang="ar"] .booking-row .route-line,
+  html[lang="ar"] .mt-section h3,
+  html[lang="ar"] .ticket-route .city,
+  html[lang="ar"] .ticket-head .brand-sm,
+  html[lang="ar"] .brand,
+  html[lang="ar"] .modal-card h3,
+  html[lang="ar"] .pending-card h3,
+  html[lang="ar"] .welcome-card .ttl,
+  html[lang="ar"] .empty-state h3 { line-height: 1.45; }
+  /* Bump common Arabic UI text +2px for legibility (Cairo at the same px as
+     Fraunces reads visually smaller in Arabic mode). */
+  html[lang="ar"] .cta { font-size: 16px; letter-spacing: 0; }
+  html[lang="ar"] .btn-inline { font-size: 13px; letter-spacing: 0.06em; }
+  html[lang="ar"] .topbar-nav a.nav-link { font-size: 19px; }
+  html[lang="ar"] .auth-stage input,
+  html[lang="ar"] .auth-stage select { font-size: 19px; }
+  html[lang="ar"] .field-block input,
+  html[lang="ar"] .field-block select { font-size: 17px; }
+  html[lang="ar"] .filter-strip input,
+  html[lang="ar"] .filter-strip select { font-size: 15px; }
+  html[lang="ar"] .auth-stage label,
+  html[lang="ar"] .field-block label { font-size: 12px; }
+  html[lang="ar"] .auth-stage .lead,
+  html[lang="ar"] .my-tickets-stage .lead { font-size: 15px; }
+  html[lang="ar"] .topbar .session button.signout { font-size: 11px; }
+  html[lang="ar"] .tab-bar button { font-size: 13px; }
+
+  /* All UI chrome that uses JetBrains Mono or Hanken Grotesk falls back to
+     the system default Arabic font for non-Latin characters — which is what
+     was leaking through on labels like "FROM"/"TO". Force Cairo here too. */
+  html[lang="ar"] .auth-stage label,
+  html[lang="ar"] .field-block label,
+  html[lang="ar"] .subhead,
+  html[lang="ar"] .lead,
+  html[lang="ar"] .welcome-card .lbl,
+  html[lang="ar"] .welcome-card .dsc,
+  html[lang="ar"] .role-card .desc,
+  html[lang="ar"] .tab-bar button,
+  html[lang="ar"] .btn-inline,
+  html[lang="ar"] .topbar .session,
+  html[lang="ar"] .topbar .session button.signout,
+  html[lang="ar"] .empty-state p,
+  html[lang="ar"] .trip-card .stats,
+  html[lang="ar"] .status-pill,
+  html[lang="ar"] .pending-card .meta,
+  html[lang="ar"] .filter-strip input,
+  html[lang="ar"] .filter-strip select,
+  html[lang="ar"] .modal-card .modal-sub {
+    font-family: 'Cairo', sans-serif;
+    letter-spacing: 0;
+    text-transform: none;  /* Arabic has no upper/lower case */
+  }
+  /* Bump the labels specifically — they were tiny + condensed before. */
+  html[lang="ar"] .auth-stage label,
+  html[lang="ar"] .field-block label { font-size: 14px; font-weight: 600; }
+
+  /* RTL arrow direction — `→` is a fixed glyph that doesn't auto-flip in
+     RTL text. Mirror it for Arabic mode. Down-arrows (`↓`, `↑`) are
+     horizontally symmetric so this transform is a no-op for them. */
+  html[lang="ar"] .arrow {
+    display: inline-block;
+    transform: scaleX(-1);
   }
   /* Force the seat-map + price + monospace numerics to stay LTR even in RTL */
   html[lang="ar"] .ff-mono,
@@ -297,6 +375,10 @@
 
     .search-stage h2, .panel h2,
     .provider-stage h2, .admin-stage h2 { font-size: 26px; margin-bottom: 10px; }
+    /* The trip-results screen header reuses .provider-stage h2; the rest of
+       that screen needs the smaller compact heading specifically so origin →
+       destination fits on one line. */
+    #trips-route-title { font-size: 20px; font-weight: 700; line-height: 1.1; }
     .my-tickets-stage h2 { font-size: 26px; }
     .my-tickets-stage .lead { margin-bottom: 14px; }
     .mt-section h3 { font-size: 17px; }
@@ -329,12 +411,14 @@
     .admin-row .name { font-size: 17px; }
     .admin-row .sub { font-size: 10px; }
 
-    /* Booking rows (admin Bookings tab + provider My Bookings) — shrink to match
-       the customer trip-card density. */
-    .booking-row { padding: 12px 14px; gap: 10px; margin-bottom: 8px; }
-    .booking-row .route-line { font-size: 17px; }
-    .booking-row .route-line .arrow { margin: 0 6px; }
-    .booking-row .info-line { font-size: 10px; line-height: 1.55; }
+    /* Booking rows (admin Bookings tab + provider My Bookings + customer
+       My Tickets) — compact density to match the customer trip cards. */
+    .booking-row { padding: 10px 12px; gap: 8px; margin-bottom: 6px; }
+    .booking-row .main { gap: 4px; }
+    .booking-row .meta-row { gap: 6px; }
+    .booking-row .route-line { font-size: 15px; line-height: 1.15; }
+    .booking-row .route-line .arrow { margin: 0 5px; }
+    .booking-row .info-line { font-size: 10px; line-height: 1.45; }
     .booking-row .actions { gap: 6px; }
 
     /* Admin + provider in-page tab strips become fixed bottom tab bars
@@ -407,24 +491,45 @@
 
     .delivered-banner { padding: 6px 14px; font-size: 10px; }
 
-    /* Cities stack vertically on the LEFT; right side reserved for the QR. */
+    /* Cities side-by-side on the LEFT with directional arrow between them.
+       Right side reserved for the QR (positioned absolutely from .ticket-head). */
     .ticket-route {
       padding: 14px 14px;
-      grid-template-columns: 1fr;
-      gap: 4px;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
       padding-right: 110px;
+      align-items: center;
     }
-    .ticket .ticket-route .city,
-    .ticket .ticket-route .city.right { font-size: 16px; text-align: left; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ticket .ticket-route .city .meta { margin-top: 2px; font-size: 9px; white-space: normal; }
-    /* Replace the rotated → with a clean downward chevron — no transform games. */
-    .ticket-route .arrow { font-size: 0; line-height: 1; margin: 2px 0; transform: none; width: auto; }
-    .ticket-route .arrow::before {
-      content: '↓';
-      font-family: 'Fraunces', serif;
+    .ticket .ticket-route .city { font-size: 17px; text-align: left; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .ticket .ticket-route .city.right { font-size: 17px; text-align: right; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    /* Hide the per-city meta on mobile; show the combined centered line below instead. */
+    .ticket .ticket-route .city .meta { display: none; }
+    .ticket .ticket-route-meta {
+      display: block;
+      grid-column: 1 / -1;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--ink-soft);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+    html[lang="ar"] .ticket .ticket-route-meta {
+      font-family: 'Cairo', sans-serif;
+      letter-spacing: 0;
+      text-transform: none;
+      font-size: 12px;
+    }
+    /* Horizontal arrow between cities. The global Arabic rule flips it via
+       transform: scaleX(-1), so it becomes ← in RTL automatically. */
+    .ticket .ticket-route .arrow {
       font-size: 16px;
       color: var(--terra-dim);
+      margin: 0;
+      width: auto;
       display: inline-block;
+      text-align: center;
     }
     .ticket-grid { padding: 14px 16px; gap: 12px; grid-template-columns: 1fr 1fr; }
     .ticket-grid .cell .v { font-size: 14px; }
@@ -1056,6 +1161,9 @@
   .ticket-route .city.right { text-align: right; }
   .ticket-route .city .meta { font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 10px; letter-spacing: 0.2em; color: var(--ink-soft); text-transform: uppercase; margin-top: 6px; display: block; }
   .ticket-route .arrow { font-family: 'Fraunces', serif; font-size: 32px; color: var(--terra-dim); }
+  /* Mobile-only centered merged meta line. Hidden by default so desktop
+     keeps its existing "meta under each city" layout. */
+  .ticket-route-meta { display: none; }
 
   .ticket-grid {
     padding: 22px 36px;
@@ -1620,6 +1728,7 @@
       <div class="city"><span id="t-origin">—</span><span class="meta" id="t-departure">—</span></div>
       <div class="arrow">→</div>
       <div class="city right"><span id="t-destination">—</span><span class="meta" id="t-duration">—</span></div>
+      <div class="ticket-route-meta" id="t-route-meta"></div>
     </div>
     <div class="ticket-grid">
       <div class="cell"><div class="k" data-i18n="ticket.bookingid">Booking ID</div><div class="v mono" id="t-booking-id">—</div></div>
@@ -2007,6 +2116,9 @@ function applyLanguage() {
   });
   localStorage.setItem('taz.lang', LANG);
 
+  // Re-populate city dropdowns so the option labels flip to the new language
+  // while preserving any selection the user already made.
+  if (typeof populateCitySelects === 'function') populateCitySelects();
   // Re-run paintChrome so the dynamic topbar nav + role badge re-translate
   if (typeof paintChrome === 'function') paintChrome();
   // Re-render any currently-visible list view that mixes static + dynamic strings
@@ -2036,6 +2148,12 @@ function refreshDynamicScreen() {
   if (s === 'customer-my-tickets') refreshMyTickets();
   if (s === 'provider-home')       refreshProviderTab();
   if (s === 'admin-home')          refreshAdminTab();
+  // Customer trip search results: re-render with cached search data so cities
+  // re-translate when the user toggles language mid-browse.
+  if (s === 'customer-trips' && STATE.lastCustomerTripSearch) {
+    const { trips, origin, destination } = STATE.lastCustomerTripSearch;
+    renderCustomerTrips(trips, origin, destination);
+  }
   // Booking screen text labels are already i18n-tagged; the bus stays as-is.
   if (s === 'customer-book' || s === 'provider-book') refreshSelectionUI();
 }
@@ -2520,8 +2638,9 @@ async function doSearch() {
 }
 
 function renderCustomerTrips(trips, origin, destination) {
+  STATE.lastCustomerTripSearch = { trips, origin, destination };
   $('#trips-route-title').innerHTML =
-    `${escapeHtml(origin)} <span class="arrow" style="color: var(--terra-dim);">→</span> ${escapeHtml(destination)}`;
+    `${escapeHtml(cityLabel(origin))} <span class="arrow" style="color: var(--terra-dim);">→</span> ${escapeHtml(cityLabel(destination))}`;
   const list = $('#customer-trip-list');
   const empty = $('#customer-trip-empty');
   list.innerHTML = '';
@@ -2544,7 +2663,7 @@ function makeTripCard(trip, asProvider) {
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(trip.departure_time)}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${trip.duration || '12H'}</span>
       </div>
-      <div class="route">${escapeHtml(trip.origin)} <span class="arrow">→</span> ${escapeHtml(trip.destination)}</div>
+      <div class="route">${escapeHtml(cityLabel(trip.origin))} <span class="arrow">→</span> ${escapeHtml(cityLabel(trip.destination))}</div>
       <div class="stats"><b>${trip.available_seats_count}</b>/${trip.total_seats} ${t('trips.available_of')} · <b>${trip.total_seats}-${t('trips.layout')}</b></div>
     </div>
     <div class="price">${fmtMoney(trip.price)}<small>${t('trips.sdg_per_seat')}</small></div>
@@ -2622,7 +2741,7 @@ function makeMyTicketRow(b, kind) {
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
       </div>
-      <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
+      <div class="route-line">${escapeHtml(cityLabel(b.origin))} <span class="arrow">→</span> ${escapeHtml(cityLabel(b.destination))}</div>
       <div class="info-line">${t('ticket.seatmap').toUpperCase()} <b>${b.seats.join(', ') || '—'}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}</div>
     </div>
     <div class="actions">${action}</div>
@@ -2728,7 +2847,7 @@ function makeProviderBookingRow(b) {
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
       </div>
-      <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
+      <div class="route-line">${escapeHtml(cityLabel(b.origin))} <span class="arrow">→</span> ${escapeHtml(cityLabel(b.destination))}</div>
       <div class="info-line">
         ${escapeHtml(b.customer_name || '—')} · ${escapeHtml(b.customer_email || '—')}<br>
         ${t('ticket.seatmap').toUpperCase()} <b>${b.seats.join(', ') || '—'}</b> · <b>${b.passenger_count}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
@@ -2857,7 +2976,7 @@ function openBooking(trip, asProvider) {
   STATE.currentBooking = null;
   $('#booking-panel').classList.add('hidden');
   $('#book-route').innerHTML =
-    `${escapeHtml(trip.origin)} <span class="arrow">→</span> ${escapeHtml(trip.destination)}`;
+    `${escapeHtml(cityLabel(trip.origin))} <span class="arrow">→</span> ${escapeHtml(cityLabel(trip.destination))}`;
   $('#book-meta').innerHTML = `
     TRIP <b>#${trip.trip_id}</b><br>
     ${fmtTime(trip.departure_time)}<br>
@@ -3142,10 +3261,13 @@ function restartFlow() { resetBookingState(); STATE.knownVersion = null; refresh
 /* ---------- Ticket modal + QR ---------- */
 function renderTicket(ticket, { confirmed }) {
   $('#t-bok').textContent = ticket.billing_reference || '—';
-  $('#t-origin').textContent = ticket.trip.origin;
-  $('#t-destination').textContent = ticket.trip.destination;
+  $('#t-origin').textContent = cityLabel(ticket.trip.origin);
+  $('#t-destination').textContent = cityLabel(ticket.trip.destination);
   $('#t-departure').textContent = t('driver.dep') + ' ' + fmtTime(ticket.trip.departure_time);
   $('#t-duration').textContent = (ticket.trip.duration || '12H') + ' · ' + t('driver.route');
+  $('#t-route-meta').textContent =
+    t('driver.dep') + ' ' + fmtTime(ticket.trip.departure_time) +
+    ' · ' + (ticket.trip.duration || '12H') + ' ' + t('driver.route');
   $('#t-booking-id').textContent = '#' + ticket.booking_id;
   $('#t-channel').textContent = STATE.bookingFlow === 'provider' ? tChannel('walkin') : tChannel('online');
   $('#t-status').textContent = tStatus(ticket.booking_status);
@@ -3287,7 +3409,7 @@ async function renderAdminTrips() {
           <span class="chip-id">Trip #${trip.trip_id}</span>
           <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em;">${fmtTime(trip.departure_time)}</span>
         </div>
-        <div class="route">${escapeHtml(trip.origin)} <span class="arrow">→</span> ${escapeHtml(trip.destination)}</div>
+        <div class="route">${escapeHtml(cityLabel(trip.origin))} <span class="arrow">→</span> ${escapeHtml(cityLabel(trip.destination))}</div>
         <div class="stats"><b>${trip.available_seats_count}</b>/${trip.total_seats} ${t('trips.available_of')} · <b>${trip.total_seats}-${t('trips.layout')}</b></div>
       </div>
       <div class="price">${fmtMoney(trip.price)}<small>${t('trips.sdg_per_seat')}</small></div>
@@ -3336,7 +3458,7 @@ function makeAdminBookingRow(b) {
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
       </div>
-      <div class="route-line">${escapeHtml(b.origin)} <span class="arrow">→</span> ${escapeHtml(b.destination)}</div>
+      <div class="route-line">${escapeHtml(cityLabel(b.origin))} <span class="arrow">→</span> ${escapeHtml(cityLabel(b.destination))}</div>
       <div class="info-line">
         ${escapeHtml(b.customer_name || '—')} · ${escapeHtml(b.customer_email || '—')}<br>
         ${escapeHtml(b.provider_name || '#'+b.provider_id)}<br>
@@ -3405,14 +3527,42 @@ const CITIES = [
   'Kosti', 'Nyala', 'Port Sudan', 'Sennar', 'Wad Madani', 'Wadi Halfa',
 ];
 
+/* Arabic display names for each city. The <option value=> stays English so
+ * the backend (which treats route.origin/destination as plain strings) keeps
+ * working regardless of UI language. Only the visible label flips. */
+const CITIES_AR = {
+  'Atbara':     'عطبرة',
+  'Damazin':    'الدمازين',
+  'Dongola':    'دنقلا',
+  'El Fasher':  'الفاشر',
+  'El Obeid':   'الأبيض',
+  'Gedaref':    'القضارف',
+  'Geneina':    'الجنينة',
+  'Kadugli':    'كادقلي',
+  'Kassala':    'كسلا',
+  'Khartoum':   'الخرطوم',
+  'Kosti':      'كوستي',
+  'Nyala':      'نيالا',
+  'Port Sudan': 'بورتسودان',
+  'Sennar':     'سنار',
+  'Wad Madani': 'ود مدني',
+  'Wadi Halfa': 'وادي حلفا',
+};
+
+function cityLabel(en) {
+  return (typeof LANG !== 'undefined' && LANG === 'ar' && CITIES_AR[en]) ? CITIES_AR[en] : en;
+}
+
 function populateCitySelects() {
   document.querySelectorAll('select.city-select').forEach(sel => {
-    if (sel.dataset.populated === '1') return;
+    const prevValue = sel.value;
     const optional = sel.dataset.optional === '1';
     const key = optional ? 'city.any' : 'city.select';
     const fallback = optional ? 'All cities' : 'Select a city';
-    const head = `<option value="" data-i18n="${key}"${optional ? '' : ' disabled selected'}>${fallback}</option>`;
-    sel.innerHTML = head + CITIES.map(c => `<option value="${c}">${c}</option>`).join('');
+    const headText = (typeof t === 'function') ? t(key) : fallback;
+    const head = `<option value="" data-i18n="${key}"${optional ? '' : ' disabled' + (prevValue ? '' : ' selected')}>${headText}</option>`;
+    sel.innerHTML = head + CITIES.map(c => `<option value="${c}">${cityLabel(c)}</option>`).join('');
+    if (prevValue) sel.value = prevValue;
     sel.dataset.populated = '1';
   });
 }
