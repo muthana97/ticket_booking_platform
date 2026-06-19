@@ -192,9 +192,9 @@
     font-family: 'Hanken Grotesk', sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    min-height: 100vh;
-    overflow-x: hidden;
-    overscroll-behavior-y: none;
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: clip;
   }
   body::before {
     content: '';
@@ -209,7 +209,7 @@
   .ff-mono    { font-family: 'JetBrains Mono', monospace; }
 
   /* ───── Shell / topbar ───── */
-  .shell { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+  .shell { position: relative; z-index: 1; min-height: 100dvh; display: flex; flex-direction: column; }
   .topbar {
     border-bottom: 1px solid var(--rule);
     padding: 14px 32px;
@@ -3748,6 +3748,14 @@ applyLanguage();
     if (!s) return;
     if (s.isActive === false) pauseStreamLoop();
     else if (s.isActive === true) resumeStreamLoop();
+  });
+  // Android hardware/gesture back button. iOS never fires this event.
+  // Order: close any open modal → pop in-app history → exit app at root.
+  App.addListener('backButton', () => {
+    const openModal = document.querySelector('.modal-bg.show');
+    if (openModal) { openModal.classList.remove('show'); return; }
+    if (STATE.history && STATE.history.length > 0) { back(); return; }
+    if (typeof App.exitApp === 'function') App.exitApp();
   });
 })();
 paintChrome();
