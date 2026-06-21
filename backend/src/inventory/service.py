@@ -35,6 +35,7 @@ def decorate_trip_row(db: Session, trip: models.Trip) -> dict:
         "trip_id": trip.id,
         "provider_id": trip.provider_id or 0,
         "provider_name": provider_name,
+        "route_id": trip.route_id,
         "origin": trip.route.origin,
         "destination": trip.route.destination,
         "departure_time": trip.departure_time,

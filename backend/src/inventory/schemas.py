@@ -11,6 +11,7 @@ class TripSearchResponse(BaseModel):
     trip_id: int
     provider_id: int
     provider_name: Optional[str] = None
+    route_id: Optional[int] = None
     origin: str
     destination: str
     departure_time: datetime
