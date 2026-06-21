@@ -3650,7 +3650,7 @@ function switchAdminTab(tab) {
 async function refreshAdminSettings() {
   if (STATE.auth?.user.role !== 'admin') return;
   try {
-    const data = await api('GET', '/admin/commissions');
+    const data = await api('/admin/commissions');
     renderGlobalCommission(data.global);
     renderOverrideList(data.overrides || []);
   } catch (e) { toast(e.message, true); }
@@ -3687,7 +3687,7 @@ function applyConditionalRows() {
 
 async function populateProviderSelect(selectedId) {
   const sel = $('#cov-provider');
-  const list = await api('GET', '/admin/providers?status=active');
+  const list = await api('/admin/providers?status=active');
   sel.innerHTML = `<option value="">${t('commission.modal.placeholder.select')}</option>` +
     list.map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${escapeHtml(p.full_name)}</option>`).join('');
 }
@@ -3697,7 +3697,7 @@ async function populateRouteSelect(_providerId, selectedId) {
   // existing trips, because backend allows pre-setting a rate.
   const sel = $('#cov-route');
   try {
-    const trips = await api('GET', '/admin/trips?time=all');
+    const trips = await api('/admin/trips?time=all');
     const seen = new Map();
     trips.forEach(tr => {
       if (tr.route_id) seen.set(tr.route_id, `${tr.origin} → ${tr.destination}`);
@@ -3712,7 +3712,7 @@ async function populateTripSelect(providerId, selectedId) {
   const sel = $('#cov-trip');
   if (!providerId) { sel.innerHTML = ''; return; }
   try {
-    const trips = await api('GET', `/admin/trips?provider_id=${providerId}&time=upcoming`);
+    const trips = await api(`/admin/trips?provider_id=${providerId}&time=upcoming`);
     sel.innerHTML = `<option value="">${t('commission.modal.placeholder.select')}</option>` +
       trips.map(tr => {
         const label = `Trip #${tr.trip_id} · ${tr.origin} → ${tr.destination} · ${fmtTime(tr.departure_time)}`;
@@ -3722,15 +3722,16 @@ async function populateTripSelect(providerId, selectedId) {
 }
 
 function renderGlobalCommission(g) {
+  // Form is always visible. Empty state is just a one-line hint above it.
   const empty = $('#commission-global-empty');
   const form  = $('#commission-global-form');
+  form.classList.remove('hidden');
   if (!g) {
     empty.classList.remove('hidden');
-    form.classList.add('hidden');
+    $('#commission-global-value').value = '';
     return;
   }
   empty.classList.add('hidden');
-  form.classList.remove('hidden');
   $$('#commission-global-kind label').forEach(l => {
     l.classList.toggle('active', l.dataset.kind === g.rate_kind);
     const inp = l.querySelector('input');
@@ -4046,12 +4047,6 @@ function wire() {
     });
   });
 
-  // First-time entry: clicking the empty-state reveals the form.
-  $('#commission-global-empty')?.addEventListener('click', () => {
-    $('#commission-global-empty').classList.add('hidden');
-    $('#commission-global-form').classList.remove('hidden');
-  });
-
   // Save → PUT /admin/commissions/global
   $('#commission-global-save')?.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -4062,8 +4057,10 @@ function wire() {
       return toast(t('commission.modal.field.rate_value') + ' ?', true);
     }
     try {
-      await api('PUT', '/admin/commissions/global',
-                { rate_kind: kind, rate_value: value });
+      await api('/admin/commissions/global', {
+        method: 'PUT',
+        body: JSON.stringify({ rate_kind: kind, rate_value: value }),
+      });
       toast(t('commission.saved'));
       refreshAdminSettings();
     } catch (err) { toast(err.message, true); }
@@ -4099,21 +4096,27 @@ function wire() {
     }
     try {
       if (_covEditingId) {
-        await api('PATCH', `/admin/commissions/overrides/${_covEditingId}`,
-                  { rate_kind: kind, rate_value: value });
+        await api(`/admin/commissions/overrides/${_covEditingId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ rate_kind: kind, rate_value: value }),
+        });
       } else {
-        const body = {
+        const payload = {
           scope, rate_kind: kind, rate_value: value,
           provider_id: parseInt($('#cov-provider').value),
         };
-        if (scope === 'provider_route') body.route_id = parseInt($('#cov-route').value);
-        if (scope === 'trip')           body.trip_id  = parseInt($('#cov-trip').value);
-        await api('POST', '/admin/commissions/overrides', body);
+        if (scope === 'provider_route') payload.route_id = parseInt($('#cov-route').value);
+        if (scope === 'trip')           payload.trip_id  = parseInt($('#cov-trip').value);
+        await api('/admin/commissions/overrides', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
       }
       $('#commission-override-modal').classList.remove('show');
       refreshAdminSettings();
     } catch (err) {
-      if (err.status === 409) toast(t('commission.modal.error.dup'), true);
+      // api() throws Error with message starting "409 Conflict — …" on dupe
+      if (err.message?.startsWith('409')) toast(t('commission.modal.error.dup'), true);
       else toast(err.message, true);
     }
   });
@@ -4124,14 +4127,14 @@ function wire() {
     const delBtn  = e.target.closest('button.del');
     if (editBtn) {
       const id = parseInt(editBtn.dataset.id);
-      const data = await api('GET', '/admin/commissions');
+      const data = await api('/admin/commissions');
       const row = (data.overrides || []).find(r => r.id === id);
       if (row) openOverrideModal(row);
     }
     if (delBtn) {
       if (!confirm(t('commission.overrides.confirm_delete'))) return;
       try {
-        await api('DELETE', `/admin/commissions/overrides/${delBtn.dataset.id}`);
+        await api(`/admin/commissions/overrides/${delBtn.dataset.id}`, { method: 'DELETE' });
         refreshAdminSettings();
       } catch (err) { toast(err.message, true); }
     }
