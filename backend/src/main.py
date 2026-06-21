@@ -11,9 +11,13 @@ from .auth.router import router as auth_router
 from .booking.router import router as booking_router
 from .booking.tasks import cleanup_expired_bookings # <--- Import the task
 from .admin.router import router as admin_router
+from .finance.router import router as finance_router
 
-# Ensure tables are created (Standard SQLAlchemy sync way)
-Base.metadata.create_all(bind=engine)
+def _ensure_schema():
+    """Create tables on the configured engine. Lifted out of module scope so
+    importing `src.main` doesn't open a Postgres connection (matters for
+    tests that swap the engine via dependency overrides)."""
+    Base.metadata.create_all(bind=engine)
 
 
 def _migrate_if_needed():
@@ -98,6 +102,7 @@ def _bootstrap_if_empty():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # STARTUP
+    _ensure_schema()
     _migrate_if_needed()
     _bootstrap_if_empty()
     reaper_task = asyncio.create_task(cleanup_expired_bookings())
@@ -128,6 +133,7 @@ app.include_router(inventory_router)
 app.include_router(auth_router)
 app.include_router(booking_router)
 app.include_router(admin_router)
+app.include_router(finance_router)
 
 @app.get("/")
 def health_check():

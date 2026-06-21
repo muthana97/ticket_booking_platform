@@ -1,16 +1,20 @@
-"""Shared pytest fixtures. Tests use an in-memory SQLite DB and create
-all tables fresh per test session — never touches the dev Postgres."""
+"""Shared pytest fixtures. Each test gets a fresh in-memory SQLite DB so
+isolation is guaranteed without savepoint gymnastics. The client fixture
+shares the same session as `db` so seed-then-request flows see the same data.
+"""
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def engine():
     eng = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
     from src.database import Base
     import src.auth.models  # noqa: F401
@@ -18,35 +22,32 @@ def engine():
     import src.booking.models  # noqa: F401
     import src.finance.models  # noqa: F401
     Base.metadata.create_all(bind=eng)
-    return eng
+    yield eng
+    eng.dispose()
 
 
 @pytest.fixture
 def db(engine):
-    connection = engine.connect()
-    trans = connection.begin()
-    Session = sessionmaker(bind=connection)
+    Session = sessionmaker(bind=engine)
     session = Session()
     try:
         yield session
     finally:
         session.close()
-        trans.rollback()
-        connection.close()
 
 
 @pytest.fixture
-def client(engine):
+def client(db):
+    """FastAPI test client whose get_db dependency yields the SAME session
+    as the `db` fixture, so seed-then-request flows see the same data."""
     from src.database import get_db
     from src.main import app
-    Session = sessionmaker(bind=engine)
 
     def _get_db_override():
-        db = Session()
         try:
             yield db
         finally:
-            db.close()
+            pass
 
     app.dependency_overrides[get_db] = _get_db_override
     yield TestClient(app)
@@ -96,4 +97,4 @@ def auth_header(client, admin_user):
         "password": "Test#2026",
     })
     assert r.status_code == 200, r.text
-    return {"Authorization": f"Bearer {r.json()['token']}"}
+    return {"Authorization": f"Bearer {r.json()['access_token']}"}
