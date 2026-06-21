@@ -4035,7 +4035,10 @@ function wire() {
   $('#pending-refresh').addEventListener('click', refreshPendingStatus);
 
   $('#signout-btn').addEventListener('click', logout);
-  $('#settings-btn')?.addEventListener('click', () => goto('admin-settings'));
+  $('#settings-btn')?.addEventListener('click', () => {
+    goto('admin-settings');
+    refreshAdminSettings();
+  });
 
   // Global commission — radio toggle highlight
   $$('#commission-global-kind label').forEach(l => {
