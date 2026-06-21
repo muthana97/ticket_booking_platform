@@ -36,7 +36,11 @@ class Booking(Base):
     commission_amount = Column(Float, nullable=True)
     commission_rate_kind = Column(String, nullable=True)
     commission_rate_value = Column(Float, nullable=True)
-    commission_rule_id = Column(Integer, ForeignKey("commission_rules.id"), nullable=True)
+    commission_rule_id = Column(
+        Integer,
+        ForeignKey("commission_rules.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     passengers = relationship("Passenger", back_populates="booking", cascade="all, delete-orphan")
 

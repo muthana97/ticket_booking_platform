@@ -80,8 +80,20 @@ def test_trip_beats_everything(db, trip):
 
 
 def test_other_provider_rules_ignored(db, trip):
+    """A rule for a DIFFERENT real provider must not win for our trip."""
+    from src.auth.models import User
+    from src.auth.utils import hash_password
+    other = User(
+        email="other-provider@tazkirati.app",
+        full_name="Other Provider",
+        password_hash=hash_password("Test#2026"),
+        role="provider", status="active", email_verified=True,
+    )
+    db.add(other)
+    db.commit()
+    db.refresh(other)
     db.add_all([
-        _mk("provider", provider_id=trip.provider_id + 999, v=8.0),
+        _mk("provider", provider_id=other.id, v=8.0),
         _mk("global", v=10.0),
     ])
     db.commit()

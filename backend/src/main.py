@@ -34,9 +34,30 @@ def _migrate_if_needed():
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rate_value FLOAT",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rule_id INTEGER REFERENCES commission_rules(id)",
     ]
+    # The original FK above lacks ON DELETE SET NULL — drop + re-add so admins
+    # can remove a rule even after it's been snapshotted onto a booking. The
+    # historic rate_kind / rate_value / amount stay intact; only the pointer
+    # is nulled.
+    refk_fix = """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'bookings_commission_rule_id_fkey'
+            ) THEN
+                ALTER TABLE bookings DROP CONSTRAINT bookings_commission_rule_id_fkey;
+            END IF;
+            ALTER TABLE bookings
+                ADD CONSTRAINT bookings_commission_rule_id_fkey
+                FOREIGN KEY (commission_rule_id)
+                REFERENCES commission_rules(id)
+                ON DELETE SET NULL;
+        END$$;
+    """
     with engine.begin() as conn:
         for stmt in alters:
             conn.execute(text(stmt))
+        conn.execute(text(refk_fix))
     print("[MIGRATE] commission columns ensured on bookings")
 
 

@@ -3,7 +3,7 @@ isolation is guaranteed without savepoint gymnastics. The client fixture
 shares the same session as `db` so seed-then-request flows see the same data.
 """
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
@@ -16,6 +16,15 @@ def engine():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    # SQLite needs an explicit pragma per connection to enforce FK constraints
+    # (including ON DELETE SET NULL). Without it, tests pass that prod would fail.
+    @event.listens_for(eng, "connect")
+    def _enable_fk(dbapi_connection, _record):
+        cur = dbapi_connection.cursor()
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+
     from src.database import Base
     import src.auth.models  # noqa: F401
     import src.inventory.models  # noqa: F401
