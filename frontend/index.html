@@ -981,6 +981,29 @@
     font-family: inherit;
   }
   .commission-override-row button:hover { background: var(--ink); color: var(--bone); }
+
+  .provider-bookings-footer {
+    display: flex; flex-wrap: wrap; gap: 18px;
+    padding: 12px 16px; margin-top: 12px;
+    background: var(--bone); border: 1.5px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+  .provider-bookings-footer b {
+    font-family: 'Fraunces', serif; font-weight: 700;
+  }
+  .commission-line {
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink-soft); letter-spacing: 0.04em;
+  }
+  .commission-line b { color: var(--ink); }
+  .walkin-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--ink-soft); letter-spacing: 0.08em;
+    margin-left: 4px;
+  }
   .provider-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 14px; }
   .provider-head .lead { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; }
 
@@ -1616,6 +1639,11 @@
               </select>
             </div>
             <div id="provider-bookings-list"></div>
+            <div class="provider-bookings-footer" id="provider-bookings-footer" hidden>
+              <span><b data-i18n="provider.commission.footer.gross">Gross</b>: SDG <span id="pbf-gross">0</span></span>
+              <span><b data-i18n="provider.commission.footer.commission">Commission</b>: SDG <span id="pbf-commission">0</span></span>
+              <span><b data-i18n="provider.commission.footer.net">Net</b>: SDG <span id="pbf-net">0</span></span>
+            </div>
             <div class="empty-state hidden" id="provider-bookings-empty">
               <h3 data-i18n="provider.empty.bookings.title">No bookings yet.</h3>
               <p data-i18n="provider.empty.bookings.desc">Bookings will appear here once passengers book your trips — including walk-ins.</p>
@@ -3074,9 +3102,14 @@ async function refreshProviderBookings() {
     const list = $('#provider-bookings-list');
     const empty = $('#provider-bookings-empty');
     list.innerHTML = '';
-    if (!bookings.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
+    if (!bookings.length) {
+      empty.classList.remove('hidden'); list.classList.add('hidden');
+      $('#provider-bookings-footer').hidden = true;
+      return;
+    }
     empty.classList.add('hidden'); list.classList.remove('hidden');
     bookings.forEach(b => list.appendChild(makeProviderBookingRow(b)));
+    renderProviderBookingsFooter(bookings);
     api('/trips/mine').then(ts => $('#pcnt-trips').textContent = ts.length).catch(()=>{});
   } catch (e) { toast(e.message, true); }
 }
@@ -3101,6 +3134,18 @@ function makeProviderBookingRow(b) {
     ? `<button class="btn-inline ghost" data-action="view-ticket">${t('mytickets.viewticket')}</button>`
     : '';
 
+  // Commission line — only shown for confirmed bookings (snapshot exists).
+  let commLine = '';
+  if (b.commission_amount !== null && b.commission_amount !== undefined) {
+    const walkinTag = b.channel === 'walkin'
+      ? ` <small class="walkin-tag">(${t('provider.commission.walkin_note')})</small>`
+      : '';
+    commLine = `<div class="info-line commission-line">
+      ${t('provider.commission.col')}: <b>SDG ${fmtMoney(b.commission_amount)}</b>${walkinTag}
+      · ${t('provider.commission.net')}: <b>SDG ${fmtMoney(b.net_amount)}</b>
+    </div>`;
+  }
+
   row.innerHTML = `
     <div class="main">
       <div class="meta-row">
@@ -3114,6 +3159,7 @@ function makeProviderBookingRow(b) {
         ${escapeHtml(b.customer_name || '—')} · ${escapeHtml(b.customer_email || '—')}<br>
         ${t('ticket.seatmap').toUpperCase()} <b>${b.seats.join(', ') || '—'}</b> · <b>${b.passenger_count}</b> · SDG <b>${fmtMoney(b.total_price)}</b> ${refTag}
       </div>
+      ${commLine}
     </div>
     <div class="actions">${confirmBtn} ${viewBtn}</div>
   `;
@@ -3122,6 +3168,17 @@ function makeProviderBookingRow(b) {
   const vBtn = row.querySelector('[data-action="view-ticket"]');
   if (vBtn) vBtn.addEventListener('click', () => openExistingTicket(b.booking_id));
   return row;
+}
+
+function renderProviderBookingsFooter(rows) {
+  const confirmed = rows.filter(b => b.status === 'confirmed');
+  const gross = confirmed.reduce((a, b) => a + (b.total_price || 0), 0);
+  const comm  = confirmed.reduce((a, b) => a + (b.commission_amount || 0), 0);
+  const net   = confirmed.reduce((a, b) => a + (b.net_amount || 0), 0);
+  $('#pbf-gross').textContent      = fmtMoney(Math.round(gross * 100) / 100);
+  $('#pbf-commission').textContent = fmtMoney(Math.round(comm  * 100) / 100);
+  $('#pbf-net').textContent        = fmtMoney(Math.round(net   * 100) / 100);
+  $('#provider-bookings-footer').hidden = (confirmed.length === 0);
 }
 
 async function providerConfirmWalkin(b) {
