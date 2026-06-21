@@ -185,6 +185,15 @@
   .topbar.role-provider .lang-toggle button.active { color: var(--ink); }
   .topbar.role-admin    .lang-toggle button.active { color: var(--admin); }
 
+  .gear-btn {
+    appearance: none; background: transparent; border: 1.5px solid currentColor;
+    color: inherit; font-size: 18px; line-height: 1; cursor: pointer;
+    padding: 7px 11px; font-family: inherit;
+    transition: background 180ms, color 180ms;
+  }
+  .gear-btn:hover { background: currentColor; color: var(--paper); }
+  .topbar.role-admin .gear-btn:hover { color: var(--admin); }
+
   html, body {
     margin: 0; padding: 0;
     background: var(--paper);
@@ -1273,6 +1282,7 @@
     <div class="brand" id="brand-home">Tazkirati. <small>تذكرتي</small></div>
     <nav class="topbar-nav" id="topbar-nav" hidden></nav>
     <div class="topbar-right">
+      <button class="gear-btn" id="settings-btn" aria-label="Settings" hidden>⚙</button>
       <span class="lang-toggle" id="lang-toggle">
         <button data-lang="en" class="active">EN</button>
         <button data-lang="ar">عربي</button>
@@ -2464,6 +2474,10 @@ function paintChrome() {
     $('#email-tag').textContent = '';
   }
   applyStatusBarStyle(auth?.user?.role);
+
+  // Gear icon is admin-only for now. Future roles get nothing.
+  const gear = $('#settings-btn');
+  if (gear) gear.hidden = (auth?.user?.role !== 'admin');
 
   // Hide the subhead on screens where the back button isn't useful (main
   // landing screens for each role + the auth flow). Only sub-screens that
@@ -3678,6 +3692,7 @@ function wire() {
   $('#pending-refresh').addEventListener('click', refreshPendingStatus);
 
   $('#signout-btn').addEventListener('click', logout);
+  $('#settings-btn')?.addEventListener('click', () => goto('admin-settings'));
   $('#brand-home').addEventListener('click', () => {
     if (STATE.auth) {
       STATE.history = [];
