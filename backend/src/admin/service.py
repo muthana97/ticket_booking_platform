@@ -233,6 +233,14 @@ def confirm_payment(
         booking.billing_reference = _generate_billing_reference()
         booking.bill_generated_at = _now_utc_naive()
 
+    # Commission snapshot — immutable record of (rate_kind, rate_value, rule_id)
+    # at the moment of confirmation. Walk-ins short-circuit to 0 inside.
+    from ..inventory.models import Trip as _Trip
+    from ..finance.service import snapshot_commission
+    _trip = db.query(_Trip).filter(_Trip.id == booking.trip_id).first()
+    if _trip:
+        snapshot_commission(db, booking, _trip)
+
     db.commit()
     db.refresh(booking)
 
