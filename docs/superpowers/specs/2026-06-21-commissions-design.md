@@ -16,6 +16,8 @@ The admin can set:
 
 Precedence (most specific first): `trip > provider+route > provider > global`.
 
+**Channel rule:** Commission only applies to **consumer-channel bookings** (`Booking.channel == 'consumer'`). Walk-in bookings (`channel == 'walkin'`) are always 0% — the provider sold the seat at their own counter, the platform contributed nothing, so it takes nothing. This is a hard rule, not a configurable rate.
+
 ## 2. Out of scope
 
 - Multi-currency. SDG only.
@@ -108,6 +110,11 @@ Implemented in `backend/src/finance/service.py` as `snapshot_commission(db, book
 
 ```python
 def snapshot_commission(db, booking, trip):
+    # Walk-in bookings are always 0% commission — the provider sold at
+    # their own counter, the platform contributed nothing. Hard rule.
+    if booking.channel == 'walkin':
+        booking.commission_amount = 0.0
+        return
     rule = resolve_rule(db, trip)
     if rule is None:
         booking.commission_amount = 0.0
@@ -122,6 +129,8 @@ def snapshot_commission(db, booking, trip):
     booking.commission_rate_value  = rule.rate_value
     booking.commission_rule_id     = rule.id
 ```
+
+Walk-in snapshots populate only `commission_amount = 0.0`. The other three columns (`commission_rate_kind`, `commission_rate_value`, `commission_rule_id`) stay `NULL` — there's no rule to attribute it to.
 
 Snapshot is **immutable** after confirmation. Later edits to the rule (or rule deletion) do not retroactively change historical bookings.
 
@@ -250,8 +259,11 @@ Phase 1 ships **one** section: Commissions. Account/password reset is a placehol
 
 Existing `provider-home` → `Bookings` tab gains two columns per row:
 
-- `Commission` — shows `—` until confirmed; otherwise `SDG X` with a small subtitle (`8%` or `SDG 150/seat`)
-- `Net to you` — `—` until confirmed; otherwise `SDG (total - commission)`
+- `Commission` — shows `—` until confirmed; otherwise:
+  - Consumer row with a rule: `SDG X` + small subtitle (`8%` or `SDG 150/seat`)
+  - Consumer row with no rule: `SDG 0` (no subtitle)
+  - Walk-in row: `SDG 0` + small subtitle `walk-in` (translated) so the provider knows why it's free
+- `Net to you` — `—` until confirmed; otherwise `SDG (total - commission)` (equals `total_price` for walk-ins)
 
 A new **footer summary band** appears above the table's bottom edge (mobile: stacked below the list):
 
@@ -293,7 +305,7 @@ Unit tests in `backend/tests/finance/`:
 
 Integration smoke in `backend/tests/booking/`:
 
-5. `test_confirm_path_snapshots_commission.py` — both confirmation paths (admin `confirm_payment` and provider cash-confirm) set the four snapshot columns.
+5. `test_confirm_path_snapshots_commission.py` — both confirmation paths (admin `confirm_payment` and provider cash-confirm) set the snapshot columns; walk-in confirmations short-circuit to `commission_amount = 0` with the other three snapshot columns left `NULL`, even when a matching rule exists.
 
 Frontend changes are tested manually on mobile + web per `mobile/README.md` after backend is green.
 
@@ -309,7 +321,8 @@ Frontend changes are tested manually on mobile + web per `mobile/README.md` afte
 - Admin can set a global commission, see it persist across reloads, and edit it.
 - Admin can add an override at any of the three tiers; precedence resolves correctly when a booking is confirmed.
 - A booking confirmed without any rule set has `commission_amount = 0` and `commission_rule_id = NULL`.
-- A booking confirmed with a rule set has all four commission columns populated and they never change afterward.
+- A consumer-channel booking confirmed with a rule set has all four commission columns populated and they never change afterward.
+- A walk-in booking always confirms with `commission_amount = 0`, regardless of any matching rule.
 - Provider sees `commission_amount` and `net_amount` on every confirmed row of their bookings list, plus a totals footer.
 - The Settings screen is reachable from a gear icon in the topbar; non-admin sessions do not see the gear.
 - Both EN and AR render every label, including in RTL mode.
