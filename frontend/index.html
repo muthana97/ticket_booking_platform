@@ -1817,6 +1817,68 @@
   </div>
 </div>
 
+<!-- Commission Override Modal -->
+<div id="commission-override-modal" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3 id="cov-title" data-i18n="commission.modal.title.add">Add override</h3>
+    <div class="modal-sub" data-i18n="commission.overrides.lead">Override the global rate.</div>
+
+    <div class="field-block">
+      <label data-i18n="commission.modal.field.scope">Scope</label>
+      <div class="role-pick" id="cov-scope">
+        <label class="active" data-scope="provider">
+          <input type="radio" name="cov-scope" value="provider" checked>
+          <span class="rp-title" data-i18n="commission.overrides.scope.provider">Provider</span>
+        </label>
+        <label data-scope="provider_route">
+          <input type="radio" name="cov-scope" value="provider_route">
+          <span class="rp-title" data-i18n="commission.overrides.scope.provider_route">Provider + Route</span>
+        </label>
+        <label data-scope="trip">
+          <input type="radio" name="cov-scope" value="trip">
+          <span class="rp-title" data-i18n="commission.overrides.scope.trip">Trip</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <label data-i18n="commission.modal.field.provider">Provider</label>
+      <select id="cov-provider"></select>
+    </div>
+    <div class="field-block hidden" id="cov-route-row">
+      <label data-i18n="commission.modal.field.route">Route</label>
+      <select id="cov-route"></select>
+    </div>
+    <div class="field-block hidden" id="cov-trip-row">
+      <label data-i18n="commission.modal.field.trip">Trip</label>
+      <select id="cov-trip"></select>
+    </div>
+
+    <div class="field-block">
+      <label data-i18n="commission.modal.field.rate_kind">Rate type</label>
+      <div class="role-pick" id="cov-kind">
+        <label class="active" data-kind="percentage">
+          <input type="radio" name="cov-kind" value="percentage" checked>
+          <span class="rp-title" data-i18n="commission.kind.percentage">Percentage</span>
+        </label>
+        <label data-kind="flat_per_seat">
+          <input type="radio" name="cov-kind" value="flat_per_seat">
+          <span class="rp-title" data-i18n="commission.kind.flat">Flat per seat</span>
+        </label>
+      </div>
+    </div>
+    <div class="field-block">
+      <label data-i18n="commission.modal.field.rate_value">Rate</label>
+      <input type="number" id="cov-value" min="0.01" step="0.01" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="cta ghost" id="cov-cancel" data-i18n="ticket.close">Cancel</button>
+      <button class="cta admin" id="cov-save" data-i18n="commission.save">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Ticket Modal -->
 <div id="ticket-modal" class="modal-bg" role="dialog" aria-modal="true">
   <div class="ticket">
@@ -3537,6 +3599,71 @@ async function refreshAdminSettings() {
   } catch (e) { toast(e.message, true); }
 }
 
+let _covEditingId = null;
+async function openOverrideModal(row) {
+  _covEditingId = row?.id || null;
+  $('#cov-title').textContent = t(row ? 'commission.modal.title.edit' : 'commission.modal.title.add');
+  selectPillById('#cov-scope', row?.scope || 'provider');
+  selectPillById('#cov-kind',  row?.rate_kind || 'percentage');
+  $('#cov-value').value = row?.rate_value ?? '';
+  await populateProviderSelect(row?.provider_id);
+  await populateRouteSelect(row?.provider_id, row?.route_id);
+  await populateTripSelect(row?.provider_id, row?.trip_id);
+  applyConditionalRows();
+  $('#commission-override-modal').classList.add('show');
+}
+
+function selectPillById(rootSel, value) {
+  $$(rootSel + ' label').forEach(l => {
+    const key = l.dataset.scope || l.dataset.kind;
+    l.classList.toggle('active', key === value);
+    const inp = l.querySelector('input');
+    if (inp) inp.checked = (key === value);
+  });
+}
+
+function applyConditionalRows() {
+  const scope = $('#cov-scope label.active')?.dataset.scope || 'provider';
+  $('#cov-route-row').classList.toggle('hidden', scope !== 'provider_route');
+  $('#cov-trip-row').classList.toggle('hidden',  scope !== 'trip');
+}
+
+async function populateProviderSelect(selectedId) {
+  const sel = $('#cov-provider');
+  const list = await api('GET', '/admin/providers?status=active');
+  sel.innerHTML = `<option value="">${t('commission.modal.placeholder.select')}</option>` +
+    list.map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${escapeHtml(p.full_name)}</option>`).join('');
+}
+
+async function populateRouteSelect(_providerId, selectedId) {
+  // Per spec §7.3: route picker shows all routes, not filtered to provider's
+  // existing trips, because backend allows pre-setting a rate.
+  const sel = $('#cov-route');
+  try {
+    const trips = await api('GET', '/admin/trips?time=all');
+    const seen = new Map();
+    trips.forEach(tr => {
+      if (tr.route_id) seen.set(tr.route_id, `${tr.origin} → ${tr.destination}`);
+    });
+    sel.innerHTML = `<option value="">${t('commission.modal.placeholder.select')}</option>` +
+      [...seen.entries()].map(([id, label]) =>
+        `<option value="${id}" ${id === selectedId ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('');
+  } catch (e) { sel.innerHTML = ''; }
+}
+
+async function populateTripSelect(providerId, selectedId) {
+  const sel = $('#cov-trip');
+  if (!providerId) { sel.innerHTML = ''; return; }
+  try {
+    const trips = await api('GET', `/admin/trips?provider_id=${providerId}&time=upcoming`);
+    sel.innerHTML = `<option value="">${t('commission.modal.placeholder.select')}</option>` +
+      trips.map(tr => {
+        const label = `Trip #${tr.trip_id} · ${tr.origin} → ${tr.destination} · ${fmtTime(tr.departure_time)}`;
+        return `<option value="${tr.trip_id}" ${tr.trip_id === selectedId ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+      }).join('');
+  } catch (e) { sel.innerHTML = ''; }
+}
+
 function renderGlobalCommission(g) {
   const empty = $('#commission-global-empty');
   const form  = $('#commission-global-form');
@@ -3883,6 +4010,74 @@ function wire() {
       toast(t('commission.saved'));
       refreshAdminSettings();
     } catch (err) { toast(err.message, true); }
+  });
+
+  // ---- Commission override modal ----
+  $('#commission-overrides-add')?.addEventListener('click', () => openOverrideModal(null));
+
+  $$('#cov-scope label').forEach(l => l.addEventListener('click', () => {
+    selectPillById('#cov-scope', l.dataset.scope);
+    applyConditionalRows();
+  }));
+  $$('#cov-kind label').forEach(l => l.addEventListener('click', () => {
+    selectPillById('#cov-kind', l.dataset.kind);
+  }));
+
+  $('#cov-cancel')?.addEventListener('click', () => {
+    $('#commission-override-modal').classList.remove('show');
+  });
+
+  $('#cov-provider')?.addEventListener('change', async (e) => {
+    await populateRouteSelect(parseInt(e.target.value) || null, null);
+    await populateTripSelect(parseInt(e.target.value) || null, null);
+  });
+
+  $('#cov-save')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const scope = $('#cov-scope label.active')?.dataset.scope || 'provider';
+    const kind  = $('#cov-kind  label.active')?.dataset.kind  || 'percentage';
+    const value = parseFloat($('#cov-value').value);
+    if (!isFinite(value) || value <= 0) {
+      return toast(t('commission.modal.field.rate_value') + ' ?', true);
+    }
+    try {
+      if (_covEditingId) {
+        await api('PATCH', `/admin/commissions/overrides/${_covEditingId}`,
+                  { rate_kind: kind, rate_value: value });
+      } else {
+        const body = {
+          scope, rate_kind: kind, rate_value: value,
+          provider_id: parseInt($('#cov-provider').value),
+        };
+        if (scope === 'provider_route') body.route_id = parseInt($('#cov-route').value);
+        if (scope === 'trip')           body.trip_id  = parseInt($('#cov-trip').value);
+        await api('POST', '/admin/commissions/overrides', body);
+      }
+      $('#commission-override-modal').classList.remove('show');
+      refreshAdminSettings();
+    } catch (err) {
+      if (err.status === 409) toast(t('commission.modal.error.dup'), true);
+      else toast(err.message, true);
+    }
+  });
+
+  // Row edit + delete (delegated on the list)
+  $('#commission-overrides-list')?.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('button.edit');
+    const delBtn  = e.target.closest('button.del');
+    if (editBtn) {
+      const id = parseInt(editBtn.dataset.id);
+      const data = await api('GET', '/admin/commissions');
+      const row = (data.overrides || []).find(r => r.id === id);
+      if (row) openOverrideModal(row);
+    }
+    if (delBtn) {
+      if (!confirm(t('commission.overrides.confirm_delete'))) return;
+      try {
+        await api('DELETE', `/admin/commissions/overrides/${delBtn.dataset.id}`);
+        refreshAdminSettings();
+      } catch (err) { toast(err.message, true); }
+    }
   });
   $('#brand-home').addEventListener('click', () => {
     if (STATE.auth) {
