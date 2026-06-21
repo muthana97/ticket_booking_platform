@@ -3851,6 +3851,39 @@ function wire() {
 
   $('#signout-btn').addEventListener('click', logout);
   $('#settings-btn')?.addEventListener('click', () => goto('admin-settings'));
+
+  // Global commission — radio toggle highlight
+  $$('#commission-global-kind label').forEach(l => {
+    l.addEventListener('click', () => {
+      $$('#commission-global-kind label').forEach(x => x.classList.remove('active'));
+      l.classList.add('active');
+      const inp = l.querySelector('input');
+      if (inp) inp.checked = true;
+    });
+  });
+
+  // First-time entry: clicking the empty-state reveals the form.
+  $('#commission-global-empty')?.addEventListener('click', () => {
+    $('#commission-global-empty').classList.add('hidden');
+    $('#commission-global-form').classList.remove('hidden');
+  });
+
+  // Save → PUT /admin/commissions/global
+  $('#commission-global-save')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const active = $('#commission-global-kind label.active');
+    const kind = active?.dataset.kind || 'percentage';
+    const value = parseFloat($('#commission-global-value').value);
+    if (!isFinite(value) || value <= 0) {
+      return toast(t('commission.modal.field.rate_value') + ' ?', true);
+    }
+    try {
+      await api('PUT', '/admin/commissions/global',
+                { rate_kind: kind, rate_value: value });
+      toast(t('commission.saved'));
+      refreshAdminSettings();
+    } catch (err) { toast(err.message, true); }
+  });
   $('#brand-home').addEventListener('click', () => {
     if (STATE.auth) {
       STATE.history = [];
