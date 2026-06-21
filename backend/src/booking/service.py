@@ -280,6 +280,12 @@ def list_provider_bookings(db: Session, *, provider_id: int) -> list[dict]:
             "created_at": b.created_at,
             "customer_email": customer.email if customer else None,
             "customer_name": customer.full_name if customer else None,
+            "commission_amount": b.commission_amount,
+            "net_amount": (
+                round(b.total_price - b.commission_amount, 2)
+                if b.commission_amount is not None and b.total_price is not None
+                else None
+            ),
         })
     return out
 

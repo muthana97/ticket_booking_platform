@@ -113,6 +113,8 @@ class ProviderBookingItem(BaseModel):
     created_at: datetime
     customer_email: Optional[str] = None
     customer_name: Optional[str] = None
+    commission_amount: Optional[float] = None
+    net_amount: Optional[float] = None
 
     class Config:
         from_attributes = True
