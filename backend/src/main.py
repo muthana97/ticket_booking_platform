@@ -15,6 +15,27 @@ from .admin.router import router as admin_router
 # Ensure tables are created (Standard SQLAlchemy sync way)
 Base.metadata.create_all(bind=engine)
 
+
+def _migrate_if_needed():
+    """Idempotent column additions for existing deployments. Postgres has
+    `IF NOT EXISTS` since 9.6 so this is safe to run on every boot. SQLite
+    test environments use create_all() which already covers the columns,
+    so we skip the ALTER on SQLite."""
+    from sqlalchemy import text
+    if engine.dialect.name != "postgresql":
+        return
+    alters = [
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_amount FLOAT",
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rate_kind VARCHAR",
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rate_value FLOAT",
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rule_id INTEGER REFERENCES commission_rules(id)",
+    ]
+    with engine.begin() as conn:
+        for stmt in alters:
+            conn.execute(text(stmt))
+    print("[MIGRATE] commission columns ensured on bookings")
+
+
 def _bootstrap_if_empty():
     """
     On every startup:
@@ -77,6 +98,7 @@ def _bootstrap_if_empty():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # STARTUP
+    _migrate_if_needed()
     _bootstrap_if_empty()
     reaper_task = asyncio.create_task(cleanup_expired_bookings())
 

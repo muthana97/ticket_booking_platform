@@ -26,3 +26,12 @@ def test_commission_rule_insert_roundtrip(db):
     db.refresh(rule)
     assert rule.id is not None
     assert rule.created_at is not None
+
+
+def test_booking_has_commission_columns():
+    from src.booking.models import Booking
+    cols = {c.name for c in Booking.__table__.columns}
+    assert "commission_amount" in cols
+    assert "commission_rate_kind" in cols
+    assert "commission_rate_value" in cols
+    assert "commission_rule_id" in cols

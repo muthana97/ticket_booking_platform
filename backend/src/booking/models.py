@@ -30,6 +30,14 @@ class Booking(Base):
 
     seat_ids = Column(JSON)  # list[int] of Seat.id — used by Reaper to revert seats
 
+    # Commission snapshot — populated by finance.service.snapshot_commission
+    # at confirmation. NULL for unconfirmed bookings. Walk-ins keep only
+    # commission_amount=0 with the other three columns NULL (no rule won).
+    commission_amount = Column(Float, nullable=True)
+    commission_rate_kind = Column(String, nullable=True)
+    commission_rate_value = Column(Float, nullable=True)
+    commission_rule_id = Column(Integer, ForeignKey("commission_rules.id"), nullable=True)
+
     passengers = relationship("Passenger", back_populates="booking", cascade="all, delete-orphan")
 
 
