@@ -599,7 +599,8 @@
   body[data-screen="customer-my-tickets"]   #screen-customer-my-tickets,
   body[data-screen="provider-home"]         #screen-provider-home,
   body[data-screen="provider-book"]         #screen-customer-book,
-  body[data-screen="admin-home"]            #screen-admin-home { display: block; }
+  body[data-screen="admin-home"]            #screen-admin-home,
+  body[data-screen="admin-settings"]        #screen-admin-settings { display: block; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -935,6 +936,51 @@
 
   /* ───── Provider home / Admin home ───── */
   .provider-stage, .admin-stage { max-width: 1180px; margin: 0 auto; }
+
+  /* Admin Settings hub */
+  body[data-screen="admin-settings"] .admin-stage { max-width: 760px; }
+  .settings-section { margin: 28px 0; }
+  .settings-section h3 {
+    font-family: 'Fraunces', serif; font-weight: 800; font-size: 22px;
+    letter-spacing: -0.015em; margin: 0 0 12px;
+    padding-bottom: 8px; border-bottom: 1.5px solid var(--rule);
+  }
+  .settings-section.disabled .settings-body { opacity: 0.5; pointer-events: none; }
+  .settings-section .settings-body { display: flex; flex-direction: column; gap: 18px; }
+  .settings-section .panel {
+    background: var(--bone); border: 1.5px solid var(--rule);
+    padding: 22px;
+  }
+  .settings-section .panel h4 {
+    font-family: 'Fraunces', serif; font-weight: 800; font-size: 18px;
+    letter-spacing: -0.005em; margin: 0 0 6px;
+  }
+  .settings-section .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+  }
+
+  .commission-override-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px dashed var(--rule);
+  }
+  .commission-override-row:last-child { border-bottom: 0; }
+  .commission-override-row .scope-badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 3px 8px; background: var(--admin); color: var(--bone);
+  }
+  .commission-override-row .label { flex: 1; font-weight: 600; }
+  .commission-override-row .rate {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  }
+  .commission-override-row .actions { display: flex; gap: 6px; }
+  .commission-override-row button {
+    appearance: none; background: transparent; border: 1px solid var(--rule);
+    padding: 5px 10px; font-size: 11px; cursor: pointer;
+    font-family: inherit;
+  }
+  .commission-override-row button:hover { background: var(--ink); color: var(--bone); }
   .provider-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 14px; }
   .provider-head .lead { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; }
 
@@ -1649,6 +1695,61 @@
       </div>
     </section>
 
+    <!-- Admin Settings hub -->
+    <section class="screen" id="screen-admin-settings">
+      <div class="admin-stage">
+        <h2 data-i18n="settings.title">Settings</h2>
+
+        <section class="settings-section">
+          <h3 data-i18n="settings.section.commissions">Commissions</h3>
+          <div class="settings-body">
+            <div class="panel" id="commission-global-card">
+              <h4 data-i18n="commission.global.title">Global commission</h4>
+              <p class="lead" data-i18n="commission.global.lead">Default rate applied when no override exists.</p>
+              <div id="commission-global-empty" class="empty-state" data-i18n="commission.global.empty">No global commission set yet.</div>
+              <form id="commission-global-form" class="hidden">
+                <div class="field-block">
+                  <label data-i18n="commission.modal.field.rate_kind">Rate type</label>
+                  <div class="role-pick" id="commission-global-kind">
+                    <label class="active" data-kind="percentage">
+                      <input type="radio" name="cg-kind" value="percentage" checked>
+                      <span class="rp-title" data-i18n="commission.kind.percentage">Percentage</span>
+                    </label>
+                    <label data-kind="flat_per_seat">
+                      <input type="radio" name="cg-kind" value="flat_per_seat">
+                      <span class="rp-title" data-i18n="commission.kind.flat">Flat per seat</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field-block">
+                  <label data-i18n="commission.modal.field.rate_value">Rate</label>
+                  <input type="number" id="commission-global-value" min="0.01" step="0.01" />
+                </div>
+                <button class="cta admin" id="commission-global-save" data-i18n="commission.save">Save commission</button>
+              </form>
+            </div>
+
+            <div class="panel" id="commission-overrides-card">
+              <div class="panel-head">
+                <h4 data-i18n="commission.overrides.title">Overrides</h4>
+                <button class="btn-inline admin" id="commission-overrides-add" data-i18n="commission.overrides.add">Add override</button>
+              </div>
+              <p class="lead" data-i18n="commission.overrides.lead">Override the global rate for a specific provider, route, or trip.</p>
+              <div id="commission-overrides-list"></div>
+              <div id="commission-overrides-empty" class="empty-state" data-i18n="commission.overrides.empty">No overrides yet.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-section disabled">
+          <h3 data-i18n="settings.section.account">Account</h3>
+          <div class="settings-body">
+            <p class="lead" data-i18n="settings.section.account.soon">Coming soon.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -2242,6 +2343,7 @@ function refreshDynamicScreen() {
   if (s === 'customer-my-tickets') refreshMyTickets();
   if (s === 'provider-home')       refreshProviderTab();
   if (s === 'admin-home')          refreshAdminTab();
+  if (s === 'admin-settings')      refreshAdminSettings();
   // Customer trip search results: re-render with cached search data so cities
   // re-translate when the user toggles language mid-browse.
   if (s === 'customer-trips' && STATE.lastCustomerTripSearch) {
@@ -3424,6 +3526,62 @@ function switchAdminTab(tab) {
   $$('.admin-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   $$('.tab-content > *').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
   refreshAdminTab();
+}
+
+async function refreshAdminSettings() {
+  if (STATE.auth?.user.role !== 'admin') return;
+  try {
+    const data = await api('GET', '/admin/commissions');
+    renderGlobalCommission(data.global);
+    renderOverrideList(data.overrides || []);
+  } catch (e) { toast(e.message, true); }
+}
+
+function renderGlobalCommission(g) {
+  const empty = $('#commission-global-empty');
+  const form  = $('#commission-global-form');
+  if (!g) {
+    empty.classList.remove('hidden');
+    form.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  form.classList.remove('hidden');
+  $$('#commission-global-kind label').forEach(l => {
+    l.classList.toggle('active', l.dataset.kind === g.rate_kind);
+    const inp = l.querySelector('input');
+    if (inp) inp.checked = (l.dataset.kind === g.rate_kind);
+  });
+  $('#commission-global-value').value = g.rate_value;
+}
+
+function renderOverrideList(rows) {
+  const wrap = $('#commission-overrides-list');
+  const empty = $('#commission-overrides-empty');
+  wrap.innerHTML = '';
+  if (rows.length === 0) { empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  rows.forEach(r => {
+    const label = (r.scope === 'trip')           ? r.trip_label
+                : (r.scope === 'provider_route') ? `${r.provider_name} · ${r.route_label}`
+                :                                  r.provider_name;
+    const rateText = (r.rate_kind === 'percentage')
+      ? `${r.rate_value}${t('commission.value.percent.suffix')}`
+      : `${r.rate_value} ${t('commission.value.flat.suffix')}`;
+    const row = document.createElement('div');
+    row.className = 'commission-override-row';
+    row.innerHTML = `
+      <span class="scope-badge">${t('commission.overrides.scope.' + r.scope)}</span>
+      <span class="label">${escapeHtml(label || '—')}</span>
+      <span class="rate">${escapeHtml(rateText)}</span>
+      <span class="actions">
+        <button class="edit" data-id="${r.id}" data-i18n="commission.overrides.edit">Edit</button>
+        <button class="del"  data-id="${r.id}" data-i18n="commission.overrides.delete">Delete</button>
+      </span>
+    `;
+    wrap.appendChild(row);
+  });
+  applyLanguage();
 }
 
 async function refreshAdminTab() {
