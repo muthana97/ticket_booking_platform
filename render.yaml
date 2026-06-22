@@ -1,12 +1,22 @@
 # Render blueprint — `git push` after connecting this repo to Render and
-# both services + the managed Postgres come up. Free tier defaults.
+# the web service comes up.
 #
-# Free tier caveats (intentional, accept-them-for-now):
+# Database is on Neon (since 2026-06-22) — the `databases:` block below is
+# kept for blueprint completeness but is no longer the source of truth.
+# `DATABASE_URL` in the Render dashboard is set manually to the Neon
+# connection string and takes precedence over the fromDatabase injection.
+#
+# Branch: Render's dashboard branch setting drives auto-deploy. Set it to
+# your working branch (e.g. feat/mobile-scaffold) in
+# Settings → Build & Deploy → Branch. Otherwise Render defaults to `main`
+# and silently deploys stale code.
+#
+# Free tier caveats:
 #   • web service sleeps after 15 min of inactivity (~30s cold-start on wake)
-#   • free Postgres is 256MB, 1GB storage, expires after 90 days
+#   • outbound SMTP blocked
 #
-# When stakeholders sign off, change `plan: free` → `plan: starter` ($7/mo
-# each) and the sleep + expiry disappear. See claude.md for upgrade notes.
+# When stakeholders sign off, change web `plan: free` → `plan: starter`
+# ($7/mo) and the sleep disappears. See claude.md for upgrade notes.
 
 services:
   - type: web
