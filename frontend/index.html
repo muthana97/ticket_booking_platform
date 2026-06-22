@@ -326,6 +326,45 @@
       font-size: 9px;
       letter-spacing: 0.14em;
     }
+    .gear-btn { padding: 5px 9px; font-size: 14px; }
+
+    /* Admin Settings — tighten for mobile so the section list fits.
+       Override row collapses to two stacked lines + actions. */
+    .settings-section { margin: 18px 0; }
+    .settings-section h3 { font-size: 18px; padding-bottom: 6px; }
+    .settings-section .panel { padding: 14px; }
+    .settings-section .panel h4 { font-size: 16px; }
+    .settings-section .panel .lead { font-size: 12px; }
+
+    .commission-override-row {
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      padding: 10px 0;
+    }
+    .commission-override-row .scope-badge { flex: 0 0 auto; }
+    .commission-override-row .label {
+      flex: 1 1 100%;
+      order: 3;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .commission-override-row .rate {
+      flex: 0 0 auto;
+      margin-left: auto;
+    }
+    .commission-override-row .actions {
+      flex: 1 1 100%;
+      order: 4;
+      justify-content: flex-end;
+    }
+    .commission-override-row button {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    /* Provider-bookings totals footer — stack vertically on narrow screens
+       so each line stays readable. */
+    .provider-bookings-footer { flex-direction: column; gap: 4px; padding: 10px 14px; }
 
     /* Customer nav becomes a fixed bottom tab bar. */
     .topbar-nav:not([hidden]) {
