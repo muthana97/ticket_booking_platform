@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ---------------------------------------------------------------------------
@@ -72,3 +72,64 @@ class AdminBookingItem(BaseModel):
     passenger_names: List[str]
     total_price: float
     created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Reports (financial + operational, monthly by confirmation date)
+# ---------------------------------------------------------------------------
+
+class ReportPeriod(BaseModel):
+    from_: str = Field(..., alias="from")
+    to: str
+
+    class Config:
+        populate_by_name = True
+
+
+class FinancialByMonthRow(BaseModel):
+    month: str          # "YYYY-MM"
+    commission: float
+    bookings: int
+
+
+class FinancialByProviderRow(BaseModel):
+    provider_id: int
+    provider_name: str
+    commission: float
+    bookings: int
+
+
+class FinancialSection(BaseModel):
+    total_commission: float
+    by_month: List[FinancialByMonthRow]
+    by_provider: List[FinancialByProviderRow]
+
+
+class OperationalByMonthRow(BaseModel):
+    month: str
+    bookings: int
+    passengers: int
+    consumer: int
+    walkin: int
+
+
+class OperationalByProviderRow(BaseModel):
+    provider_id: int
+    provider_name: str
+    bookings: int
+    passengers: int
+    consumer: int
+    walkin: int
+
+
+class OperationalSection(BaseModel):
+    total_bookings: int
+    total_passengers: int
+    by_month: List[OperationalByMonthRow]
+    by_provider: List[OperationalByProviderRow]
+
+
+class ReportsResponse(BaseModel):
+    period: ReportPeriod
+    financial: FinancialSection
+    operational: OperationalSection
