@@ -1762,10 +1762,31 @@
       </div>
     </section>
 
-    <!-- Admin Settings hub -->
+    <!-- Settings hub (universal — all signed-in roles).
+         The screen id remains 'admin-settings' for legacy reasons; routing
+         keys it on body[data-screen='admin-settings']. -->
     <section class="screen" id="screen-admin-settings">
       <div class="admin-stage">
         <h2 data-i18n="settings.title">Settings</h2>
+
+        <section class="settings-section">
+          <h3 data-i18n="settings.section.language">Language</h3>
+          <div class="settings-body">
+            <div class="panel">
+              <p class="lead" data-i18n="settings.lang.lead">Choose the app language. Affects the whole app immediately.</p>
+              <div class="role-pick" id="settings-lang-pick">
+                <label class="active" data-lang="en">
+                  <input type="radio" name="settings-lang" value="en" checked>
+                  <span class="rp-title">English</span>
+                </label>
+                <label data-lang="ar">
+                  <input type="radio" name="settings-lang" value="ar">
+                  <span class="rp-title">عربي</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section class="settings-section">
           <h3 data-i18n="settings.section.commissions">Commissions</h3>
@@ -2169,6 +2190,8 @@ const I18N = {
     // Commission system (admin Settings hub + provider visibility)
     'settings.title': 'Settings',
     'settings.crumb': 'Settings',
+    'settings.section.language': 'Language',
+    'settings.lang.lead': 'Choose the app language. Affects the whole app immediately.',
     'settings.section.commissions': 'Commissions',
     'settings.section.account': 'Account',
     'settings.section.account.soon': 'Coming soon · password reset and more.',
@@ -2374,6 +2397,8 @@ const I18N = {
     // العمولات + إعدادات المشرف
     'settings.title': 'الإعدادات',
     'settings.crumb': 'الإعدادات',
+    'settings.section.language': 'اللغة',
+    'settings.lang.lead': 'اختر لغة التطبيق. يطبق التغيير فوراً على كل التطبيق.',
     'settings.section.commissions': 'العمولات',
     'settings.section.account': 'الحساب',
     'settings.section.account.soon': 'قريباً · إعادة تعيين كلمة المرور والمزيد.',
@@ -2706,9 +2731,22 @@ function paintChrome() {
   }
   applyStatusBarStyle(auth?.user?.role);
 
-  // Gear icon is admin-only for now. Future roles get nothing.
+  // Gear icon is visible for any signed-in user. Settings has a Language
+  // section everyone sees; the Commissions section below is admin-only.
   const gear = $('#settings-btn');
-  if (gear) gear.hidden = (auth?.user?.role !== 'admin');
+  if (gear) gear.hidden = !auth;
+
+  // Topbar language toggle is kept ONLY on the unauthenticated chrome so a
+  // first-time visitor can pick a language before signing in. Once logged in,
+  // language lives under Settings.
+  const langToggle = $('#lang-toggle');
+  if (langToggle) langToggle.hidden = !!auth;
+
+  // Commissions section visibility — admin only.
+  const commCard = $('#commission-global-card');
+  const ovCard   = $('#commission-overrides-card');
+  const commSection = commCard?.closest('.settings-section');
+  if (commSection) commSection.hidden = (auth?.user?.role !== 'admin');
 
   // Hide the subhead on screens where the back button isn't useful (main
   // landing screens for each role + the auth flow). Only sub-screens that
@@ -2725,6 +2763,7 @@ function paintChrome() {
                           ? (LANG === 'ar' ? 'حجز عند المنفذ' : 'Walk-in booking')
                           : (LANG === 'ar' ? 'اختيار المقاعد' : 'Seat selection'),
     'provider-book':   LANG === 'ar' ? 'حجز عند المنفذ' : 'Walk-in booking',
+    'admin-settings':  t('settings.crumb'),
   };
   $('#crumb').textContent = crumbs[STATE.screen] || '';
 }
@@ -3687,12 +3726,25 @@ function switchAdminTab(tab) {
 }
 
 async function refreshAdminSettings() {
-  if (STATE.auth?.user.role !== 'admin') return;
+  if (!STATE.auth) return;
+  // Reflect current LANG in the Language pills (all roles see this).
+  syncSettingsLanguagePills();
+  // Commissions only fetched for admin.
+  if (STATE.auth.user.role !== 'admin') return;
   try {
     const data = await api('/admin/commissions');
     renderGlobalCommission(data.global);
     renderOverrideList(data.overrides || []);
   } catch (e) { toast(e.message, true); }
+}
+
+function syncSettingsLanguagePills() {
+  $$('#settings-lang-pick label').forEach(l => {
+    const match = (l.dataset.lang === LANG);
+    l.classList.toggle('active', match);
+    const inp = l.querySelector('input');
+    if (inp) inp.checked = match;
+  });
 }
 
 let _covEditingId = null;
@@ -4077,6 +4129,20 @@ function wire() {
   $('#settings-btn')?.addEventListener('click', () => {
     goto('admin-settings');
     refreshAdminSettings();
+  });
+
+  // Settings → Language pills: clicking switches language immediately.
+  // Mirrors what the legacy topbar lang-toggle did, just sourced from
+  // inside the Settings screen instead.
+  $$('#settings-lang-pick label').forEach(l => {
+    l.addEventListener('click', () => {
+      const lang = l.dataset.lang;
+      if (lang === LANG) return;
+      LANG = lang;
+      localStorage.setItem('taz.lang', lang);
+      applyLanguage();
+      syncSettingsLanguagePills();
+    });
   });
 
   // Global commission — radio toggle highlight
