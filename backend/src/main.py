@@ -33,6 +33,8 @@ def _migrate_if_needed():
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rate_kind VARCHAR",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rate_value FLOAT",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rule_id INTEGER REFERENCES commission_rules(id)",
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMP",
+        "CREATE INDEX IF NOT EXISTS idx_bookings_confirmed_at ON bookings (confirmed_at)",
     ]
     # The original FK above lacks ON DELETE SET NULL — drop + re-add so admins
     # can remove a rule even after it's been snapshotted onto a booking. The
@@ -59,6 +61,15 @@ def _migrate_if_needed():
             conn.execute(text(stmt))
         conn.execute(text(refk_fix))
     print("[MIGRATE] commission columns ensured on bookings")
+
+    backfill = (
+        "UPDATE bookings "
+        "SET confirmed_at = COALESCE(bill_generated_at, created_at) "
+        "WHERE status = 'confirmed' AND confirmed_at IS NULL"
+    )
+    with engine.begin() as conn:
+        conn.execute(text(backfill))
+    print("[MIGRATE] confirmed_at column + backfill complete")
 
 
 def _bootstrap_if_empty():

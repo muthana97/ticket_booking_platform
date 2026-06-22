@@ -42,6 +42,10 @@ class Booking(Base):
         nullable=True,
     )
 
+    # Set by admin.service.confirm_payment at the moment status flips to
+    # `confirmed`. Drives the monthly bucket on /admin/reports.
+    confirmed_at = Column(DateTime, nullable=True, index=True)
+
     passengers = relationship("Passenger", back_populates="booking", cascade="all, delete-orphan")
 
 

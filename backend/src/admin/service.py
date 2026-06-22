@@ -222,6 +222,7 @@ def confirm_payment(
 
     booking.status = "confirmed"
     booking.payment_status = "paid"
+    booking.confirmed_at = _now_utc_naive()
     # Always stamp the supplied payment_method on confirmation. A caller-set
     # "cash" (provider walk-in) is more informative than the prior "billing_reference"
     # for accounting / commission downstream.

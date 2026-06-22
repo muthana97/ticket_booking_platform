@@ -55,6 +55,7 @@ def test_consumer_confirm_snapshots_commission(db, trip_with_seats):
     assert b.status == "confirmed"
     assert b.commission_amount == 160.0
     assert b.commission_rate_kind == "percentage"
+    assert b.confirmed_at is not None
 
 
 def test_walkin_confirm_zero_commission_even_with_rule(db, trip_with_seats):
@@ -68,6 +69,7 @@ def test_walkin_confirm_zero_commission_even_with_rule(db, trip_with_seats):
     assert b.commission_amount == 0.0
     assert b.commission_rate_kind is None
     assert b.commission_rule_id is None
+    assert b.confirmed_at is not None  # set on every confirmation, walk-in or not
 
 
 def test_confirm_without_rules_zero(db, trip_with_seats):
