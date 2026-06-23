@@ -23,3 +23,58 @@ def period_months(from_str: str, to_str: str) -> list[str]:
             m = 1
             y += 1
     return out
+
+
+def _period_bounds(period: list[str]) -> tuple[datetime, datetime]:
+    """Inclusive UTC datetime range for a list of YYYY-MM strings."""
+    first_y, first_m = map(int, period[0].split("-"))
+    last_y, last_m = map(int, period[-1].split("-"))
+    start = datetime(first_y, first_m, 1)
+    if last_m == 12:
+        end_y, end_m = last_y + 1, 1
+    else:
+        end_y, end_m = last_y, last_m + 1
+    end = datetime(end_y, end_m, 1)  # exclusive upper bound
+    return start, end
+
+
+def financial_by_month(
+    db: Session, *, period: list[str], provider_id: Optional[int],
+) -> list[dict]:
+    """One row per month in `period`. Sums commission_amount where not NULL,
+    counts bookings (confirmed only). Empty months appear with zeros."""
+    from ..booking.models import Booking
+    from ..inventory.models import Trip
+
+    start, end = _period_bounds(period)
+
+    q = (
+        db.query(Booking, Trip)
+        .join(Trip, Trip.id == Booking.trip_id)
+        .filter(
+            Booking.status == "confirmed",
+            Booking.confirmed_at.isnot(None),
+            Booking.confirmed_at >= start,
+            Booking.confirmed_at < end,
+        )
+    )
+    if provider_id is not None:
+        q = q.filter(Trip.provider_id == provider_id)
+
+    buckets: dict[str, dict] = {m: {"commission": 0.0, "bookings": 0} for m in period}
+    for b, _t in q.all():
+        # Spec §5: rows with commission_amount IS NULL are excluded entirely
+        # from the financial side. Walk-ins keep amount=0.0 (not NULL) so they
+        # still count here.
+        if b.commission_amount is None:
+            continue
+        key = b.confirmed_at.strftime("%Y-%m")
+        if key not in buckets:
+            continue
+        buckets[key]["bookings"] += 1
+        buckets[key]["commission"] += b.commission_amount
+
+    return [
+        {"month": m, "commission": round(v["commission"], 2), "bookings": v["bookings"]}
+        for m, v in buckets.items()
+    ]
