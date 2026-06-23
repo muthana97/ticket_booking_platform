@@ -3,7 +3,9 @@ import datetime as _dt
 import pytest
 
 from src.booking.models import Booking
-from src.finance.reports import period_months, financial_by_month
+from src.finance.reports import (
+    period_months, financial_by_month, financial_by_provider,
+)
 from src.inventory.models import Trip, Route, Bus
 
 
@@ -90,3 +92,32 @@ def test_financial_by_month_walkin_counts_with_zero(db, trip):
              channel="walkin", when=_dt.datetime(2026, 3, 15))
     rows = financial_by_month(db, period=["2026-03", "2026-03"], provider_id=None)
     assert rows == [{"month": "2026-03", "commission": 0.0, "bookings": 1}]
+
+
+def test_financial_by_provider_empty(db, trip):
+    rows = financial_by_provider(db, period=["2026-01", "2026-02"], provider_id=None)
+    assert rows == []
+
+
+def test_financial_by_provider_groups_per_provider(db, trip, provider_user):
+    # Two bookings on the same provider in range, one outside.
+    _booking(db, trip, commission=100.0, when=_dt.datetime(2026, 3, 5))
+    _booking(db, trip, commission=200.0, when=_dt.datetime(2026, 3, 20))
+    _booking(db, trip, commission=999.0, when=_dt.datetime(2026, 5, 1))  # out of range
+
+    rows = financial_by_provider(
+        db, period=["2026-03", "2026-03"], provider_id=None,
+    )
+    assert rows == [
+        {"provider_id": provider_user.id,
+         "provider_name": provider_user.full_name,
+         "commission": 300.0, "bookings": 2},
+    ]
+
+
+def test_financial_by_provider_filter(db, trip, provider_user):
+    _booking(db, trip, commission=100.0, when=_dt.datetime(2026, 3, 5))
+    rows = financial_by_provider(
+        db, period=["2026-03", "2026-03"], provider_id=provider_user.id + 999,
+    )
+    assert rows == []

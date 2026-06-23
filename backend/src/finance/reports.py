@@ -78,3 +78,57 @@ def financial_by_month(
         {"month": m, "commission": round(v["commission"], 2), "bookings": v["bookings"]}
         for m, v in buckets.items()
     ]
+
+
+def financial_by_provider(
+    db: Session, *, period: list[str], provider_id: Optional[int],
+) -> list[dict]:
+    """One row per provider with confirmed bookings + non-NULL commission in
+    the period. Providers with zero qualifying activity are omitted."""
+    from ..auth.models import User
+    from ..booking.models import Booking
+    from ..inventory.models import Trip
+
+    start, end = _period_bounds(period)
+
+    q = (
+        db.query(Booking, Trip)
+        .join(Trip, Trip.id == Booking.trip_id)
+        .filter(
+            Booking.status == "confirmed",
+            Booking.confirmed_at.isnot(None),
+            Booking.confirmed_at >= start,
+            Booking.confirmed_at < end,
+        )
+    )
+    if provider_id is not None:
+        q = q.filter(Trip.provider_id == provider_id)
+
+    buckets: dict[int, dict] = {}
+    for b, t in q.all():
+        # Same NULL exclusion as financial_by_month — financial-side only.
+        if b.commission_amount is None:
+            continue
+        pid = t.provider_id
+        if pid not in buckets:
+            buckets[pid] = {"commission": 0.0, "bookings": 0}
+        buckets[pid]["bookings"] += 1
+        buckets[pid]["commission"] += b.commission_amount
+
+    pids = list(buckets.keys())
+    if not pids:
+        return []
+    name_by_id = {
+        u.id: u.full_name
+        for u in db.query(User).filter(User.id.in_(pids)).all()
+    }
+
+    return [
+        {
+            "provider_id": pid,
+            "provider_name": name_by_id.get(pid, "—"),
+            "commission": round(v["commission"], 2),
+            "bookings": v["bookings"],
+        }
+        for pid, v in buckets.items()
+    ]
