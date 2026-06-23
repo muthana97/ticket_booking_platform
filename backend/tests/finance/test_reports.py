@@ -200,3 +200,67 @@ def test_build_reports_provider_filter(db, trip, provider_user):
     )
     assert result["financial"]["total_commission"] == 0.0
     assert result["operational"]["total_bookings"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Endpoint tests — exercises GET /admin/reports
+# ---------------------------------------------------------------------------
+
+def test_endpoint_default_period(client, auth_header):
+    """No from/to → defaults to last 6 months including current."""
+    r = client.get("/admin/reports", headers=auth_header)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert len(body["financial"]["by_month"]) == 6
+    assert "from" in body["period"] and "to" in body["period"]
+
+
+def test_endpoint_with_filters(client, auth_header, db, provider_user):
+    from src.inventory.models import Trip, Route, Bus
+    from src.booking.models import Booking
+    route = Route(origin="K", destination="P", duration="10h")
+    bus = Bus(provider_id=provider_user.id, name="B",
+              seat_layout_config={}, total_seats=45)
+    db.add_all([route, bus]); db.flush()
+    trip = Trip(provider_id=provider_user.id, bus_id=bus.id, route_id=route.id,
+                departure_time=_dt.datetime(2030, 1, 1), price=1000.0)
+    db.add(trip); db.flush()
+    b = Booking(customer_id=1, trip_id=trip.id, status="confirmed",
+                total_price=2000.0, channel="consumer", payment_status="paid",
+                commission_amount=160.0, seat_ids=[1],
+                confirmed_at=_dt.datetime(2026, 3, 10))
+    db.add(b); db.commit()
+
+    r = client.get("/admin/reports?from=2026-03&to=2026-03", headers=auth_header)
+    assert r.status_code == 200
+    assert r.json()["financial"]["total_commission"] == 160.0
+
+
+def test_endpoint_from_after_to_returns_400(client, auth_header):
+    r = client.get("/admin/reports?from=2026-06&to=2026-01", headers=auth_header)
+    assert r.status_code == 400
+
+
+def test_endpoint_range_over_24_months_returns_400(client, auth_header):
+    r = client.get("/admin/reports?from=2024-01&to=2027-01", headers=auth_header)
+    assert r.status_code == 400
+
+
+def test_endpoint_malformed_date_returns_400(client, auth_header):
+    r = client.get("/admin/reports?from=not-a-date&to=2026-06", headers=auth_header)
+    assert r.status_code == 400
+
+
+def test_endpoint_requires_admin(client, db):
+    from src.auth.models import User
+    from src.auth.utils import hash_password
+    u = User(email="cust@x.com", full_name="C",
+            password_hash=hash_password("Test#2026"),
+            role="customer", status="active", email_verified=True)
+    db.add(u); db.commit()
+    token = client.post(
+        "/auth/login",
+        json={"email": "cust@x.com", "password": "Test#2026"},
+    ).json()["access_token"]
+    r = client.get("/admin/reports", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 403

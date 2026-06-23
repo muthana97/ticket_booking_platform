@@ -1,15 +1,44 @@
+import re
+from datetime import datetime as _dt
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..auth.dependencies import require_admin
 from ..database import get_db
+from ..finance import reports as finance_reports
 from ..inventory import schemas as inv_schemas
 from ..inventory import service as inv_service
 from . import schemas, service
 
 router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(require_admin)])
+
+
+_YYYY_MM = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
+def _validate_period(from_str: str, to_str: str) -> None:
+    if not _YYYY_MM.match(from_str) or not _YYYY_MM.match(to_str):
+        raise HTTPException(400, "from/to must be in YYYY-MM format")
+    fy, fm = map(int, from_str.split("-"))
+    ty, tm = map(int, to_str.split("-"))
+    if (fy, fm) > (ty, tm):
+        raise HTTPException(400, "from must be <= to")
+    months = (ty - fy) * 12 + (tm - fm) + 1
+    if months > 24:
+        raise HTTPException(400, "Date range cannot exceed 24 months")
+
+
+def _default_period() -> tuple[str, str]:
+    now = _dt.utcnow()
+    # 5 months ago through current → 6-month inclusive window
+    m = now.month - 5
+    y = now.year
+    while m <= 0:
+        m += 12
+        y -= 1
+    return f"{y:04d}-{m:02d}", f"{now.year:04d}-{now.month:02d}"
 
 
 # ---------------------------------------------------------------------------
@@ -167,3 +196,24 @@ def confirm_payment(booking_id: int, db: Session = Depends(get_db)):
             + (f"Confirmation emailed to {delivered_to}." if delivered_to else "")
         ),
     }
+
+
+# ---------------------------------------------------------------------------
+# Reports (financial + operational, monthly by confirmation date)
+# ---------------------------------------------------------------------------
+
+@router.get("/reports", response_model=schemas.ReportsResponse)
+def get_reports(
+    from_: Optional[str] = Query(default=None, alias="from"),
+    to: Optional[str] = Query(default=None),
+    provider_id: Optional[int] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    if not from_ or not to:
+        d_from, d_to = _default_period()
+        from_ = from_ or d_from
+        to = to or d_to
+    _validate_period(from_, to)
+    return finance_reports.build_reports(
+        db, from_str=from_, to_str=to, provider_id=provider_id,
+    )
