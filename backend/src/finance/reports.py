@@ -132,3 +132,58 @@ def financial_by_provider(
         }
         for pid, v in buckets.items()
     ]
+
+
+def operational_by_month(
+    db: Session, *, period: list[str], provider_id: Optional[int],
+) -> list[dict]:
+    """One row per month with booking + passenger + channel-split counts.
+    Includes confirmed bookings regardless of commission state."""
+    from sqlalchemy import func
+    from ..booking.models import Booking, Passenger
+    from ..inventory.models import Trip
+
+    start, end = _period_bounds(period)
+
+    bookings_q = (
+        db.query(Booking, Trip)
+        .join(Trip, Trip.id == Booking.trip_id)
+        .filter(
+            Booking.status == "confirmed",
+            Booking.confirmed_at.isnot(None),
+            Booking.confirmed_at >= start,
+            Booking.confirmed_at < end,
+        )
+    )
+    if provider_id is not None:
+        bookings_q = bookings_q.filter(Trip.provider_id == provider_id)
+
+    book_rows = bookings_q.all()
+    booking_ids = [b.id for b, _ in book_rows]
+
+    pax_count_by_booking: dict[int, int] = {}
+    if booking_ids:
+        for bid, n in (
+            db.query(Passenger.booking_id, func.count(Passenger.id))
+            .filter(Passenger.booking_id.in_(booking_ids))
+            .group_by(Passenger.booking_id)
+            .all()
+        ):
+            pax_count_by_booking[bid] = n
+
+    buckets: dict[str, dict] = {
+        m: {"bookings": 0, "passengers": 0, "consumer": 0, "walkin": 0}
+        for m in period
+    }
+    for b, _t in book_rows:
+        key = b.confirmed_at.strftime("%Y-%m")
+        if key not in buckets:
+            continue
+        buckets[key]["bookings"] += 1
+        buckets[key]["passengers"] += pax_count_by_booking.get(b.id, 0)
+        if b.channel == "walkin":
+            buckets[key]["walkin"] += 1
+        else:
+            buckets[key]["consumer"] += 1
+
+    return [{"month": m, **v} for m, v in buckets.items()]

@@ -3,8 +3,10 @@ import datetime as _dt
 import pytest
 
 from src.booking.models import Booking
+from src.booking.models import Passenger
 from src.finance.reports import (
     period_months, financial_by_month, financial_by_provider,
+    operational_by_month,
 )
 from src.inventory.models import Trip, Route, Bus
 
@@ -121,3 +123,36 @@ def test_financial_by_provider_filter(db, trip, provider_user):
         db, period=["2026-03", "2026-03"], provider_id=provider_user.id + 999,
     )
     assert rows == []
+
+
+def _with_passengers(db, booking, n):
+    for i in range(n):
+        db.add(Passenger(
+            booking_id=booking.id,
+            full_name=f"Pax {i+1}",
+            phone_number="249111",
+            seat_number=f"{i+1}A",
+        ))
+    db.commit()
+    return booking
+
+
+def test_operational_by_month_counts_all_confirmed(db, trip):
+    """Even bookings with NULL commission count operationally."""
+    b1 = _booking(db, trip, commission=None, when=_dt.datetime(2026, 3, 5))
+    _with_passengers(db, b1, 2)
+    rows = operational_by_month(db, period=["2026-03", "2026-03"], provider_id=None)
+    assert rows == [{"month": "2026-03", "bookings": 1, "passengers": 2,
+                     "consumer": 1, "walkin": 0}]
+
+
+def test_operational_by_month_consumer_vs_walkin_split(db, trip):
+    b1 = _booking(db, trip, channel="consumer", commission=80.0,
+                  when=_dt.datetime(2026, 4, 1))
+    _with_passengers(db, b1, 2)
+    b2 = _booking(db, trip, channel="walkin", commission=0.0,
+                  when=_dt.datetime(2026, 4, 15))
+    _with_passengers(db, b2, 3)
+    rows = operational_by_month(db, period=["2026-04", "2026-04"], provider_id=None)
+    assert rows == [{"month": "2026-04", "bookings": 2, "passengers": 5,
+                     "consumer": 1, "walkin": 1}]
