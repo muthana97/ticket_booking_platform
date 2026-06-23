@@ -4298,6 +4298,21 @@ function renderReportTable(sel, headers, rows) {
     ).join('') + '</tbody>';
 }
 
+function downloadCsv(filename, headers, rows) {
+  const csvCell = (v) => {
+    const s = String(v ?? '');
+    return /["\n,]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(',')];
+  rows.forEach(cells => lines.push(cells.map(csvCell).join(',')));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // Debounced refetch on filter changes (matches the booking-filter pattern).
 let _repDebounce = null;
 function scheduleReportRefresh() {
@@ -4416,6 +4431,37 @@ function wire() {
   $('#rep-from')?.addEventListener('input', scheduleReportRefresh);
   $('#rep-to')?.addEventListener('input', scheduleReportRefresh);
   $('#rep-provider')?.addEventListener('change', scheduleReportRefresh);
+
+  // CSV download — delegated on the Reports tab content. Each [data-export]
+  // button identifies which slice of STATE.reports to flatten.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-export]');
+    if (!btn) return;
+    const key = btn.dataset.export;
+    const r = STATE.reports;
+    if (!r) return;
+    const period = r.period;
+    const pid = $('#rep-provider')?.value || '';
+    const pidSuffix = pid ? `-provider${pid}` : '';
+    const baseName = `tazkirati-${key}-${period.from}-to-${period.to}${pidSuffix}.csv`;
+
+    let headers, rows;
+    if (key === 'financial-by-month') {
+      headers = ['month', 'commission', 'bookings'];
+      rows = r.financial.by_month.map(x => [x.month, x.commission, x.bookings]);
+    } else if (key === 'financial-by-provider') {
+      headers = ['provider_id', 'provider_name', 'commission', 'bookings'];
+      rows = r.financial.by_provider.map(x => [x.provider_id, x.provider_name, x.commission, x.bookings]);
+    } else if (key === 'operational-by-month') {
+      headers = ['month', 'bookings', 'passengers', 'consumer', 'walkin'];
+      rows = r.operational.by_month.map(x => [x.month, x.bookings, x.passengers, x.consumer, x.walkin]);
+    } else if (key === 'operational-by-provider') {
+      headers = ['provider_id', 'provider_name', 'bookings', 'passengers', 'consumer', 'walkin'];
+      rows = r.operational.by_provider.map(x => [x.provider_id, x.provider_name, x.bookings, x.passengers, x.consumer, x.walkin]);
+    } else { return; }
+
+    downloadCsv(baseName, headers, rows);
+  });
 
   // Global commission — radio toggle highlight
   $$('#commission-global-kind label').forEach(l => {
