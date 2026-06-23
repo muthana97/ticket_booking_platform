@@ -2759,6 +2759,7 @@ const STATE = {
   adminTab: 'providers',
   providerTab: 'trips',
   adminRefreshTimer: null,
+  reports: null,  // cached last /admin/reports response, used by CSV export
   adminBookingsTimer: null,
   awaitingCount: 0,        // count of pending+committed_pending bookings (nav badge)
   resendCooldownSecs: 0,   // OTP resend cooldown
@@ -4043,6 +4044,7 @@ async function refreshAdminTab() {
     if (tab === 'trips')     await renderAdminTrips();
     if (tab === 'bookings')  await renderAdminBookings();
     if (tab === 'payments')  await renderAdminPayments();
+    if (tab === 'reports')   await renderAdminReports();
     // Pull other counts quietly
     if (tab !== 'providers') api('/admin/providers').then(p => $('#cnt-providers').textContent = p.length).catch(()=>{});
     if (tab !== 'trips')     api('/admin/trips').then(t => $('#cnt-trips').textContent = t.length).catch(()=>{});
@@ -4215,6 +4217,96 @@ async function adminConfirmPayment(payment) {
   } catch (e) { toast(e.message, true); }
 }
 
+async function renderAdminReports() {
+  const from = $('#rep-from')?.value || '';
+  const to   = $('#rep-to')?.value || '';
+  const pid  = $('#rep-provider')?.value || '';
+
+  // Populate the provider dropdown once (it starts with just the "All providers" option).
+  if ($('#rep-provider')?.options.length === 1) {
+    try {
+      const provs = await api('/admin/providers?status=active');
+      const sel = $('#rep-provider');
+      provs.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id; opt.textContent = p.full_name;
+        sel.appendChild(opt);
+      });
+    } catch (_) {}
+  }
+
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to)   params.set('to',   to);
+  if (pid)  params.set('provider_id', pid);
+
+  try {
+    const data = await api('/admin/reports' + (params.toString() ? '?' + params : ''));
+    STATE.reports = data;
+    drawReports(data);
+  } catch (e) { toast(e.message, true); }
+}
+
+function drawReports(data) {
+  if (data.period?.from && !$('#rep-from').value) $('#rep-from').value = data.period.from;
+  if (data.period?.to   && !$('#rep-to').value)   $('#rep-to').value   = data.period.to;
+
+  $('#rep-fin-total').textContent     = 'SDG ' + fmtMoney(data.financial.total_commission);
+  $('#rep-op-bookings').textContent   = fmtMoney(data.operational.total_bookings);
+  $('#rep-op-passengers').textContent = fmtMoney(data.operational.total_passengers);
+
+  renderReportTable('#rep-fin-by-month', [
+    t('admin.reports.col.month'),
+    t('admin.reports.col.commission'),
+    t('admin.reports.col.bookings'),
+  ], data.financial.by_month.map(r => [r.month, fmtMoney(r.commission), r.bookings]));
+
+  renderReportTable('#rep-fin-by-provider', [
+    t('admin.reports.col.provider'),
+    t('admin.reports.col.commission'),
+    t('admin.reports.col.bookings'),
+  ], data.financial.by_provider.map(r => [r.provider_name, fmtMoney(r.commission), r.bookings]));
+
+  renderReportTable('#rep-op-by-month', [
+    t('admin.reports.col.month'),
+    t('admin.reports.col.bookings'),
+    t('admin.reports.col.passengers'),
+    t('admin.reports.col.consumer'),
+    t('admin.reports.col.walkin'),
+  ], data.operational.by_month.map(r => [r.month, r.bookings, r.passengers, r.consumer, r.walkin]));
+
+  renderReportTable('#rep-op-by-provider', [
+    t('admin.reports.col.provider'),
+    t('admin.reports.col.bookings'),
+    t('admin.reports.col.passengers'),
+    t('admin.reports.col.consumer'),
+    t('admin.reports.col.walkin'),
+  ], data.operational.by_provider.map(r => [r.provider_name, r.bookings, r.passengers, r.consumer, r.walkin]));
+
+  const allEmpty =
+    data.financial.total_commission === 0 &&
+    data.operational.total_bookings === 0;
+  $('#rep-empty').classList.toggle('hidden', !allEmpty);
+}
+
+function renderReportTable(sel, headers, rows) {
+  const tbl = $(sel);
+  tbl.innerHTML =
+    '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>' +
+    '<tbody>' + rows.map(cells =>
+      '<tr>' + cells.map(c => `<td>${escapeHtml(String(c))}</td>`).join('') + '</tr>'
+    ).join('') + '</tbody>';
+}
+
+// Debounced refetch on filter changes (matches the booking-filter pattern).
+let _repDebounce = null;
+function scheduleReportRefresh() {
+  clearTimeout(_repDebounce);
+  _repDebounce = setTimeout(() => {
+    if (STATE.adminTab === 'reports') renderAdminReports();
+  }, 280);
+}
+
 function startAdminRefresh() {
   stopAdminRefresh();
   STATE.adminRefreshTimer = setInterval(refreshAdminTab, ADMIN_REFRESH_MS);
@@ -4319,6 +4411,11 @@ function wire() {
       syncSettingsLanguagePills();
     });
   });
+
+  // Reports — filter strip wiring (debounced auto-apply)
+  $('#rep-from')?.addEventListener('input', scheduleReportRefresh);
+  $('#rep-to')?.addEventListener('input', scheduleReportRefresh);
+  $('#rep-provider')?.addEventListener('change', scheduleReportRefresh);
 
   // Global commission — radio toggle highlight
   $$('#commission-global-kind label').forEach(l => {
