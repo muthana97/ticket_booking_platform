@@ -366,6 +366,34 @@
        so each line stays readable. */
     .provider-bookings-footer { flex-direction: column; gap: 4px; padding: 10px 14px; }
 
+    /* Reports tab — tables collapse to stacked cards. Each row becomes a
+       card with the first cell as a prominent label. */
+    .report-table thead { display: none; }
+    .report-table, .report-table tbody, .report-table tr, .report-table td {
+      display: block; width: 100%;
+    }
+    .report-table tr {
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      margin-bottom: 8px;
+      padding: 10px 12px;
+    }
+    .report-table tr:nth-child(even) td { background: transparent; }
+    .report-table td {
+      padding: 3px 0;
+      border-bottom: 0;
+      font-size: 13px;
+    }
+    .report-table td:first-child {
+      font-family: 'Fraunces', serif; font-weight: 800;
+      font-size: 15px; letter-spacing: -0.01em;
+      padding-bottom: 6px;
+    }
+    .report-headline { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .report-headline-grid { grid-template-columns: 1fr; }
+    .kv-value { font-size: 22px; }
+    .report-panel-head h4 { font-size: 14px; }
+
     /* Customer nav becomes a fixed bottom tab bar. */
     .topbar-nav:not([hidden]) {
       position: fixed;
