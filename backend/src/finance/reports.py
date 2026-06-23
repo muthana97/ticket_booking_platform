@@ -252,3 +252,34 @@ def operational_by_provider(
         {"provider_id": pid, "provider_name": name_by_id.get(pid, "—"), **v}
         for pid, v in buckets.items()
     ]
+
+
+def build_reports(
+    db: Session, *, from_str: str, to_str: str, provider_id: Optional[int],
+) -> dict:
+    """Compose the /admin/reports response in the documented shape."""
+    period = period_months(from_str, to_str)
+
+    fin_by_month = financial_by_month(db, period=period, provider_id=provider_id)
+    fin_by_provider = financial_by_provider(db, period=period, provider_id=provider_id)
+    op_by_month = operational_by_month(db, period=period, provider_id=provider_id)
+    op_by_provider = operational_by_provider(db, period=period, provider_id=provider_id)
+
+    total_commission = round(sum(r["commission"] for r in fin_by_month), 2)
+    total_bookings = sum(r["bookings"] for r in op_by_month)
+    total_passengers = sum(r["passengers"] for r in op_by_month)
+
+    return {
+        "period": {"from": from_str, "to": to_str},
+        "financial": {
+            "total_commission": total_commission,
+            "by_month": fin_by_month,
+            "by_provider": fin_by_provider,
+        },
+        "operational": {
+            "total_bookings": total_bookings,
+            "total_passengers": total_passengers,
+            "by_month": op_by_month,
+            "by_provider": op_by_provider,
+        },
+    }

@@ -6,7 +6,7 @@ from src.booking.models import Booking
 from src.booking.models import Passenger
 from src.finance.reports import (
     period_months, financial_by_month, financial_by_provider,
-    operational_by_month, operational_by_provider,
+    operational_by_month, operational_by_provider, build_reports,
 )
 from src.inventory.models import Trip, Route, Bus
 
@@ -175,3 +175,28 @@ def test_operational_by_provider_groups_and_splits(db, trip, provider_user):
         "bookings": 2, "passengers": 3,
         "consumer": 1, "walkin": 1,
     }]
+
+
+def test_build_reports_shape(db, trip, provider_user):
+    b = _booking(db, trip, commission=120.0, when=_dt.datetime(2026, 3, 10))
+    _with_passengers(db, b, 2)
+
+    result = build_reports(db, from_str="2026-03", to_str="2026-03", provider_id=None)
+    assert result["period"] == {"from": "2026-03", "to": "2026-03"}
+    assert result["financial"]["total_commission"] == 120.0
+    assert len(result["financial"]["by_month"]) == 1
+    assert len(result["financial"]["by_provider"]) == 1
+    assert result["operational"]["total_bookings"] == 1
+    assert result["operational"]["total_passengers"] == 2
+    assert len(result["operational"]["by_month"]) == 1
+    assert len(result["operational"]["by_provider"]) == 1
+
+
+def test_build_reports_provider_filter(db, trip, provider_user):
+    _booking(db, trip, commission=100.0, when=_dt.datetime(2026, 3, 10))
+    result = build_reports(
+        db, from_str="2026-03", to_str="2026-03",
+        provider_id=provider_user.id + 999,
+    )
+    assert result["financial"]["total_commission"] == 0.0
+    assert result["operational"]["total_bookings"] == 0
