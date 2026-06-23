@@ -187,3 +187,68 @@ def operational_by_month(
             buckets[key]["consumer"] += 1
 
     return [{"month": m, **v} for m, v in buckets.items()]
+
+
+def operational_by_provider(
+    db: Session, *, period: list[str], provider_id: Optional[int],
+) -> list[dict]:
+    """One row per provider with confirmed activity in the period.
+    Counts include all confirmed rows regardless of commission state."""
+    from sqlalchemy import func
+    from ..auth.models import User
+    from ..booking.models import Booking, Passenger
+    from ..inventory.models import Trip
+
+    start, end = _period_bounds(period)
+
+    bookings_q = (
+        db.query(Booking, Trip)
+        .join(Trip, Trip.id == Booking.trip_id)
+        .filter(
+            Booking.status == "confirmed",
+            Booking.confirmed_at.isnot(None),
+            Booking.confirmed_at >= start,
+            Booking.confirmed_at < end,
+        )
+    )
+    if provider_id is not None:
+        bookings_q = bookings_q.filter(Trip.provider_id == provider_id)
+
+    book_rows = bookings_q.all()
+    booking_ids = [b.id for b, _ in book_rows]
+
+    pax_count_by_booking: dict[int, int] = {}
+    if booking_ids:
+        for bid, n in (
+            db.query(Passenger.booking_id, func.count(Passenger.id))
+            .filter(Passenger.booking_id.in_(booking_ids))
+            .group_by(Passenger.booking_id)
+            .all()
+        ):
+            pax_count_by_booking[bid] = n
+
+    buckets: dict[int, dict] = {}
+    for b, t in book_rows:
+        pid = t.provider_id
+        if pid not in buckets:
+            buckets[pid] = {"bookings": 0, "passengers": 0,
+                            "consumer": 0, "walkin": 0}
+        buckets[pid]["bookings"] += 1
+        buckets[pid]["passengers"] += pax_count_by_booking.get(b.id, 0)
+        if b.channel == "walkin":
+            buckets[pid]["walkin"] += 1
+        else:
+            buckets[pid]["consumer"] += 1
+
+    pids = list(buckets.keys())
+    if not pids:
+        return []
+    name_by_id = {
+        u.id: u.full_name
+        for u in db.query(User).filter(User.id.in_(pids)).all()
+    }
+
+    return [
+        {"provider_id": pid, "provider_name": name_by_id.get(pid, "—"), **v}
+        for pid, v in buckets.items()
+    ]

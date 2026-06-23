@@ -6,7 +6,7 @@ from src.booking.models import Booking
 from src.booking.models import Passenger
 from src.finance.reports import (
     period_months, financial_by_month, financial_by_provider,
-    operational_by_month,
+    operational_by_month, operational_by_provider,
 )
 from src.inventory.models import Trip, Route, Bus
 
@@ -156,3 +156,22 @@ def test_operational_by_month_consumer_vs_walkin_split(db, trip):
     rows = operational_by_month(db, period=["2026-04", "2026-04"], provider_id=None)
     assert rows == [{"month": "2026-04", "bookings": 2, "passengers": 5,
                      "consumer": 1, "walkin": 1}]
+
+
+def test_operational_by_provider_groups_and_splits(db, trip, provider_user):
+    b1 = _booking(db, trip, channel="consumer", commission=100.0,
+                  when=_dt.datetime(2026, 3, 5))
+    _with_passengers(db, b1, 2)
+    b2 = _booking(db, trip, channel="walkin", commission=0.0,
+                  when=_dt.datetime(2026, 3, 12))
+    _with_passengers(db, b2, 1)
+
+    rows = operational_by_provider(
+        db, period=["2026-03", "2026-03"], provider_id=None,
+    )
+    assert rows == [{
+        "provider_id": provider_user.id,
+        "provider_name": provider_user.full_name,
+        "bookings": 2, "passengers": 3,
+        "consumer": 1, "walkin": 1,
+    }]
