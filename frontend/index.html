@@ -367,28 +367,52 @@
     .provider-bookings-footer { flex-direction: column; gap: 4px; padding: 10px 14px; }
 
     /* Reports tab — tables collapse to stacked cards. Each row becomes a
-       card with the first cell as a prominent label. */
-    .report-table thead { display: none; }
-    .report-table, .report-table tbody, .report-table tr, .report-table td {
+       card with the first cell as a prominent label; remaining cells show
+       their column header inline via data-label so the numbers have context.
+       Specificity is bumped via `.report-panel` ancestor selector to win
+       over the desktop `.report-table td` rule that lives later in the
+       stylesheet (CLAUDE.md known CSS source-order quirk). */
+    .report-panel .report-table thead { display: none; }
+    .report-panel .report-table,
+    .report-panel .report-table tbody,
+    .report-panel .report-table tr,
+    .report-panel .report-table td {
       display: block; width: 100%;
     }
-    .report-table tr {
+    .report-panel .report-table tr {
       background: var(--paper);
       border: 1px solid var(--rule);
       margin-bottom: 8px;
       padding: 10px 12px;
     }
-    .report-table tr:nth-child(even) td { background: transparent; }
-    .report-table td {
-      padding: 3px 0;
+    .report-panel .report-table tr:nth-child(even) td { background: transparent; }
+    .report-panel .report-table td {
+      padding: 4px 0;
       border-bottom: 0;
       font-size: 13px;
+      display: flex; align-items: baseline; gap: 8px;
     }
-    .report-table td:first-child {
+    .report-panel .report-table td:first-child {
       font-family: 'Fraunces', serif; font-weight: 800;
       font-size: 15px; letter-spacing: -0.01em;
       padding-bottom: 6px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 4px;
+      display: block; /* first cell stands alone, no inline label */
     }
+    .report-panel .report-table td:not(:first-child)::before {
+      content: attr(data-label);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--ink-soft);
+      font-weight: 700;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .report-panel .report-table td:not(:first-child) {
+      justify-content: space-between;
+    }
+
     .report-headline { flex-direction: column; align-items: flex-start; gap: 4px; }
     .report-headline-grid { grid-template-columns: 1fr; }
     .kv-value { font-size: 22px; }
@@ -4322,7 +4346,9 @@ function renderReportTable(sel, headers, rows) {
   tbl.innerHTML =
     '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>' +
     '<tbody>' + rows.map(cells =>
-      '<tr>' + cells.map(c => `<td>${escapeHtml(String(c))}</td>`).join('') + '</tr>'
+      '<tr>' + cells.map((c, i) =>
+        `<td data-label="${escapeHtml(headers[i] || '')}">${escapeHtml(String(c))}</td>`
+      ).join('') + '</tr>'
     ).join('') + '</tbody>';
 }
 
