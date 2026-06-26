@@ -1441,11 +1441,36 @@
   .ticket-actions button.primary:hover { background: var(--nile); }
 
   @media print {
-    body * { visibility: hidden; }
-    .ticket, .ticket * { visibility: visible; }
-    .ticket { position: absolute; top: 0; left: 0; box-shadow: none; }
-    .ticket-actions { display: none; }
-    .modal-bg { position: static; padding: 0; background: white; }
+    /* Use display:none rather than visibility:hidden so non-ticket elements
+       don't reserve layout space — otherwise the printer pads the document
+       with blank pages for every offscreen screen + modal. */
+    body > .shell,
+    body > #global-loader,
+    body > #toast,
+    body > .modal-bg:not(#ticket-modal),
+    .ticket-actions {
+      display: none !important;
+    }
+    /* The ticket modal stays in the DOM and prints inline, paper-style. */
+    #ticket-modal,
+    #ticket-modal.show {
+      position: static !important;
+      display: block !important;
+      background: white !important;
+      padding: 0 !important;
+      backdrop-filter: none !important;
+      z-index: auto !important;
+      overflow: visible !important;
+    }
+    .ticket {
+      box-shadow: none !important;
+      border: 1px solid #000 !important;
+      margin: 0 auto !important;
+      width: 100% !important;
+      max-width: 720px !important;
+    }
+    /* Make sure backgrounds + colours print (most browsers strip by default). */
+    .ticket, .ticket * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 
   .hidden { display: none !important; }
