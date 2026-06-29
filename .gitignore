@@ -11,3 +11,6 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Design exploration sandbox — not part of shipped code
+demos/
