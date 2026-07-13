@@ -297,6 +297,18 @@
   .topbar .session button.signout:hover { background: currentColor; color: var(--paper); }
   .topbar.role-provider .session button.signout:hover { color: var(--ink); }
   .topbar.role-admin    .session button.signout:hover { color: var(--admin); }
+  /* Support link — sits next to signout in the session block, visible to
+     every logged-in role so no chrome variation between customer/provider/admin. */
+  .topbar .session a.support-link {
+    text-decoration: none;
+    color: inherit;
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    border: 1.5px dashed currentColor;
+    opacity: 0.85;
+  }
+  .topbar .session a.support-link:hover { opacity: 1; border-style: solid; }
 
   /* Phone breakpoint — top bar = compact identity row, nav moves to a fixed
      bottom tab bar (native iOS/Android pattern). */
@@ -1557,6 +1569,7 @@
       <div class="session" id="session" hidden>
         <span class="badge" id="role-badge">—</span>
         <span id="email-tag">—</span>
+        <a class="support-link" id="support-link" href="mailto:gadget.service.solutions@gmail.com" data-i18n="nav.support">Support</a>
         <button class="signout" id="signout-btn" data-i18n="signout">Sign out</button>
       </div>
     </div>
@@ -2986,13 +2999,9 @@ function paintChrome() {
       nav.innerHTML = `
         <a class="nav-link" data-nav="customer-search">${t('nav.search')}</a>
         <a class="nav-link" data-nav="customer-my-tickets">${t('nav.mytickets')}${badge}</a>
-        <a class="nav-link" data-nav="support" href="mailto:gadget.service.solutions@gmail.com">${t('nav.support')}</a>
       `;
       nav.querySelectorAll('a').forEach(a => {
         a.classList.toggle('active', STATE.screen === a.dataset.nav);
-        // The support link is a plain mailto: — let the browser handle it and
-        // don't hijack with the SPA router.
-        if (a.dataset.nav === 'support') return;
         a.addEventListener('click', () => {
           if (a.dataset.nav === 'customer-search') {
             STATE.history = [];
@@ -3415,6 +3424,10 @@ async function openExistingTicket(bookingId) {
 
 /* ---------- Provider home (tabs) ---------- */
 async function refreshProviderTab() {
+  // "+ New Trip" belongs to the Trips tab only. Toggling here (not just in
+  // switchProviderTab) covers the initial provider-home entry, where the
+  // click handler never fires.
+  $('#add-trip-open-btn').classList.toggle('hidden', STATE.providerTab !== 'trips');
   if (STATE.providerTab === 'trips')    return refreshProviderTrips();
   if (STATE.providerTab === 'bookings') return refreshProviderBookings();
 }
