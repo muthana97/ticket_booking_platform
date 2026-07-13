@@ -35,6 +35,9 @@ def _migrate_if_needed():
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS commission_rule_id INTEGER REFERENCES commission_rules(id)",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMP",
         "CREATE INDEX IF NOT EXISTS idx_bookings_confirmed_at ON bookings (confirmed_at)",
+        # Phone is now optional on the passenger form (GEN-1). Existing rows
+        # have values; DROP NOT NULL is a no-op for those.
+        "ALTER TABLE passengers ALTER COLUMN phone_number DROP NOT NULL",
     ]
     # The original FK above lacks ON DELETE SET NULL — drop + re-add so admins
     # can remove a rule even after it's been snapshotted onto a booking. The

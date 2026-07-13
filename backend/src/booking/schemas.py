@@ -9,9 +9,9 @@ from datetime import datetime
 
 class PassengerInput(BaseModel):
     full_name: str
-    phone_number: str
-    national_id: Optional[str] = None
-    seat_number: str  # Must match one of seat_numbers below
+    phone_number: Optional[str] = None  # optional — captured for provider records only
+    national_id: Optional[str] = None   # optional — captured for provider records only
+    seat_number: str                    # Must match one of seat_numbers below
 
 
 class BookingLockRequest(BaseModel):

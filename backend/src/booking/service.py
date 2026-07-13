@@ -26,6 +26,75 @@ def _generate_billing_reference() -> str:
     return f"BOK-{body}-{suffix}"
 
 
+def _normalize_name(name: str) -> str:
+    """Case-insensitive + whitespace-normalized form used for duplicate checks.
+    "  Mohamed  Ali  " and "MOHAMED ALI" collapse to the same key. Adding
+    a middle name genuinely disambiguates because it changes the token count."""
+    return " ".join((name or "").strip().split()).lower()
+
+
+def _validate_passenger_names(db: Session, trip_id: int, passengers: list) -> None:
+    """Apply the three GEN-1 rules before we take any row locks:
+      1. Each passenger name must contain at least two whitespace-separated
+         words (first + last minimum).
+      2. No two passengers within this booking may share the same normalized
+         name — same person twice on the same booking is an operator mistake.
+      3. No passenger name may match a passenger on an active booking for the
+         same trip. Expired holds don't count; pending/committed/confirmed do.
+    On failure raise HTTPException 400 with a message the frontend can toast."""
+    if not passengers:
+        return
+
+    # Rule 1: at least two names
+    for p in passengers:
+        if len(_normalize_name(p.full_name).split()) < 2:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Please enter at least two names (first and last) "
+                    f"for the passenger on seat {p.seat_number}."
+                ),
+            )
+
+    # Rule 2: no in-booking dupes
+    seen: dict[str, str] = {}  # normalized_name → seat_number
+    for p in passengers:
+        key = _normalize_name(p.full_name)
+        if key in seen:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"'{p.full_name}' is used for both seat {seen[key]} and "
+                    f"seat {p.seat_number}. Add an additional name (e.g. a "
+                    f"middle or family name) to differentiate."
+                ),
+            )
+        seen[key] = p.seat_number
+
+    # Rule 3: no cross-booking dupe on this trip. Only active bookings count;
+    # `expired` rows on this trip are dead holds and free their names.
+    existing = (
+        db.query(Passenger.full_name)
+        .join(Booking, Booking.id == Passenger.booking_id)
+        .filter(
+            Booking.trip_id == trip_id,
+            Booking.status.in_(["pending", "committed_pending", "confirmed"]),
+        )
+        .all()
+    )
+    existing_keys = {_normalize_name(name) for (name,) in existing}
+    for p in passengers:
+        if _normalize_name(p.full_name) in existing_keys:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"A passenger named '{p.full_name}' is already booked on "
+                    f"this trip. Add an additional name (e.g. a middle or "
+                    f"family name) to differentiate."
+                ),
+            )
+
+
 # ---------------------------------------------------------------------------
 # The Shared Locking Core (SEAT-02 / SEAT-04)
 # Both consumer checkout AND provider walk-in flow through this function.
@@ -47,6 +116,10 @@ def lock_seats(
     The Reaper background daemon (tasks.py) reads `expires_at` to release
     seats from any booking whose window lapses without billing intent.
     """
+    # 0. Validate passenger names before we take any locks (GEN-1) — no point
+    #    locking seats we're about to reject.
+    _validate_passenger_names(db, trip_id, passengers or [])
+
     # 1. Row-level lock on the requested seats
     seats = (
         db.query(Seat)

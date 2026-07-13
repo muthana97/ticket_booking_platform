@@ -55,7 +55,7 @@ class Passenger(Base):
     id = Column(Integer, primary_key=True, index=True)
     booking_id = Column(Integer, ForeignKey("bookings.id"))
     full_name = Column(String, nullable=False)
-    phone_number = Column(String, nullable=False)
+    phone_number = Column(String, nullable=True)  # optional per GEN-1 (2026-07-13)
     national_id = Column(String, nullable=True)
     seat_number = Column(String, nullable=True)  # The seat this passenger occupies
 

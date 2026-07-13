@@ -1017,10 +1017,12 @@
   .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 8px; border: 1px solid var(--rule); background: var(--paper); }
   .chip.empty { opacity: 0.4; }
-  .pax-row { display: grid; grid-template-columns: 56px 1fr; gap: 8px; margin-bottom: 8px; align-items: center; }
-  .pax-row .seat-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 6px 8px; background: var(--ink); color: var(--bone); text-align: center; letter-spacing: 0.1em; }
+  .pax-row { display: grid; grid-template-columns: 56px 1fr; gap: 8px; margin-bottom: 14px; align-items: start; }
+  .pax-row .seat-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 6px 8px; background: var(--ink); color: var(--bone); text-align: center; letter-spacing: 0.1em; align-self: start; }
+  .pax-row .pax-fields { display: flex; flex-direction: column; gap: 6px; }
   .pax-row input { font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; background: var(--paper); border: 1px solid var(--rule); padding: 8px 10px; color: var(--ink); outline: none; transition: border-color 200ms, background 200ms; }
   .pax-row input:focus { border-color: var(--nile); background: var(--bone); }
+  .pax-row input.pax-optional { font-size: 12px; color: var(--ink-soft); }
 
   .summary-row { display: flex; justify-content: space-between; align-items: baseline; }
   .summary-row .k { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: var(--ink-soft); text-transform: uppercase; }
@@ -2340,6 +2342,10 @@ const I18N = {
     'book.tapseats': 'Tap seats to select',
     'book.pax': 'Passenger Details',
     'book.fillnames': 'Select seats to fill in passenger names.',
+    'book.phone.placeholder': 'Phone number (optional)',
+    'book.id.placeholder': 'National ID (optional)',
+    'book.err.name_too_short': 'Please enter at least two names (first and last) for the passenger on seat {seat}.',
+    'book.err.dupe_in_booking': '\'{name}\' is used for both seat {a} and seat {b}. Add an additional name (e.g. a middle or family name) to differentiate.',
     'book.fullname.placeholder': 'Full name',
     'book.total': 'Total', 'book.seats': 'seats', 'book.seat': 'seat',
     'book.lock': 'Lock Seats', 'book.walkin': 'Issue Walk-In',
@@ -2571,6 +2577,10 @@ const I18N = {
     'book.tapseats': 'اضغط على المقاعد للاختيار',
     'book.pax': 'بيانات الركاب',
     'book.fillnames': 'اختر مقاعد لتعبئة أسماء الركاب.',
+    'book.phone.placeholder': 'رقم الهاتف (اختياري)',
+    'book.id.placeholder': 'الرقم الوطني (اختياري)',
+    'book.err.name_too_short': 'يرجى إدخال اسمين على الأقل (الأول والأخير) للراكب في المقعد {seat}.',
+    'book.err.dupe_in_booking': 'تم استخدام «{name}» للمقعد {a} والمقعد {b}. أضف اسمًا إضافيًا (مثل اسم الأب أو العائلة) للتمييز.',
     'book.fullname.placeholder': 'الاسم الكامل',
     'book.total': 'الإجمالي', 'book.seats': 'مقاعد', 'book.seat': 'مقعد',
     'book.lock': 'حجز المقاعد', 'book.walkin': 'حجز عند المنفذ',
@@ -3761,21 +3771,29 @@ function refreshSelectionUI() {
 
   const body = $('#pax-body'); body.innerHTML = '';
   if (STATE.selected.size === 0) {
-    body.innerHTML = `<div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">Select seats to fill in passenger names.</div>`;
+    body.innerHTML = `<div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${t('book.fillnames')}</div>`;
   } else {
     [...STATE.selected].sort(seatSortKey).forEach(s => {
       const row = document.createElement('div'); row.className = 'pax-row';
       const defaultName = STATE.bookingFlow === 'customer' && STATE.selected.size === 1
         ? (STATE.auth?.user.full_name || '') : '';
+      const p = STATE.passengers[s] || {};
       row.innerHTML = `<div class="seat-tag">${s}</div>
-        <input data-seat="${s}" placeholder="${t('book.fullname.placeholder')}" value="${escapeHtml(STATE.passengers[s]?.name || defaultName)}">`;
+        <div class="pax-fields">
+          <input data-seat="${s}" data-field="name"  placeholder="${t('book.fullname.placeholder')}" value="${escapeHtml(p.name || defaultName)}">
+          <input data-seat="${s}" data-field="phone" class="pax-optional" placeholder="${t('book.phone.placeholder')}" value="${escapeHtml(p.phone || '')}">
+          <input data-seat="${s}" data-field="id"    class="pax-optional" placeholder="${t('book.id.placeholder')}" value="${escapeHtml(p.national_id || '')}">
+        </div>`;
       body.appendChild(row);
     });
     body.querySelectorAll('input').forEach(inp => {
       inp.addEventListener('input', e => {
-        const seat = e.target.dataset.seat;
-        STATE.passengers[seat] = STATE.passengers[seat] || { name: '' };
-        STATE.passengers[seat].name = e.target.value;
+        const seat  = e.target.dataset.seat;
+        const field = e.target.dataset.field;
+        STATE.passengers[seat] = STATE.passengers[seat] || { name: '', phone: '', national_id: '' };
+        if (field === 'name')  STATE.passengers[seat].name = e.target.value;
+        if (field === 'phone') STATE.passengers[seat].phone = e.target.value;
+        if (field === 'id')    STATE.passengers[seat].national_id = e.target.value;
       });
     });
   }
@@ -3851,12 +3869,33 @@ function resumeStreamLoop() {
 async function doLock() {
   if (STATE.selected.size === 0) return;
   const seats = [...STATE.selected].sort(seatSortKey);
-  const passengers = seats.map(seat => ({
-    full_name: (STATE.passengers[seat]?.name || '').trim() || (STATE.auth?.user.full_name || 'Passenger'),
-    phone_number: STATE.auth?.user.phone_number || '',
-    national_id: null,
-    seat_number: seat,
-  }));
+  const passengers = seats.map(seat => {
+    const p = STATE.passengers[seat] || {};
+    return {
+      full_name: (p.name || '').trim() || (STATE.auth?.user.full_name || ''),
+      phone_number: (p.phone || '').trim() || null,
+      national_id:  (p.national_id || '').trim() || null,
+      seat_number: seat,
+    };
+  });
+
+  // Client-side pre-checks (GEN-1) — same three rules the backend enforces,
+  // caught here to avoid a network round-trip for the common typos.
+  const normalize = (s) => (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const seen = new Map();  // normalized name → seat_number
+  for (const pax of passengers) {
+    if (normalize(pax.full_name).split(' ').filter(Boolean).length < 2) {
+      return toast(t('book.err.name_too_short').replace('{seat}', pax.seat_number), true);
+    }
+    const key = normalize(pax.full_name);
+    if (seen.has(key)) {
+      return toast(t('book.err.dupe_in_booking')
+        .replace('{name}', pax.full_name)
+        .replace('{a}', seen.get(key))
+        .replace('{b}', pax.seat_number), true);
+    }
+    seen.set(key, pax.seat_number);
+  }
   const body = {
     trip_id: STATE.activeTrip.trip_id,
     seat_numbers: seats,
