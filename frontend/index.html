@@ -1398,6 +1398,10 @@
     border-bottom: 1px solid var(--rule);
   }
   .delivered-banner b { font-weight: 600; }
+  /* Delivered banner takes the same status color as the top strip so the
+     printed ticket never has a mismatched green bar under a red strip. */
+  .delivered-banner.status-pending  { background: var(--amber);   color: var(--ink); }
+  .delivered-banner.status-expired  { background: var(--oxblood); color: var(--bone); }
 
   /* Ticket status strip — always shown at the very top of the ticket,
      color-coded by booking status (GEN-4). Green = confirmed/paid,
@@ -1509,6 +1513,13 @@
     }
     /* Make sure backgrounds + colours print (most browsers strip by default). */
     .ticket, .ticket * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Perforated top/bottom edges are decorative and sit at top:-9px which can
+       push the top of the ticket outside the printable margin, cropping the
+       status strip on some browsers. Drop them in print. */
+    .ticket::before, .ticket::after { display: none !important; }
+    /* Keep the status strip together on one page (it's small; a break here
+       would be ugly). */
+    .ticket-status-strip { break-inside: avoid; page-break-inside: avoid; }
   }
 
   .hidden { display: none !important; }
@@ -4011,18 +4022,27 @@ function renderTicket(ticket, { confirmed }) {
   // Colored status strip at the top of the ticket (GEN-4). Expired covers
   // both the explicit 'expired' booking status AND a trip whose departure
   // is already in the past (a confirmed ticket for yesterday reads red too).
+  // The delivered banner (RECEIPT SENT TO...) takes the same class so both
+  // colored bars agree — no green banner sitting under a red status strip.
   const strip = $('#t-status-strip');
+  const banner = $('#t-delivered');
   strip.classList.remove('status-pending', 'status-expired');
+  banner.classList.remove('status-pending', 'status-expired');
   const dep = ticket.trip.departure_time ? parseUtc(ticket.trip.departure_time).getTime() : Infinity;
   const departed = Date.now() > dep;
+  let statusClass = '';
   if (ticket.booking_status === 'expired' || departed) {
-    strip.classList.add('status-expired');
+    statusClass = 'status-expired';
     strip.textContent = t('ticket.status.expired');
   } else if (confirmed || ticket.booking_status === 'confirmed') {
     strip.textContent = t('ticket.status.paid');
   } else {
-    strip.classList.add('status-pending');
+    statusClass = 'status-pending';
     strip.textContent = t('ticket.status.pending');
+  }
+  if (statusClass) {
+    strip.classList.add(statusClass);
+    banner.classList.add(statusClass);
   }
 
   // QR code (TKT-04)
