@@ -925,7 +925,7 @@
   .status-pill.pending           { background: var(--amber);   color: var(--ink);  border-color: var(--amber); }
   .status-pill.committed_pending { background: var(--terra);   color: var(--bone); border-color: var(--terra); }
   .status-pill.confirmed         { background: var(--moss);    color: var(--bone); border-color: var(--moss); }
-  .status-pill.expired           { background: var(--ink-soft); color: var(--bone); border-color: var(--ink-soft); }
+  .status-pill.expired           { background: var(--oxblood); color: var(--bone); border-color: var(--oxblood); }
   .status-pill.active            { background: var(--moss);    color: var(--bone); border-color: var(--moss); }
   .status-pill.blocked           { background: var(--oxblood); color: var(--bone); border-color: var(--oxblood); }
   .status-pill.walkin            { background: var(--nile);    color: var(--bone); border-color: var(--nile); }
@@ -1179,6 +1179,7 @@
   .filter-strip {
     display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px;
     margin-bottom: 16px;
+    align-items: end;
   }
   .filter-strip input, .filter-strip select {
     width: 100%;
@@ -1188,6 +1189,16 @@
     color: var(--ink); outline: none;
   }
   .filter-strip input:focus, .filter-strip select:focus { border-color: var(--admin-light); }
+  /* Labeled field wrapper — used to hang "From" / "To" over the origin +
+     destination selects on all four filter strips. align-items: end above
+     keeps the unlabeled columns (search input, status/time) bottom-aligned. */
+  .filter-strip .fld { display: flex; flex-direction: column; }
+  .filter-strip .fld > .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ink-soft);
+    padding: 0 2px 4px;
+  }
 
   .admin-row {
     background: var(--bone); border: 1.5px solid var(--rule);
@@ -1375,6 +1386,21 @@
     border-bottom: 1px solid var(--rule);
   }
   .delivered-banner b { font-weight: 600; }
+
+  /* Ticket status strip — always shown at the very top of the ticket,
+     color-coded by booking status (GEN-4). Green = confirmed/paid,
+     orange = pending payment, red = expired (either lock-expired or
+     the trip's departure is already in the past). */
+  .ticket-status-strip {
+    padding: 9px 36px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+    text-transform: uppercase; text-align: center;
+    background: var(--moss); color: var(--bone);
+    border-bottom: 1px solid rgba(0,0,0,0.14);
+  }
+  .ticket-status-strip.status-pending  { background: var(--amber);   color: var(--ink); }
+  .ticket-status-strip.status-expired  { background: var(--oxblood); color: var(--bone); }
 
   .ticket-route {
     padding: 22px 36px;
@@ -1757,7 +1783,7 @@
               </div>
             </div>
             <!-- Provider-only: cash one-shot confirm — only shows when bookingFlow === 'provider' -->
-            <button id="cash-confirm-btn" class="cta hidden" style="margin-top: 10px; background: var(--moss);" data-i18n="book.cash.cta">Confirm Cash Payment →</button>
+            <button id="cash-confirm-btn" class="cta hidden" style="margin-top: 10px; background: var(--moss);" data-i18n="book.cash.cta">Confirm Payment →</button>
             <button id="billing-btn" class="cta alt" style="margin-top: 10px;" data-i18n="book.billing.cta">Generate Billing Reference →</button>
             <button id="restart-flow-btn" class="cta ghost" style="margin-top: 10px;" data-i18n="book.restart">Start New Booking</button>
           </div>
@@ -1783,8 +1809,8 @@
           <div data-ptab-panel="trips" class="active">
             <div class="filter-strip">
               <input type="text" id="pt-q" data-i18n-placeholder="provider.trips.q" placeholder="Search by origin, destination, trip id…" />
-              <select class="city-select" id="pt-origin" data-optional="1"></select>
-              <select class="city-select" id="pt-destination" data-optional="1"></select>
+              <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="pt-origin" data-optional="1"></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="pt-destination" data-optional="1"></select></div>
               <select id="pt-time">
                 <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
                 <option value="past" data-i18n="admin.trips.time.past">Past</option>
@@ -1800,8 +1826,8 @@
           <div data-ptab-panel="bookings">
             <div class="filter-strip">
               <input type="text" id="pb-q" data-i18n-placeholder="provider.bookings.q" placeholder="Search by customer, billing ref, booking id…" />
-              <select class="city-select" id="pb-origin" data-optional="1"></select>
-              <select class="city-select" id="pb-destination" data-optional="1"></select>
+              <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="pb-origin" data-optional="1"></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="pb-destination" data-optional="1"></select></div>
               <select id="pb-status">
                 <option value="any" data-i18n="status.filter.any">Any status</option>
                 <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
@@ -1852,8 +1878,8 @@
           <div data-tab-panel="trips">
             <div class="filter-strip">
               <input type="text" id="at-q" data-i18n-placeholder="admin.trips.q" placeholder="Search by origin, destination, provider, trip id…" />
-              <select class="city-select" id="at-origin" data-optional="1"></select>
-              <select class="city-select" id="at-destination" data-optional="1"></select>
+              <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="at-origin" data-optional="1"></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="at-destination" data-optional="1"></select></div>
               <select id="at-time">
                 <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
                 <option value="past" data-i18n="admin.trips.time.past">Past</option>
@@ -1869,8 +1895,8 @@
           <div data-tab-panel="bookings">
             <div class="filter-strip">
               <input type="text" id="ab-q" data-i18n-placeholder="admin.bookings.q" placeholder="Search by customer name, passenger, billing ref, booking id…" />
-              <select class="city-select" id="ab-origin" data-optional="1"></select>
-              <select class="city-select" id="ab-destination" data-optional="1"></select>
+              <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="ab-origin" data-optional="1"></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="ab-destination" data-optional="1"></select></div>
               <select id="ab-status">
                 <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
                 <option value="committed_pending" data-i18n="status.filter.committed_pending">Awaiting Payment</option>
@@ -2178,6 +2204,7 @@
 <!-- Ticket Modal -->
 <div id="ticket-modal" class="modal-bg" role="dialog" aria-modal="true">
   <div class="ticket">
+    <div class="ticket-status-strip" id="t-status-strip" data-i18n="ticket.status.paid">Paid</div>
     <div class="ticket-head">
       <div>
         <div class="brand-sm">Tazkirati.</div>
@@ -2234,7 +2261,7 @@
 const I18N = {
   en: {
     // top bar / nav
-    'signout': 'Sign out', 'nav.search': 'Search', 'nav.mytickets': 'My Tickets',
+    'signout': 'Sign out', 'nav.search': 'Search', 'nav.mytickets': 'My Tickets', 'nav.support': 'Support',
     'role.customer': 'Passenger', 'role.provider': 'Operator', 'role.admin': 'Administrator',
     'back': '← Back',
     // welcome
@@ -2305,7 +2332,7 @@ const I18N = {
     'book.fullname.placeholder': 'Full name',
     'book.total': 'Total', 'book.seats': 'seats', 'book.seat': 'seat',
     'book.lock': 'Lock Seats', 'book.walkin': 'Issue Walk-In',
-    'book.cash.cta': 'Confirm Cash Payment →',
+    'book.cash.cta': 'Confirm Payment →',
     'book.hold': 'Active Hold',
     'book.expires_in': 'HOLD EXPIRES IN', 'book.expired': 'EXPIRED',
     'book.billing.cta': 'Generate Billing Reference →',
@@ -2330,8 +2357,8 @@ const I18N = {
     'provider.empty.trips.desc': 'Tap "New Trip" to add the first one.',
     'provider.empty.bookings.title': 'No bookings yet.',
     'provider.empty.bookings.desc': 'Bookings will appear here once passengers book your trips — including walk-ins.',
-    'provider.action.confirm': 'Confirm Payment (Cash)',
-    'provider.confirm.prompt': 'Confirm cash payment for booking #{id}? Seats will be marked as booked.',
+    'provider.action.confirm': 'Confirm Payment',
+    'provider.confirm.prompt': 'Confirm payment for booking #{id}? Seats will be marked as booked.',
     'provider.trips.q': 'Search by origin, destination, trip id…',
     'provider.bookings.q': 'Search by customer, billing ref, booking id…',
     // add-trip modal
@@ -2388,6 +2415,7 @@ const I18N = {
     'ticket.expires': 'Expires', 'ticket.seatmap': 'Seat Map',
     'ticket.manifest': 'Manifest',
     'ticket.stamp.settle': 'Settle Within 30 Min', 'ticket.stamp.confirmed': 'Payment Confirmed',
+    'ticket.status.paid': 'Paid', 'ticket.status.pending': 'Awaiting Payment', 'ticket.status.expired': 'Expired',
     'ticket.delivered': '📧 RECEIPT SENT TO',
     'ticket.close': 'Close', 'ticket.print': 'Print Receipt',
     // misc
@@ -2464,7 +2492,7 @@ const I18N = {
   },
   ar: {
     // top bar / nav
-    'signout': 'تسجيل الخروج', 'nav.search': 'بحث', 'nav.mytickets': 'تذاكري',
+    'signout': 'تسجيل الخروج', 'nav.search': 'بحث', 'nav.mytickets': 'تذاكري', 'nav.support': 'الدعم',
     'role.customer': 'راكب', 'role.provider': 'موظف', 'role.admin': 'مدير',
     'back': 'رجوع →',
     // welcome
@@ -2535,7 +2563,7 @@ const I18N = {
     'book.fullname.placeholder': 'الاسم الكامل',
     'book.total': 'الإجمالي', 'book.seats': 'مقاعد', 'book.seat': 'مقعد',
     'book.lock': 'حجز المقاعد', 'book.walkin': 'حجز عند المنفذ',
-    'book.cash.cta': '→ تأكيد الدفع نقداً',
+    'book.cash.cta': '→ تأكيد الدفع',
     'book.hold': 'حجز نشط',
     'book.expires_in': 'الحجز ينتهي خلال', 'book.expired': 'منتهي',
     'book.billing.cta': '→ إنشاء رقم الفاتورة',
@@ -2560,8 +2588,8 @@ const I18N = {
     'provider.empty.trips.desc': 'اضغط "رحلة جديدة" لإضافة الأولى.',
     'provider.empty.bookings.title': 'لا حجوزات بعد.',
     'provider.empty.bookings.desc': 'ستظهر الحجوزات هنا فور أن يحجز الركاب رحلاتك — بما فيها حجوزات المنفذ.',
-    'provider.action.confirm': 'تأكيد الدفع (نقداً)',
-    'provider.confirm.prompt': 'تأكيد الدفع النقدي للحجز #{id}؟ سيتم تثبيت المقاعد.',
+    'provider.action.confirm': 'تأكيد الدفع',
+    'provider.confirm.prompt': 'تأكيد الدفع للحجز #{id}؟ سيتم تثبيت المقاعد.',
     'provider.trips.q': 'بحث بالمدينة، الوجهة، رقم الرحلة…',
     'provider.bookings.q': 'بحث بالعميل، رقم الفاتورة، رقم الحجز…',
     // add-trip modal
@@ -2617,6 +2645,7 @@ const I18N = {
     'ticket.expires': 'تنتهي في', 'ticket.seatmap': 'المقاعد',
     'ticket.manifest': 'قائمة الركاب',
     'ticket.stamp.settle': 'ادفع خلال 30 دقيقة', 'ticket.stamp.confirmed': 'تم الدفع',
+    'ticket.status.paid': 'مدفوع', 'ticket.status.pending': 'بانتظار الدفع', 'ticket.status.expired': 'منتهي',
     'ticket.delivered': '📧 أُرسلت التذكرة إلى',
     'ticket.close': 'إغلاق', 'ticket.print': 'طباعة',
     // misc
@@ -2957,9 +2986,13 @@ function paintChrome() {
       nav.innerHTML = `
         <a class="nav-link" data-nav="customer-search">${t('nav.search')}</a>
         <a class="nav-link" data-nav="customer-my-tickets">${t('nav.mytickets')}${badge}</a>
+        <a class="nav-link" data-nav="support" href="mailto:gadget.service.solutions@gmail.com">${t('nav.support')}</a>
       `;
       nav.querySelectorAll('a').forEach(a => {
         a.classList.toggle('active', STATE.screen === a.dataset.nav);
+        // The support link is a plain mailto: — let the browser handle it and
+        // don't hijack with the SPA router.
+        if (a.dataset.nav === 'support') return;
         a.addEventListener('click', () => {
           if (a.dataset.nav === 'customer-search') {
             STATE.history = [];
@@ -3390,6 +3423,10 @@ function switchProviderTab(tab) {
   STATE.providerTab = tab;
   $$('#provider-tab-bar button').forEach(b => b.classList.toggle('active', b.dataset.ptab === tab));
   $$('#provider-tab-content > *').forEach(p => p.classList.toggle('active', p.dataset.ptabPanel === tab));
+  // "+ New Trip" belongs to the Trips tab only — hiding it on the Bookings
+  // tab keeps the header from prompting an action that has nothing to do
+  // with what the operator is looking at.
+  $('#add-trip-open-btn').classList.toggle('hidden', tab !== 'trips');
   refreshProviderTab();
 }
 
@@ -3842,6 +3879,10 @@ function showBookingPanel(b) {
   // Provider flow: surface the one-click cash confirm in the post-lock panel
   // so operators don't need to navigate to the Bookings tab for the common case.
   $('#cash-confirm-btn').classList.toggle('hidden', STATE.bookingFlow !== 'provider');
+  // Providers should never generate a billing reference — the resulting ref
+  // can only be settled from the admin portal, which breaks the flow. Cash
+  // confirm is the one path for walk-ins.
+  $('#billing-btn').classList.toggle('hidden', STATE.bookingFlow === 'provider');
 }
 
 async function doCashConfirm() {
@@ -3952,6 +3993,23 @@ function renderTicket(ticket, { confirmed }) {
   } else {
     stamp.textContent = t('ticket.stamp.settle');
     stamp.classList.remove('confirmed');
+  }
+
+  // Colored status strip at the top of the ticket (GEN-4). Expired covers
+  // both the explicit 'expired' booking status AND a trip whose departure
+  // is already in the past (a confirmed ticket for yesterday reads red too).
+  const strip = $('#t-status-strip');
+  strip.classList.remove('status-pending', 'status-expired');
+  const dep = ticket.trip.departure_time ? parseUtc(ticket.trip.departure_time).getTime() : Infinity;
+  const departed = Date.now() > dep;
+  if (ticket.booking_status === 'expired' || departed) {
+    strip.classList.add('status-expired');
+    strip.textContent = t('ticket.status.expired');
+  } else if (confirmed || ticket.booking_status === 'confirmed') {
+    strip.textContent = t('ticket.status.paid');
+  } else {
+    strip.classList.add('status-pending');
+    strip.textContent = t('ticket.status.pending');
   }
 
   // QR code (TKT-04)
