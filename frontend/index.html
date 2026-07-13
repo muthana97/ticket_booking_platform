@@ -1398,25 +1398,14 @@
     border-bottom: 1px solid var(--rule);
   }
   .delivered-banner b { font-weight: 600; }
-  /* Delivered banner takes the same status color as the top strip so the
-     printed ticket never has a mismatched green bar under a red strip. */
+  /* Delivered banner is the single status bar on the ticket (GEN-4).
+     Default green = paid, amber = pending payment, red = expired. */
+  .delivered-banner {
+    text-align: center; font-weight: 700;
+    text-transform: uppercase;
+  }
   .delivered-banner.status-pending  { background: var(--amber);   color: var(--ink); }
   .delivered-banner.status-expired  { background: var(--oxblood); color: var(--bone); }
-
-  /* Ticket status strip — always shown at the very top of the ticket,
-     color-coded by booking status (GEN-4). Green = confirmed/paid,
-     orange = pending payment, red = expired (either lock-expired or
-     the trip's departure is already in the past). */
-  .ticket-status-strip {
-    padding: 9px 36px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
-    text-transform: uppercase; text-align: center;
-    background: var(--moss); color: var(--bone);
-    border-bottom: 1px solid rgba(0,0,0,0.14);
-  }
-  .ticket-status-strip.status-pending  { background: var(--amber);   color: var(--ink); }
-  .ticket-status-strip.status-expired  { background: var(--oxblood); color: var(--bone); }
 
   .ticket-route {
     padding: 22px 36px;
@@ -1513,13 +1502,12 @@
     }
     /* Make sure backgrounds + colours print (most browsers strip by default). */
     .ticket, .ticket * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    /* Perforated top/bottom edges are decorative and sit at top:-9px which can
-       push the top of the ticket outside the printable margin, cropping the
-       status strip on some browsers. Drop them in print. */
+    /* Perforated top/bottom edges are decorative and sit at top:-9px, which
+       some browsers treat as outside the printable margin and end up cropping
+       the top of the ticket. Drop them in print. */
     .ticket::before, .ticket::after { display: none !important; }
-    /* Keep the status strip together on one page (it's small; a break here
-       would be ugly). */
-    .ticket-status-strip { break-inside: avoid; page-break-inside: avoid; }
+    /* Keep the status banner on one page (it's small; a break here is ugly). */
+    .delivered-banner { break-inside: avoid; page-break-inside: avoid; }
   }
 
   .hidden { display: none !important; }
@@ -2228,7 +2216,6 @@
 <!-- Ticket Modal -->
 <div id="ticket-modal" class="modal-bg" role="dialog" aria-modal="true">
   <div class="ticket">
-    <div class="ticket-status-strip" id="t-status-strip" data-i18n="ticket.status.paid">Paid</div>
     <div class="ticket-head">
       <div>
         <div class="brand-sm">Tazkirati.</div>
@@ -2439,7 +2426,7 @@ const I18N = {
     'ticket.expires': 'Expires', 'ticket.seatmap': 'Seat Map',
     'ticket.manifest': 'Manifest',
     'ticket.stamp.settle': 'Settle Within 30 Min', 'ticket.stamp.confirmed': 'Payment Confirmed',
-    'ticket.status.paid': 'Paid', 'ticket.status.pending': 'Awaiting Payment', 'ticket.status.expired': 'Expired',
+    'ticket.status.paid': 'Paid', 'ticket.status.pending': 'Pending Payment', 'ticket.status.expired': 'Expired Ticket',
     'ticket.delivered': '📧 RECEIPT SENT TO',
     'ticket.close': 'Close', 'ticket.print': 'Print Receipt',
     // misc
@@ -2669,7 +2656,7 @@ const I18N = {
     'ticket.expires': 'تنتهي في', 'ticket.seatmap': 'المقاعد',
     'ticket.manifest': 'قائمة الركاب',
     'ticket.stamp.settle': 'ادفع خلال 30 دقيقة', 'ticket.stamp.confirmed': 'تم الدفع',
-    'ticket.status.paid': 'مدفوع', 'ticket.status.pending': 'بانتظار الدفع', 'ticket.status.expired': 'منتهي',
+    'ticket.status.paid': 'مدفوع', 'ticket.status.pending': 'بانتظار الدفع', 'ticket.status.expired': 'تذكرة منتهية',
     'ticket.delivered': '📧 أُرسلت التذكرة إلى',
     'ticket.close': 'إغلاق', 'ticket.print': 'طباعة',
     // misc
@@ -4002,13 +3989,6 @@ function renderTicket(ticket, { confirmed }) {
     ul.appendChild(li);
   });
 
-  // Delivered banner
-  const banner = $('#t-delivered');
-  if (ticket.delivered_to) {
-    banner.classList.remove('hidden');
-    banner.innerHTML = `${t('ticket.delivered')} <b>${escapeHtml(ticket.delivered_to)}</b>`;
-  } else { banner.classList.add('hidden'); }
-
   // Stamp swap when confirmed
   const stamp = $('#t-stamp');
   if (confirmed) {
@@ -4019,30 +3999,23 @@ function renderTicket(ticket, { confirmed }) {
     stamp.classList.remove('confirmed');
   }
 
-  // Colored status strip at the top of the ticket (GEN-4). Expired covers
-  // both the explicit 'expired' booking status AND a trip whose departure
-  // is already in the past (a confirmed ticket for yesterday reads red too).
-  // The delivered banner (RECEIPT SENT TO...) takes the same class so both
-  // colored bars agree — no green banner sitting under a red status strip.
-  const strip = $('#t-status-strip');
-  // Reuse the `banner` const declared above in the delivered-banner section.
-  strip.classList.remove('status-pending', 'status-expired');
-  banner.classList.remove('status-pending', 'status-expired');
+  // Status banner at the top of the ticket (GEN-4). Green PAID for
+  // confirmed, amber PENDING PAYMENT for pending/committed_pending, red
+  // EXPIRED TICKET when the booking timed out or the trip has already
+  // departed. Replaces the old delivered-to message — the banner is now
+  // the single status indicator.
+  const banner = $('#t-delivered');
+  banner.classList.remove('hidden', 'status-pending', 'status-expired');
   const dep = ticket.trip.departure_time ? parseUtc(ticket.trip.departure_time).getTime() : Infinity;
   const departed = Date.now() > dep;
-  let statusClass = '';
   if (ticket.booking_status === 'expired' || departed) {
-    statusClass = 'status-expired';
-    strip.textContent = t('ticket.status.expired');
+    banner.classList.add('status-expired');
+    banner.textContent = t('ticket.status.expired');
   } else if (confirmed || ticket.booking_status === 'confirmed') {
-    strip.textContent = t('ticket.status.paid');
+    banner.textContent = t('ticket.status.paid');
   } else {
-    statusClass = 'status-pending';
-    strip.textContent = t('ticket.status.pending');
-  }
-  if (statusClass) {
-    strip.classList.add(statusClass);
-    banner.classList.add(statusClass);
+    banner.classList.add('status-pending');
+    banner.textContent = t('ticket.status.pending');
   }
 
   // QR code (TKT-04)
