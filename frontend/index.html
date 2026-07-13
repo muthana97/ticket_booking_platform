@@ -4025,7 +4025,7 @@ function renderTicket(ticket, { confirmed }) {
   // The delivered banner (RECEIPT SENT TO...) takes the same class so both
   // colored bars agree — no green banner sitting under a red status strip.
   const strip = $('#t-status-strip');
-  const banner = $('#t-delivered');
+  // Reuse the `banner` const declared above in the delivered-banner section.
   strip.classList.remove('status-pending', 'status-expired');
   banner.classList.remove('status-pending', 'status-expired');
   const dep = ticket.trip.departure_time ? parseUtc(ticket.trip.departure_time).getTime() : Infinity;
