@@ -58,37 +58,35 @@ def list_providers(
 def approve_provider(provider_id: int, db: Session = Depends(get_db)):
     """Move a provider from `pending` (or `blocked`) into `active`."""
     user = service.set_provider_status(db, provider_id=provider_id, new_status="active")
-    trip_count = 0  # fresh approvals have no trips yet by definition
-    from ..inventory.models import Trip as _Trip
-    trip_count = db.query(_Trip).filter(_Trip.provider_id == user.id).count()
-    return {
-        "id": user.id,
-        "email": user.email,
-        "full_name": user.full_name,
-        "phone_number": user.phone_number,
-        "status": user.status,
-        "email_verified": user.email_verified,
-        "created_at": user.created_at,
-        "trip_count": trip_count,
-    }
+    return service._decorate_provider(db, user)
 
 
 @router.post("/providers/{provider_id}/block", response_model=schemas.ProviderSummary)
 def block_provider(provider_id: int, db: Session = Depends(get_db)):
     """Block a provider — they can still authenticate but cannot manage trips."""
     user = service.set_provider_status(db, provider_id=provider_id, new_status="blocked")
-    from ..inventory.models import Trip as _Trip
-    trip_count = db.query(_Trip).filter(_Trip.provider_id == user.id).count()
-    return {
-        "id": user.id,
-        "email": user.email,
-        "full_name": user.full_name,
-        "phone_number": user.phone_number,
-        "status": user.status,
-        "email_verified": user.email_verified,
-        "created_at": user.created_at,
-        "trip_count": trip_count,
-    }
+    return service._decorate_provider(db, user)
+
+
+@router.patch(
+    "/providers/{provider_id}/capabilities",
+    response_model=schemas.ProviderSummary,
+)
+def update_provider_capabilities(
+    provider_id: int,
+    payload: schemas.ProviderCapabilitiesUpdate,
+    db: Session = Depends(get_db),
+):
+    """Toggle any subset of {can_add_trips, can_edit_trips, can_delete_trips}
+    on a provider. Omitted fields stay as-is."""
+    user = service.update_provider_capabilities(
+        db,
+        provider_id=provider_id,
+        can_add_trips=payload.can_add_trips,
+        can_edit_trips=payload.can_edit_trips,
+        can_delete_trips=payload.can_delete_trips,
+    )
+    return service._decorate_provider(db, user)
 
 
 # ---------------------------------------------------------------------------

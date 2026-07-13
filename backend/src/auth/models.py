@@ -22,6 +22,13 @@ class User(Base):
     status = Column(String, nullable=False, default="active")
     email_verified = Column(Boolean, default=False, nullable=False)
 
+    # Per-provider capability toggles (ADMIN-2, 2026-07-13). Meaningful only
+    # for role=='provider' rows. Admins flip these from the Providers tab to
+    # restrict a specific operator without fully blocking them.
+    can_add_trips    = Column(Boolean, default=True, nullable=False)
+    can_edit_trips   = Column(Boolean, default=True, nullable=False)
+    can_delete_trips = Column(Boolean, default=True, nullable=False)
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

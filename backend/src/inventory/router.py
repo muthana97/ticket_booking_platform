@@ -62,6 +62,12 @@ def create_trip(
     Provider-only. Creates one Trip, or many if `repeat.kind != "once"`.
     Each trip gets its own Bus + Seats, sharing the underlying Route.
     """
+    if not provider.can_add_trips:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=403,
+            detail="Adding trips is disabled for your account. Contact the admin.",
+        )
     departures = service.expand_repeat_pattern(
         start=payload.departure_time,
         kind=payload.repeat.kind,
@@ -146,8 +152,13 @@ def delete_trip(
     Provider-only. RBAC: refuses if the trip belongs to another provider
     (provider data isolation). Also refuses if any confirmed booking exists.
     """
-    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     from fastapi import HTTPException
+    if not provider.can_delete_trips:
+        raise HTTPException(
+            status_code=403,
+            detail="Deleting trips is disabled for your account. Contact the admin.",
+        )
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
     if trip.provider_id != provider.id:

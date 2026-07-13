@@ -37,8 +37,63 @@ def list_providers(db: Session, *, status: Optional[str] = None) -> list[dict]:
             "email_verified": p.email_verified,
             "created_at": p.created_at,
             "trip_count": trip_count,
+            "can_add_trips": p.can_add_trips,
+            "can_edit_trips": p.can_edit_trips,
+            "can_delete_trips": p.can_delete_trips,
         })
     return out
+
+
+def _decorate_provider(db: Session, user: auth_models.User) -> dict:
+    """Shape a provider row the same way list_providers does — used by the
+    approve / block / capability-update handlers so their responses match
+    the list response schema exactly."""
+    trip_count = db.query(Trip).filter(Trip.provider_id == user.id).count()
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "phone_number": user.phone_number,
+        "status": user.status,
+        "email_verified": user.email_verified,
+        "created_at": user.created_at,
+        "trip_count": trip_count,
+        "can_add_trips": user.can_add_trips,
+        "can_edit_trips": user.can_edit_trips,
+        "can_delete_trips": user.can_delete_trips,
+    }
+
+
+def update_provider_capabilities(
+    db: Session,
+    *,
+    provider_id: int,
+    can_add_trips: Optional[bool] = None,
+    can_edit_trips: Optional[bool] = None,
+    can_delete_trips: Optional[bool] = None,
+) -> auth_models.User:
+    """Partial patch on a provider's three trip-management flags. Any field
+    left None on the request stays as-is on the row (partial update)."""
+    user = (
+        db.query(auth_models.User)
+        .filter(auth_models.User.id == provider_id, auth_models.User.role == "provider")
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    if can_add_trips is not None:
+        user.can_add_trips = can_add_trips
+    if can_edit_trips is not None:
+        user.can_edit_trips = can_edit_trips
+    if can_delete_trips is not None:
+        user.can_delete_trips = can_delete_trips
+    db.commit()
+    db.refresh(user)
+    print(
+        f"[ADMIN] provider {user.email} capabilities "
+        f"add={user.can_add_trips} edit={user.can_edit_trips} delete={user.can_delete_trips}"
+    )
+    return user
 
 
 def set_provider_status(db: Session, *, provider_id: int, new_status: str) -> auth_models.User:

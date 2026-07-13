@@ -17,9 +17,20 @@ class ProviderSummary(BaseModel):
     email_verified: bool
     created_at: datetime
     trip_count: int
+    # ADMIN-2 capability toggles — default True for existing rows.
+    can_add_trips: bool = True
+    can_edit_trips: bool = True
+    can_delete_trips: bool = True
 
     class Config:
         from_attributes = True
+
+
+class ProviderCapabilitiesUpdate(BaseModel):
+    """Partial update — any omitted field is left as-is."""
+    can_add_trips: Optional[bool] = None
+    can_edit_trips: Optional[bool] = None
+    can_delete_trips: Optional[bool] = None
 
 
 # ---------------------------------------------------------------------------

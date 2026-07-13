@@ -1224,6 +1224,14 @@
   .admin-row .name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
   .admin-row .sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.06em; }
   .admin-row .sub b { color: var(--ink); }
+  /* Per-provider capability toggles (ADMIN-2). Only rendered for active
+     providers — pending / blocked rows don't need them. */
+  .admin-row .caps { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .admin-row .caps .cap-label { color: var(--ink-soft); letter-spacing: 0.14em; text-transform: uppercase; }
+  .admin-row .caps label.cap { display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+    user-select: none; color: var(--ink); }
+  .admin-row .caps label.cap input { margin: 0; accent-color: var(--nile); cursor: pointer; }
   .admin-row .actions { display: flex; gap: 8px; }
 
   /* ───── Modals ───── */
@@ -2412,6 +2420,8 @@ const I18N = {
     'admin.payments.empty.title': 'No pending payments.',
     'admin.payments.empty.desc': 'Bookings settle here once a billing reference is issued.',
     'admin.action.approve': 'Approve', 'admin.action.block': 'Block',
+    'admin.caps.label': 'Trip permissions:', 'admin.caps.add': 'Add', 'admin.caps.edit': 'Edit', 'admin.caps.delete': 'Delete',
+    'admin.caps.enabled': 'Permission enabled', 'admin.caps.disabled': 'Permission disabled',
     'admin.action.markpaid': 'Mark Paid',
     'admin.row.joined': 'joined', 'admin.row.trips': 'trip(s)',
     // status filter
@@ -2647,6 +2657,8 @@ const I18N = {
     'admin.payments.empty.title': 'لا مدفوعات معلّقة.',
     'admin.payments.empty.desc': 'تظهر الحجوزات هنا بعد إصدار رقم فاتورة.',
     'admin.action.approve': 'موافقة', 'admin.action.block': 'حظر',
+    'admin.caps.label': 'صلاحيات الرحلات:', 'admin.caps.add': 'إضافة', 'admin.caps.edit': 'تعديل', 'admin.caps.delete': 'حذف',
+    'admin.caps.enabled': 'تم تفعيل الصلاحية', 'admin.caps.disabled': 'تم إلغاء الصلاحية',
     'admin.action.markpaid': 'تأكيد الدفع',
     'admin.row.joined': 'انضمّ في', 'admin.row.trips': 'رحلة',
     // status filter
@@ -4243,10 +4255,20 @@ async function renderAdminProviders() {
   empty.classList.add('hidden'); list.classList.remove('hidden');
   providers.forEach(p => {
     const row = document.createElement('div'); row.className = 'admin-row';
+    // Capability toggles only make sense for active providers — a pending
+    // or blocked account can't create/edit/delete anything regardless.
+    const capsBlock = p.status === 'active' ? `
+      <div class="caps">
+        <span class="cap-label">${t('admin.caps.label')}</span>
+        <label class="cap"><input type="checkbox" data-cap="can_add_trips"    ${p.can_add_trips    ? 'checked' : ''}> ${t('admin.caps.add')}</label>
+        <label class="cap"><input type="checkbox" data-cap="can_edit_trips"   ${p.can_edit_trips   ? 'checked' : ''}> ${t('admin.caps.edit')}</label>
+        <label class="cap"><input type="checkbox" data-cap="can_delete_trips" ${p.can_delete_trips ? 'checked' : ''}> ${t('admin.caps.delete')}</label>
+      </div>` : '';
     row.innerHTML = `
       <div class="main">
         <div><span class="status-pill ${p.status}">${tStatus(p.status)}</span><span class="name">${escapeHtml(p.full_name)}</span></div>
         <div class="sub">${escapeHtml(p.email)} · ${escapeHtml(p.phone_number || '—')} · ${t('admin.row.joined')} ${fmtTime(p.created_at)} · <b>${p.trip_count}</b> ${t('admin.row.trips')}</div>
+        ${capsBlock}
       </div>
       <div class="actions">
         ${ p.status === 'active'
@@ -4258,6 +4280,9 @@ async function renderAdminProviders() {
     const block = row.querySelector('[data-action="block"]');
     approve?.addEventListener('click', () => adminProviderAction(p.id, 'approve'));
     block?.addEventListener('click',   () => adminProviderAction(p.id, 'block'));
+    row.querySelectorAll('.caps input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => setProviderCapability(p.id, cb.dataset.cap, cb.checked, cb));
+    });
     list.appendChild(row);
   });
 }
@@ -4267,6 +4292,20 @@ async function adminProviderAction(providerId, action) {
     toast(`Provider ${action}d`);
     refreshAdminTab();
   } catch (e) { toast(e.message, true); }
+}
+async function setProviderCapability(providerId, key, value, checkbox) {
+  try {
+    await api(`/admin/providers/${providerId}/capabilities`, {
+      method: 'PATCH',
+      body: JSON.stringify({ [key]: value }),
+    });
+    toast(t(value ? 'admin.caps.enabled' : 'admin.caps.disabled'));
+  } catch (e) {
+    // Roll the checkbox back to its previous state on failure so the UI
+    // doesn't lie about server state.
+    if (checkbox) checkbox.checked = !value;
+    toast(e.message, true);
+  }
 }
 
 async function renderAdminTrips() {

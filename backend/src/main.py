@@ -38,6 +38,11 @@ def _migrate_if_needed():
         # Phone is now optional on the passenger form (GEN-1). Existing rows
         # have values; DROP NOT NULL is a no-op for those.
         "ALTER TABLE passengers ALTER COLUMN phone_number DROP NOT NULL",
+        # Per-provider capability toggles (ADMIN-2). Existing providers get
+        # TRUE for all three so the migration is behavior-preserving.
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_add_trips BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_edit_trips BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_delete_trips BOOLEAN NOT NULL DEFAULT TRUE",
     ]
     # The original FK above lacks ON DELETE SET NULL — drop + re-add so admins
     # can remove a rule even after it's been snapshotted onto a booking. The
