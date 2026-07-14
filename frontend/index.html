@@ -2569,7 +2569,7 @@ const I18N = {
     'rel.now': 'just now', 'rel.m': '{n}m ago', 'rel.h': '{n}h ago', 'rel.d': '{n}d ago',
     'notif.trip_time_changed.title': 'Trip #{trip} departure changed',
     'notif.trip_time_changed.sub': 'Was: {from} · Now: {to}',
-    'notif.trip_edited_by_provider.title': 'Trip #{trip} edited by a provider',
+    'notif.trip_edited_by_provider.title': 'Trip #{trip} edited by {provider}',
     'notif.trip_edited_by_admin.title': 'Trip #{trip} edited by admin',
     'notif.trip_cancelled.title': 'Trip #{trip} was cancelled',
     'notif.trip_deleted_by_admin.title': 'Trip #{trip} deleted by admin',
@@ -2826,7 +2826,7 @@ const I18N = {
     'rel.now': 'الآن', 'rel.m': 'قبل {n} د', 'rel.h': 'قبل {n} س', 'rel.d': 'قبل {n} ي',
     'notif.trip_time_changed.title': 'تم تغيير موعد الرحلة #{trip}',
     'notif.trip_time_changed.sub': 'كان: {from} · أصبح: {to}',
-    'notif.trip_edited_by_provider.title': 'تم تعديل الرحلة #{trip} من قبل الموظف',
+    'notif.trip_edited_by_provider.title': 'تم تعديل الرحلة #{trip} من قبل {provider}',
     'notif.trip_edited_by_admin.title': 'تم تعديل الرحلة #{trip} من قبل المدير',
     'notif.trip_cancelled.title': 'تم إلغاء الرحلة #{trip}',
     'notif.trip_deleted_by_admin.title': 'تم حذف الرحلة #{trip} من قبل المدير',
@@ -3949,7 +3949,9 @@ function _notifSummary(n) {
     case 'trip_edited_by_provider':
       return {
         icon: '✏️',
-        title: t('notif.trip_edited_by_provider.title').replace('{trip}', p.trip_id ?? '?'),
+        title: t('notif.trip_edited_by_provider.title')
+                 .replace('{trip}', p.trip_id ?? '?')
+                 .replace('{provider}', p.provider_name || (p.provider_id ? `Provider #${p.provider_id}` : '—')),
         sub:   (p.changed_fields || []).join(', '),
       };
     case 'trip_edited_by_admin':
@@ -3995,16 +3997,38 @@ function _routeFromNotif(n) {
     refreshMyTickets();
     return;
   }
-  if ((n.type === 'trip_edited_by_admin' || n.type === 'trip_deleted_by_admin' ||
+  if (n.type === 'trip_edited_by_admin' && role === 'provider' && p.trip_id) {
+    _openProviderTripsFiltered(p.trip_id);
+    return;
+  }
+  if ((n.type === 'trip_deleted_by_admin' ||
        n.type === 'provider_capability_changed') && role === 'provider') {
     goto('provider-home');
     return;
   }
-  if (n.type === 'trip_edited_by_provider' && role === 'admin') {
-    goto('admin-home');
+  if (n.type === 'trip_edited_by_provider' && role === 'admin' && p.trip_id) {
+    _openAdminTripsFiltered(p.trip_id);
     return;
   }
   // Fallback — stay put, item stays open.
+}
+
+function _openAdminTripsFiltered(tripId) {
+  goto('admin-home');
+  switchAdminTab('trips');
+  const q = $('#at-q'); const time = $('#at-time');
+  if (q)    q.value = String(tripId);
+  if (time) time.value = 'all';
+  renderAdminTrips();
+}
+
+function _openProviderTripsFiltered(tripId) {
+  goto('provider-home');
+  switchProviderTab('trips');
+  const q = $('#pt-q'); const time = $('#pt-time');
+  if (q)    q.value = String(tripId);
+  if (time) time.value = 'all';
+  refreshProviderTrips();
 }
 
 async function renderNotifications() {

@@ -69,12 +69,19 @@ def _fanout_trip_edit(db, *, trip, delta, actor, actor_id):
             "to":   _serialize_dt(delta["departure_time"]["to"]),
         }
     if actor == "provider":
-        # Notify every admin.
+        # Notify every admin. Include the acting provider's display name so
+        # the admin console can attribute the edit at a glance without a
+        # follow-up lookup.
         from ..auth.models import User
+        provider_name = None
+        if actor_id:
+            provider = db.query(User).filter(User.id == actor_id).first()
+            if provider:
+                provider_name = provider.full_name
         admin_ids = [row.id for row in db.query(User.id).filter(User.role == "admin").all()]
         notif.create_notifications_bulk(
             db, user_ids=admin_ids, type="trip_edited_by_provider",
-            payload={**delta_payload, "provider_id": actor_id},
+            payload={**delta_payload, "provider_id": actor_id, "provider_name": provider_name},
         )
     elif actor == "admin":
         if trip.provider_id:

@@ -175,7 +175,7 @@ class SeatStateSnapshot(BaseModel):
 class ManifestPassengerItem(BaseModel):
     passenger_id: int
     full_name: str
-    phone_number: str
+    phone_number: Optional[str] = None
     national_id: Optional[str] = None
     seat_number: Optional[str] = None
     booking_id: int
