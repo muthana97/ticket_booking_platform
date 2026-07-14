@@ -297,6 +297,41 @@
   .topbar .session button.signout:hover { background: currentColor; color: var(--paper); }
   .topbar.role-provider .session button.signout:hover { color: var(--ink); }
   .topbar.role-admin    .session button.signout:hover { color: var(--admin); }
+  /* Manifest modal (Task #6). Wider than the standard modal-card since the
+     passenger table wants some breathing room. */
+  .modal-card.manifest-card { max-width: 780px; }
+  .manifest-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 24px; margin-bottom: 14px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--rule);
+  }
+  .manifest-meta {
+    text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--ink); line-height: 1.6;
+  }
+  .manifest-meta b { color: var(--ink); }
+  .manifest-body { max-height: 55vh; overflow-y: auto; margin-bottom: 14px; }
+  .manifest-table {
+    width: 100%; border-collapse: collapse;
+    font-family: 'Hanken Grotesk', sans-serif; font-size: 13px;
+  }
+  .manifest-table th {
+    text-align: left; padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-soft); border-bottom: 1.5px solid var(--rule);
+  }
+  .manifest-table td {
+    padding: 10px; border-bottom: 1px dashed var(--rule);
+    color: var(--ink); vertical-align: top;
+  }
+  .manifest-table tr:last-child td { border-bottom: none; }
+  .manifest-table td.seat {
+    font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    background: var(--ink); color: var(--bone);
+    text-align: center; letter-spacing: 0.06em; width: 48px;
+  }
+
   /* Notifications bell button (Task #5). Small icon sitting in the session
      block. Shows an oxblood pill with the unread count overlaid top-right. */
   .topbar .session button.notif-btn {
@@ -2241,6 +2276,41 @@
   </div>
 </div>
 
+<!-- Manifest Modal (Task #6) -->
+<div id="manifest-modal" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="modal-card manifest-card">
+    <div class="manifest-head">
+      <div>
+        <h3 data-i18n="manifest.title">Passenger Manifest</h3>
+        <div class="modal-sub" id="mnf-route">—</div>
+      </div>
+      <div class="manifest-meta">
+        <div><span data-i18n="manifest.count">Passengers</span>: <b id="mnf-count">0</b></div>
+        <div class="ff-mono" style="font-size: 10px; color: var(--ink-soft); letter-spacing: 0.14em; text-transform: uppercase;" id="mnf-generated">—</div>
+      </div>
+    </div>
+    <div class="manifest-body">
+      <table class="manifest-table">
+        <thead>
+          <tr>
+            <th data-i18n="manifest.col.seat">Seat</th>
+            <th data-i18n="manifest.col.name">Name</th>
+            <th data-i18n="manifest.col.phone">Phone</th>
+            <th data-i18n="manifest.col.id">ID</th>
+            <th data-i18n="manifest.col.booking">Booking</th>
+          </tr>
+        </thead>
+        <tbody id="mnf-rows"></tbody>
+      </table>
+      <div id="mnf-empty" class="notif-empty hidden" data-i18n="manifest.empty">No confirmed passengers yet.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="cta ghost" id="manifest-close" data-i18n="manifest.close">Close</button>
+      <button class="cta alt" id="manifest-csv" data-i18n="manifest.csv">Export CSV →</button>
+    </div>
+  </div>
+</div>
+
 <!-- Trip Edit Modal (Task #4) -->
 <div id="trip-edit-modal" class="modal-bg" role="dialog" aria-modal="true">
   <div class="modal-card">
@@ -2440,7 +2510,11 @@ const I18N = {
     'trips.available_of': 'available', 'trips.layout': 'layout',
     'trips.sdg_per_seat': 'SDG / SEAT',
     'trips.action.select': 'Select Seats →', 'trips.action.walkin': 'Walk-in Book →',
-    'trips.action.delete': 'Delete Trip', 'trips.action.edit': 'Edit',
+    'trips.action.delete': 'Delete Trip', 'trips.action.edit': 'Edit', 'trips.action.manifest': 'Manifest',
+    'manifest.title': 'Passenger Manifest', 'manifest.count': 'Passengers', 'manifest.generated': 'Generated',
+    'manifest.col.seat': 'Seat', 'manifest.col.name': 'Name', 'manifest.col.phone': 'Phone',
+    'manifest.col.id': 'ID', 'manifest.col.booking': 'Booking',
+    'manifest.empty': 'No confirmed passengers yet.', 'manifest.close': 'Close', 'manifest.csv': 'Export CSV →',
     'tripedit.title': 'Edit Trip', 'tripedit.sub': 'Change the price and/or departure time. Existing bookings keep their locked price.',
     'tripedit.departure.label': 'Departure', 'tripedit.departure.hint': 'must be in the future',
     'tripedit.price.label': 'Price (SDG)', 'tripedit.cancel': 'Cancel', 'tripedit.save': 'Save changes →',
@@ -2692,7 +2766,11 @@ const I18N = {
     'trips.available_of': 'متاح', 'trips.layout': 'مقعد',
     'trips.sdg_per_seat': 'ج.س / مقعد',
     'trips.action.select': '→ اختر المقاعد', 'trips.action.walkin': '→ حجز عند المنفذ',
-    'trips.action.delete': 'حذف الرحلة', 'trips.action.edit': 'تعديل',
+    'trips.action.delete': 'حذف الرحلة', 'trips.action.edit': 'تعديل', 'trips.action.manifest': 'قائمة الركاب',
+    'manifest.title': 'قائمة الركاب', 'manifest.count': 'عدد الركاب', 'manifest.generated': 'تم إنشاؤها في',
+    'manifest.col.seat': 'المقعد', 'manifest.col.name': 'الاسم', 'manifest.col.phone': 'الهاتف',
+    'manifest.col.id': 'الهوية', 'manifest.col.booking': 'الحجز',
+    'manifest.empty': 'لا يوجد ركاب مؤكدون بعد.', 'manifest.close': 'إغلاق', 'manifest.csv': '→ تصدير CSV',
     'tripedit.title': 'تعديل الرحلة', 'tripedit.sub': 'يمكنك تعديل السعر و/أو وقت المغادرة. الحجوزات القائمة تحتفظ بسعرها.',
     'tripedit.departure.label': 'المغادرة', 'tripedit.departure.hint': 'يجب أن يكون في المستقبل',
     'tripedit.price.label': 'السعر (SDG)', 'tripedit.cancel': 'إلغاء', 'tripedit.save': '→ حفظ التغييرات',
@@ -3485,6 +3563,7 @@ function makeTripCard(trip, asProvider) {
       ${ asProvider
           ? `<button class="btn-inline" data-action="book">${t('trips.action.walkin')}</button>
              <button class="btn-inline alt" data-action="edit">${t('trips.action.edit')}</button>
+             <button class="btn-inline alt" data-action="manifest">${t('trips.action.manifest')}</button>
              <button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>`
           : `<button class="btn-inline" data-action="book">${t('trips.action.select')}</button>`
       }
@@ -3493,6 +3572,7 @@ function makeTripCard(trip, asProvider) {
   card.querySelector('[data-action="book"]').addEventListener('click', () => openBooking(trip, asProvider));
   if (asProvider) {
     card.querySelector('[data-action="edit"]').addEventListener('click', () => openTripEdit(trip, '/trips/'));
+    card.querySelector('[data-action="manifest"]').addEventListener('click', () => openManifest(trip));
     card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(trip.trip_id, '/trips/'));
   }
   return card;
@@ -3928,6 +4008,88 @@ async function markAllNotifRead() {
     $('#notif-count').hidden = true;
     renderNotifications();
   } catch (e) { toast(e.message, true); }
+}
+
+/* ---------- Manifest modal (Task #6) ---------- */
+let _manifestState = null;  // { trip, data }
+
+async function openManifest(trip) {
+  _manifestState = { trip, data: null };
+  $('#mnf-route').textContent = `${cityLabel(trip.origin)} → ${cityLabel(trip.destination)} · ${fmtTime(trip.departure_time)}`;
+  $('#mnf-count').textContent = '…';
+  $('#mnf-generated').textContent = '';
+  $('#mnf-rows').innerHTML = '';
+  $('#mnf-empty').classList.add('hidden');
+  $('#manifest-modal').classList.add('show');
+  try {
+    const data = await api(`/bookings/trips/${trip.trip_id}/manifest`);
+    _manifestState.data = data;
+    renderManifest(data);
+  } catch (e) {
+    toast(e.message, true);
+    closeManifest();
+  }
+}
+
+function closeManifest() {
+  $('#manifest-modal').classList.remove('show');
+  _manifestState = null;
+}
+
+function renderManifest(data) {
+  $('#mnf-count').textContent = data.total_confirmed_passengers;
+  $('#mnf-generated').textContent = t('manifest.generated') + ' ' + fmtTime(data.generated_at);
+  const rows = $('#mnf-rows');
+  rows.innerHTML = '';
+  if (!data.manifest.length) {
+    $('#mnf-empty').classList.remove('hidden');
+    return;
+  }
+  $('#mnf-empty').classList.add('hidden');
+  data.manifest.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="seat">${escapeHtml(p.seat_number || '—')}</td>
+      <td>${escapeHtml(p.full_name)}</td>
+      <td>${escapeHtml(p.phone_number || '—')}</td>
+      <td>${escapeHtml(p.national_id || '—')}</td>
+      <td>#${p.booking_id}</td>
+    `;
+    rows.appendChild(tr);
+  });
+}
+
+function _csvEscape(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportManifestCsv() {
+  if (!_manifestState?.data) return;
+  const { trip, data } = _manifestState;
+  const header = ['Seat', 'Full Name', 'Phone', 'National ID', 'Booking ID'];
+  const lines = [header.join(',')];
+  data.manifest.forEach(p => {
+    lines.push([
+      _csvEscape(p.seat_number),
+      _csvEscape(p.full_name),
+      _csvEscape(p.phone_number),
+      _csvEscape(p.national_id),
+      _csvEscape(p.booking_id),
+    ].join(','));
+  });
+  // Prepend BOM so Excel opens the file in UTF-8 (matters for Arabic names).
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const depSlug = new Date(trip.departure_time).toISOString().slice(0, 10);
+  a.download = `manifest_trip${trip.trip_id}_${depSlug}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /* ---------- Trip edit modal (Task #4) ---------- */
@@ -4692,10 +4854,12 @@ async function renderAdminTrips() {
       <div class="price">${fmtMoney(trip.price)}<small>${t('trips.sdg_per_seat')}</small></div>
       <div class="trip-card-actions">
         <button class="btn-inline alt" data-action="edit">${t('trips.action.edit')}</button>
+        <button class="btn-inline alt" data-action="manifest">${t('trips.action.manifest')}</button>
         <button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>
       </div>
     `;
     card.querySelector('[data-action="edit"]').addEventListener('click', () => openTripEdit(trip, '/admin/trips/'));
+    card.querySelector('[data-action="manifest"]').addEventListener('click', () => openManifest(trip));
     card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(trip.trip_id, '/admin/trips/'));
     list.appendChild(card);
   });
@@ -5160,6 +5324,10 @@ function wire() {
 
   $('#notif-btn').addEventListener('click', openNotifications);
   $('#notif-mark-all').addEventListener('click', markAllNotifRead);
+
+  $('#manifest-close').addEventListener('click', closeManifest);
+  $('#manifest-csv').addEventListener('click', exportManifestCsv);
+  $('#manifest-modal').addEventListener('click', e => { if (e.target.id === 'manifest-modal') closeManifest(); });
   $$('.layout-pick label').forEach(lbl => lbl.addEventListener('click', () => {
     $$('.layout-pick label').forEach(l => l.classList.remove('active'));
     lbl.classList.add('active');

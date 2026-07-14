@@ -323,5 +323,19 @@ def get_trip_manifest(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """MAN-02: Structured passenger manifest for an operational trip."""
+    """MAN-02: Structured passenger manifest for an operational trip.
+    Access: admin → any trip; provider → own trips only; customer → forbidden."""
+    from fastapi import HTTPException
+    from ..inventory.models import Trip as _Trip
+    if current_user.role == "customer":
+        raise HTTPException(status_code=403, detail="Manifest is provider/admin only.")
+    if current_user.role == "provider":
+        trip = db.query(_Trip).filter(_Trip.id == trip_id).first()
+        if not trip:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        if trip.provider_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only view manifests for trips you own.",
+            )
     return service.compile_trip_manifest(db=db, trip_id=trip_id)
