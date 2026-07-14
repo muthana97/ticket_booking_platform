@@ -12,6 +12,9 @@ from .booking.router import router as booking_router
 from .booking.tasks import cleanup_expired_bookings # <--- Import the task
 from .admin.router import router as admin_router
 from .finance.router import router as finance_router
+from .notifications.router import router as notifications_router
+# Import the model so Base.metadata.create_all() picks up the table.
+from .notifications import models as _notifications_models  # noqa: F401
 
 def _ensure_schema():
     """Create tables on the configured engine. Lifted out of module scope so
@@ -174,6 +177,7 @@ app.include_router(auth_router)
 app.include_router(booking_router)
 app.include_router(admin_router)
 app.include_router(finance_router)
+app.include_router(notifications_router)
 
 @app.get("/")
 def health_check():

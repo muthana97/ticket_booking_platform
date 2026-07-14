@@ -12,6 +12,104 @@ router = APIRouter(prefix="/trips", tags=["Inventory"])
 
 
 # ---------------------------------------------------------------------------
+# Notification fan-out helpers (shared by provider + admin edit / delete paths)
+# ---------------------------------------------------------------------------
+
+def _serialize_dt(v):
+    return v.isoformat() if hasattr(v, "isoformat") else v
+
+
+def _active_customer_ids_for_trip(db, trip_id):
+    """Consumer-channel bookings only — walk-ins record the provider's own id
+    as customer_id and shouldn't self-notify."""
+    from ..booking.models import Booking
+    rows = (
+        db.query(Booking.id, Booking.customer_id)
+        .filter(
+            Booking.trip_id == trip_id,
+            Booking.status.in_(["pending", "committed_pending", "confirmed"]),
+            Booking.channel == "consumer",
+        )
+        .all()
+    )
+    return rows  # list of (booking_id, customer_id)
+
+
+def _fanout_trip_edit(db, *, trip, delta, actor, actor_id):
+    """Emit notifications for a trip edit (used by both the provider and the
+    admin PATCH paths). `delta` comes from service.update_trip and only
+    contains fields that actually changed."""
+    if not delta:
+        return
+    from ..notifications import service as notif
+    # 1. Passengers on active bookings — only if departure_time moved.
+    if "departure_time" in delta:
+        payload_base = {
+            "trip_id": trip.id,
+            "from": _serialize_dt(delta["departure_time"]["from"]),
+            "to": _serialize_dt(delta["departure_time"]["to"]),
+        }
+        for booking_id, cust_id in _active_customer_ids_for_trip(db, trip.id):
+            notif.create_notification(
+                db,
+                user_id=cust_id,
+                type="trip_time_changed",
+                payload={**payload_base, "booking_id": booking_id},
+            )
+    # 2. Counter-party (admin ↔ provider) — for every edit, regardless of field.
+    delta_payload = {
+        "trip_id": trip.id,
+        "changed_fields": list(delta.keys()),
+    }
+    if "price" in delta:
+        delta_payload["price"] = {"from": delta["price"]["from"], "to": delta["price"]["to"]}
+    if "departure_time" in delta:
+        delta_payload["departure_time"] = {
+            "from": _serialize_dt(delta["departure_time"]["from"]),
+            "to":   _serialize_dt(delta["departure_time"]["to"]),
+        }
+    if actor == "provider":
+        # Notify every admin.
+        from ..auth.models import User
+        admin_ids = [row.id for row in db.query(User.id).filter(User.role == "admin").all()]
+        notif.create_notifications_bulk(
+            db, user_ids=admin_ids, type="trip_edited_by_provider",
+            payload={**delta_payload, "provider_id": actor_id},
+        )
+    elif actor == "admin":
+        if trip.provider_id:
+            notif.create_notification(
+                db, user_id=trip.provider_id, type="trip_edited_by_admin",
+                payload=delta_payload,
+            )
+
+
+def _fanout_trip_delete(db, *, trip, actor):
+    """Emit notifications for a trip deletion. `trip` and its bookings must
+    still exist at call time — the delete happens AFTER this returns."""
+    from ..notifications import service as notif
+    payload = {
+        "trip_id": trip.id,
+        "origin": trip.route.origin if trip.route else None,
+        "destination": trip.route.destination if trip.route else None,
+        "departure_time": _serialize_dt(trip.departure_time),
+    }
+    # Passengers on active bookings — for both provider- and admin-initiated
+    # deletes.
+    passenger_ids = [
+        cust_id for (_bid, cust_id) in _active_customer_ids_for_trip(db, trip.id)
+    ]
+    notif.create_notifications_bulk(
+        db, user_ids=passenger_ids, type="trip_cancelled", payload=payload,
+    )
+    # Admin-initiated delete → also notify the owning provider.
+    if actor == "admin" and trip.provider_id:
+        notif.create_notification(
+            db, user_id=trip.provider_id, type="trip_deleted_by_admin", payload=payload,
+        )
+
+
+# ---------------------------------------------------------------------------
 # Search — open to any authenticated session (customer or provider)
 # ---------------------------------------------------------------------------
 
@@ -170,10 +268,7 @@ def update_trip(
         db=db, trip_id=trip_id,
         price=payload.price, departure_time=payload.departure_time,
     )
-    # TODO Task #5: fan out notifications for delta.
-    #   - If delta['departure_time'] present → notify passengers on any active
-    #     booking for this trip (pending / committed_pending / confirmed).
-    #   - Emit trip_edited_by_provider → admin.
+    _fanout_trip_edit(db, trip=trip, delta=delta, actor="provider", actor_id=provider.id)
     return service.decorate_trip_row(db, trip)
 
 
@@ -201,6 +296,7 @@ def delete_trip(
             status_code=403,
             detail="You can only delete trips you own.",
         )
+    _fanout_trip_delete(db, trip=trip, actor="provider")
     service.delete_trip(db=db, trip_id=trip_id)
     return None
 

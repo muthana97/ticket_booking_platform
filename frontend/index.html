@@ -297,6 +297,68 @@
   .topbar .session button.signout:hover { background: currentColor; color: var(--paper); }
   .topbar.role-provider .session button.signout:hover { color: var(--ink); }
   .topbar.role-admin    .session button.signout:hover { color: var(--admin); }
+  /* Notifications bell button (Task #5). Small icon sitting in the session
+     block. Shows an oxblood pill with the unread count overlaid top-right. */
+  .topbar .session button.notif-btn {
+    appearance: none; background: transparent; border: 0;
+    color: inherit; cursor: pointer; padding: 4px 6px;
+    position: relative; line-height: 0;
+  }
+  .topbar .session button.notif-btn svg { width: 20px; height: 20px; opacity: 0.85; }
+  .topbar .session button.notif-btn:hover svg { opacity: 1; }
+  .topbar .session button.notif-btn .notif-count {
+    position: absolute; top: -2px; right: -2px;
+    background: var(--oxblood); color: var(--bone);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px; line-height: 1.2;
+    min-width: 14px; text-align: center;
+  }
+
+  /* Notifications list screen */
+  #screen-notifications .canvas-inner { max-width: 720px; margin: 0 auto; padding: 20px 24px; }
+  .notif-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rule);
+  }
+  .notif-head h2 { font-family: 'Fraunces', serif; font-weight: 800; font-size: 30px; letter-spacing: -0.02em; }
+  .notif-head .mark-all {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink); cursor: pointer;
+    background: transparent; border: 1.5px solid var(--rule); padding: 6px 12px;
+  }
+  .notif-head .mark-all:hover { border-color: var(--ink); }
+  .notif-list { display: flex; flex-direction: column; gap: 10px; }
+  .notif-row {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start;
+    background: var(--bone); border: 1.5px solid var(--rule); padding: 14px 16px;
+    cursor: pointer; transition: border-color 200ms;
+  }
+  .notif-row.unread { border-left: 4px solid var(--terra); }
+  .notif-row:hover { border-color: var(--ink); }
+  .notif-row .n-icon {
+    width: 32px; height: 32px; display: grid; place-items: center;
+    background: var(--paper-2); font-size: 14px;
+  }
+  .notif-row .n-body .n-title {
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 15px;
+    margin-bottom: 2px;
+  }
+  .notif-row .n-body .n-sub {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink-soft); letter-spacing: 0.04em;
+  }
+  .notif-row .n-when {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--ink-soft); letter-spacing: 0.1em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .notif-empty {
+    text-align: center; padding: 60px 20px;
+    color: var(--ink-soft); font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+
   /* Support link — sits next to signout in the session block, visible to
      every logged-in role so no chrome variation between customer/provider/admin. */
   .topbar .session a.support-link {
@@ -703,7 +765,8 @@
   body[data-screen="provider-home"]         #screen-provider-home,
   body[data-screen="provider-book"]         #screen-customer-book,
   body[data-screen="admin-home"]            #screen-admin-home,
-  body[data-screen="admin-settings"]        #screen-admin-settings { display: block; }
+  body[data-screen="admin-settings"]        #screen-admin-settings,
+  body[data-screen="notifications"]         #screen-notifications { display: block; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -1578,6 +1641,10 @@
       <div class="session" id="session" hidden>
         <span class="badge" id="role-badge">—</span>
         <span id="email-tag">—</span>
+        <button class="notif-btn" id="notif-btn" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="notif-count" id="notif-count" hidden>0</span>
+        </button>
         <a class="support-link" id="support-link" href="mailto:gadget.service.solutions@gmail.com" data-i18n="nav.support">Support</a>
         <button class="signout" id="signout-btn" data-i18n="signout">Sign out</button>
       </div>
@@ -2094,6 +2161,19 @@
       </div>
     </section>
 
+    <!-- Notifications list (Task #5). Universal — any signed-in role.
+         Routing keys it on body[data-screen='notifications']. -->
+    <section class="screen" id="screen-notifications">
+      <div class="canvas-inner">
+        <div class="notif-head">
+          <h2 data-i18n="notifications.title">Notifications</h2>
+          <button class="mark-all" id="notif-mark-all" data-i18n="notifications.mark_all">Mark all read</button>
+        </div>
+        <div id="notif-list" class="notif-list"></div>
+        <div id="notif-empty" class="notif-empty hidden" data-i18n="notifications.empty">You're all caught up.</div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -2365,6 +2445,17 @@ const I18N = {
     'tripedit.departure.label': 'Departure', 'tripedit.departure.hint': 'must be in the future',
     'tripedit.price.label': 'Price (SDG)', 'tripedit.cancel': 'Cancel', 'tripedit.save': 'Save changes →',
     'tripedit.saved': 'Trip updated.',
+    'notifications.title': 'Notifications', 'notifications.mark_all': 'Mark all read',
+    'notifications.empty': "You're all caught up.",
+    'rel.now': 'just now', 'rel.m': '{n}m ago', 'rel.h': '{n}h ago', 'rel.d': '{n}d ago',
+    'notif.trip_time_changed.title': 'Trip #{trip} departure changed',
+    'notif.trip_time_changed.sub': 'Was: {from} · Now: {to}',
+    'notif.trip_edited_by_provider.title': 'Trip #{trip} edited by a provider',
+    'notif.trip_edited_by_admin.title': 'Trip #{trip} edited by admin',
+    'notif.trip_cancelled.title': 'Trip #{trip} was cancelled',
+    'notif.trip_deleted_by_admin.title': 'Trip #{trip} deleted by admin',
+    'notif.cap.enabled': '{cap} permission enabled',
+    'notif.cap.disabled': '{cap} permission disabled',
     // booking screen
     'book.selection': 'Selection',
     'book.tapseats': 'Tap seats to select',
@@ -2606,6 +2697,17 @@ const I18N = {
     'tripedit.departure.label': 'المغادرة', 'tripedit.departure.hint': 'يجب أن يكون في المستقبل',
     'tripedit.price.label': 'السعر (SDG)', 'tripedit.cancel': 'إلغاء', 'tripedit.save': '→ حفظ التغييرات',
     'tripedit.saved': 'تم تحديث الرحلة.',
+    'notifications.title': 'الإشعارات', 'notifications.mark_all': 'تحديد الكل كمقروء',
+    'notifications.empty': 'لا يوجد إشعارات جديدة.',
+    'rel.now': 'الآن', 'rel.m': 'قبل {n} د', 'rel.h': 'قبل {n} س', 'rel.d': 'قبل {n} ي',
+    'notif.trip_time_changed.title': 'تم تغيير موعد الرحلة #{trip}',
+    'notif.trip_time_changed.sub': 'كان: {from} · أصبح: {to}',
+    'notif.trip_edited_by_provider.title': 'تم تعديل الرحلة #{trip} من قبل الموظف',
+    'notif.trip_edited_by_admin.title': 'تم تعديل الرحلة #{trip} من قبل المدير',
+    'notif.trip_cancelled.title': 'تم إلغاء الرحلة #{trip}',
+    'notif.trip_deleted_by_admin.title': 'تم حذف الرحلة #{trip} من قبل المدير',
+    'notif.cap.enabled': 'تم تفعيل صلاحية {cap}',
+    'notif.cap.disabled': 'تم إلغاء صلاحية {cap}',
     // booking screen
     'book.selection': 'الاختيار',
     'book.tapseats': 'اضغط على المقاعد للاختيار',
@@ -3067,8 +3169,13 @@ function paintChrome() {
     nav.hidden = true;
     $('#role-badge').textContent = '';
     $('#email-tag').textContent = '';
+    $('#notif-count').hidden = true;
   }
   applyStatusBarStyle(auth?.user?.role);
+  // Notifications bell: refresh unread count whenever chrome is repainted
+  // (login, role change, screen transition). Silent-fail — badge just stays
+  // stale if the request bombs.
+  if (auth) refreshNotifBadge();
 
   // Gear icon is visible for any signed-in user. Settings has a Language
   // section everyone sees; the Commissions section below is admin-only.
@@ -3666,6 +3773,162 @@ function syncRepeatUi() {
 }
 
 function closeAddTrip() { $('#add-trip-modal').classList.remove('show'); }
+
+/* ---------- Notifications (Task #5) ---------- */
+STATE.notifUnread = 0;
+
+async function refreshNotifBadge() {
+  if (!STATE.auth) return;
+  try {
+    const r = await api('/notifications/me');
+    STATE.notifUnread = r.unread || 0;
+    STATE.notifItems = r.items || [];
+    const badge = $('#notif-count');
+    if (STATE.notifUnread > 0) {
+      badge.textContent = STATE.notifUnread > 99 ? '99+' : String(STATE.notifUnread);
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+    // If the notifications screen is on, re-render with fresh data.
+    if (STATE.screen === 'notifications') renderNotifications();
+  } catch (e) { /* silent — badge just stays stale */ }
+}
+
+function _relTime(iso) {
+  const then = parseUtc(iso);
+  if (!then) return '';
+  const diff = Math.max(0, (Date.now() - then.getTime()) / 1000);
+  if (diff < 60)    return t('rel.now');
+  if (diff < 3600)  return t('rel.m').replace('{n}', Math.floor(diff / 60));
+  if (diff < 86400) return t('rel.h').replace('{n}', Math.floor(diff / 3600));
+  return t('rel.d').replace('{n}', Math.floor(diff / 86400));
+}
+
+function _notifSummary(n) {
+  const p = n.payload || {};
+  switch (n.type) {
+    case 'trip_time_changed':
+      return {
+        icon: '🕒',
+        title: t('notif.trip_time_changed.title').replace('{trip}', p.trip_id ?? '?'),
+        sub:   t('notif.trip_time_changed.sub')
+                 .replace('{from}', fmtTime(p.from))
+                 .replace('{to}',   fmtTime(p.to)),
+      };
+    case 'trip_edited_by_provider':
+      return {
+        icon: '✏️',
+        title: t('notif.trip_edited_by_provider.title').replace('{trip}', p.trip_id ?? '?'),
+        sub:   (p.changed_fields || []).join(', '),
+      };
+    case 'trip_edited_by_admin':
+      return {
+        icon: '🛠️',
+        title: t('notif.trip_edited_by_admin.title').replace('{trip}', p.trip_id ?? '?'),
+        sub:   (p.changed_fields || []).join(', '),
+      };
+    case 'trip_cancelled':
+      return {
+        icon: '⛔',
+        title: t('notif.trip_cancelled.title').replace('{trip}', p.trip_id ?? '?'),
+        sub:   `${p.origin || ''} → ${p.destination || ''}`,
+      };
+    case 'trip_deleted_by_admin':
+      return {
+        icon: '⛔',
+        title: t('notif.trip_deleted_by_admin.title').replace('{trip}', p.trip_id ?? '?'),
+        sub:   `${p.origin || ''} → ${p.destination || ''}`,
+      };
+    case 'provider_capability_changed':
+      return {
+        icon: p.value ? '✅' : '🚫',
+        title: t(p.value ? 'notif.cap.enabled' : 'notif.cap.disabled')
+                 .replace('{cap}', t('admin.caps.' + (p.capability === 'can_add_trips' ? 'add'
+                                    : p.capability === 'can_edit_trips'   ? 'edit'
+                                    : p.capability === 'can_delete_trips' ? 'delete'
+                                    : ''))),
+        sub: '',
+      };
+    default:
+      return { icon: '🔔', title: n.type, sub: '' };
+  }
+}
+
+function _routeFromNotif(n) {
+  // Best-effort — send the user somewhere useful; some notifications are
+  // informational only and no navigation makes sense.
+  const p = n.payload || {};
+  const role = STATE.auth?.user.role;
+  if (n.type === 'trip_time_changed' && role === 'customer') {
+    goto('customer-my-tickets');
+    refreshMyTickets();
+    return;
+  }
+  if ((n.type === 'trip_edited_by_admin' || n.type === 'trip_deleted_by_admin' ||
+       n.type === 'provider_capability_changed') && role === 'provider') {
+    goto('provider-home');
+    return;
+  }
+  if (n.type === 'trip_edited_by_provider' && role === 'admin') {
+    goto('admin-home');
+    return;
+  }
+  // Fallback — stay put, item stays open.
+}
+
+async function renderNotifications() {
+  const items = STATE.notifItems || [];
+  const list = $('#notif-list');
+  const empty = $('#notif-empty');
+  list.innerHTML = '';
+  if (!items.length) { empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  items.forEach(n => {
+    const s = _notifSummary(n);
+    const row = document.createElement('div');
+    row.className = 'notif-row' + (n.read_at ? '' : ' unread');
+    row.innerHTML = `
+      <div class="n-icon">${s.icon}</div>
+      <div class="n-body">
+        <div class="n-title">${escapeHtml(s.title)}</div>
+        ${s.sub ? `<div class="n-sub">${escapeHtml(s.sub)}</div>` : ''}
+      </div>
+      <div class="n-when">${_relTime(n.created_at)}</div>
+    `;
+    row.addEventListener('click', async () => {
+      if (!n.read_at) {
+        try {
+          await api(`/notifications/${n.id}/read`, { method: 'POST' });
+          n.read_at = new Date().toISOString();
+          row.classList.remove('unread');
+          STATE.notifUnread = Math.max(0, STATE.notifUnread - 1);
+          const badge = $('#notif-count');
+          if (STATE.notifUnread > 0) badge.textContent = STATE.notifUnread;
+          else badge.hidden = true;
+        } catch (_) { /* keep going regardless */ }
+      }
+      _routeFromNotif(n);
+    });
+    list.appendChild(row);
+  });
+}
+
+async function openNotifications() {
+  await refreshNotifBadge();  // ensures STATE.notifItems is fresh
+  goto('notifications');
+  renderNotifications();
+}
+
+async function markAllNotifRead() {
+  try {
+    await api('/notifications/read-all', { method: 'POST' });
+    (STATE.notifItems || []).forEach(n => n.read_at = new Date().toISOString());
+    STATE.notifUnread = 0;
+    $('#notif-count').hidden = true;
+    renderNotifications();
+  } catch (e) { toast(e.message, true); }
+}
 
 /* ---------- Trip edit modal (Task #4) ---------- */
 let _tripEditState = null;  // { tripId, basePath, refreshFn }
@@ -4894,6 +5157,9 @@ function wire() {
   $('#trip-edit-cancel').addEventListener('click', closeTripEdit);
   $('#trip-edit-submit').addEventListener('click', submitTripEdit);
   $('#trip-edit-modal').addEventListener('click', e => { if (e.target.id === 'trip-edit-modal') closeTripEdit(); });
+
+  $('#notif-btn').addEventListener('click', openNotifications);
+  $('#notif-mark-all').addEventListener('click', markAllNotifRead);
   $$('.layout-pick label').forEach(lbl => lbl.addEventListener('click', () => {
     $$('.layout-pick label').forEach(l => l.classList.remove('active'));
     lbl.classList.add('active');

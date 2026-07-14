@@ -81,14 +81,29 @@ def update_provider_capabilities(
     )
     if not user:
         raise HTTPException(status_code=404, detail="Provider not found")
-    if can_add_trips is not None:
+    changed = {}
+    if can_add_trips is not None and can_add_trips != user.can_add_trips:
+        changed["can_add_trips"] = can_add_trips
         user.can_add_trips = can_add_trips
-    if can_edit_trips is not None:
+    if can_edit_trips is not None and can_edit_trips != user.can_edit_trips:
+        changed["can_edit_trips"] = can_edit_trips
         user.can_edit_trips = can_edit_trips
-    if can_delete_trips is not None:
+    if can_delete_trips is not None and can_delete_trips != user.can_delete_trips:
+        changed["can_delete_trips"] = can_delete_trips
         user.can_delete_trips = can_delete_trips
-    db.commit()
-    db.refresh(user)
+    if changed:
+        db.commit()
+        db.refresh(user)
+        # Emit one notification per actual change so the provider sees which
+        # capabilities flipped (and in what direction).
+        from ..notifications import service as notif
+        for key, value in changed.items():
+            notif.create_notification(
+                db,
+                user_id=user.id,
+                type="provider_capability_changed",
+                payload={"capability": key, "value": bool(value)},
+            )
     print(
         f"[ADMIN] provider {user.email} capabilities "
         f"add={user.can_add_trips} edit={user.can_edit_trips} delete={user.can_delete_trips}"

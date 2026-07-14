@@ -149,6 +149,11 @@ def list_trips(
 @router.delete("/trips/{trip_id}", status_code=204)
 def admin_delete_trip(trip_id: int, db: Session = Depends(get_db)):
     """Admin can delete any trip (still refuses if confirmed bookings exist)."""
+    from ..inventory.models import Trip as _Trip
+    from ..inventory.router import _fanout_trip_delete
+    trip = db.query(_Trip).filter(_Trip.id == trip_id).first()
+    if trip is not None:
+        _fanout_trip_delete(db, trip=trip, actor="admin")
     inv_service.delete_trip(db=db, trip_id=trip_id)
     return None
 
@@ -162,14 +167,12 @@ def admin_update_trip(
     """Admin can edit any trip's price / departure. No ownership or capability
     gates apply here — admin bypasses both. Past-departure block still holds
     (backend refuses retroactive moves regardless of who's editing)."""
+    from ..inventory.router import _fanout_trip_edit
     trip, delta = inv_service.update_trip(
         db=db, trip_id=trip_id,
         price=payload.price, departure_time=payload.departure_time,
     )
-    # TODO Task #5: fan out notifications for delta.
-    #   - If delta['departure_time'] present → notify passengers on any active
-    #     booking for this trip.
-    #   - Emit trip_edited_by_admin → owning provider.
+    _fanout_trip_edit(db, trip=trip, delta=delta, actor="admin", actor_id=None)
     return inv_service.decorate_trip_row(db, trip)
 
 
