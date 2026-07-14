@@ -152,7 +152,7 @@
   html[lang="ar"] .status-pill,
   html[lang="ar"] .ticket-foot .total,
   html[lang="ar"] .ticket-head .bok .code,
-  html[lang="ar"] #email-tag,
+  html[lang="ar"] #account-email,
   html[lang="ar"] .email,
   html[lang="ar"] code {
     direction: ltr;
@@ -394,8 +394,9 @@
     font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
   }
 
-  /* Support link — sits next to signout in the session block, visible to
-     every logged-in role so no chrome variation between customer/provider/admin. */
+  /* Support link — kept in the topbar session block for admin only. Customer
+     Support lives in the customer bottom nav (added dynamically in
+     paintChrome); Provider Support lives in the provider tab bar. */
   .topbar .session a.support-link {
     text-decoration: none;
     color: inherit;
@@ -406,6 +407,8 @@
     opacity: 0.85;
   }
   .topbar .session a.support-link:hover { opacity: 1; border-style: solid; }
+  .topbar.role-customer .session a.support-link,
+  .topbar.role-provider .session a.support-link { display: none; }
 
   /* Phone breakpoint — top bar = compact identity row, nav moves to a fixed
      bottom tab bar (native iOS/Android pattern). */
@@ -422,14 +425,6 @@
 
     .topbar .session { gap: 8px; }
     .topbar .session .badge { display: none; }
-    .topbar .session #email-tag {
-      max-width: 110px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-    }
     .topbar .session button.signout {
       padding: 5px 9px;
       font-size: 9px;
@@ -647,7 +642,8 @@
       box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
     }
     .admin-stage .tab-bar button,
-    .provider-stage .tab-bar button {
+    .provider-stage .tab-bar button,
+    .provider-stage .tab-bar .tab-support {
       flex: 1;
       padding: 8px 4px;
       font-size: 9px;
@@ -658,6 +654,9 @@
       gap: 4px;
       align-items: center;
       line-height: 1.15;
+      /* Reset the desktop margin-inline-start:auto — on mobile the tab-bar
+         becomes justify-content:space-around, so Support just sits last. */
+      margin-inline-start: 0;
     }
     .admin-stage .tab-bar button.active,
     .provider-stage .tab-bar button.active {
@@ -1162,6 +1161,25 @@
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px;
   }
+  /* Account row — label + email value, stacked on narrow screens. */
+  .settings-section .account-row {
+    display: flex; align-items: baseline; gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--rule);
+    margin-bottom: 10px;
+  }
+  .settings-section .account-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .settings-section .account-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; color: var(--ink);
+    word-break: break-all;
+  }
+  .settings-section .account-note { margin: 0; font-size: 12px; }
 
   .commission-override-row {
     display: flex; align-items: center; gap: 12px;
@@ -1284,6 +1302,20 @@
   .tab-bar.admin-tabs button.active .count { background: var(--admin-light); color: var(--bone); }
   .tab-bar.provider-tabs button.active .count { background: var(--ink); color: var(--bone); }
   .tab-bar button:not(.active) .count { background: var(--paper-2); color: var(--ink-soft); }
+  /* Support pinned to the far right of the provider tab strip. Desktop uses
+     margin-inline-start:auto to push it away from the primary tabs; on mobile
+     the fixed bottom tab-bar override rewrites its layout. */
+  .tab-bar .tab-support {
+    margin-inline-start: auto;
+    text-decoration: none; color: var(--ink-soft);
+    padding: 14px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    border-bottom: 3px solid transparent;
+    transition: color 180ms;
+  }
+  .tab-bar .tab-support:hover { color: var(--ink); }
   .tab-content > * { display: none; }
   .tab-content > .active { display: block; }
 
@@ -1681,7 +1713,6 @@
       </span>
       <div class="session" id="session" hidden>
         <span class="badge" id="role-badge">—</span>
-        <span id="email-tag">—</span>
         <button class="notif-btn" id="notif-btn" aria-label="Notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
           <span class="notif-count" id="notif-count" hidden>0</span>
@@ -1934,6 +1965,7 @@
         <div class="tab-bar provider-tabs" id="provider-tab-bar">
           <button data-ptab="trips" class="active"><span data-i18n="provider.tab.trips">My Trips</span> <span class="count" id="pcnt-trips">0</span></button>
           <button data-ptab="bookings"><span data-i18n="provider.tab.bookings">My Bookings</span> <span class="count" id="pcnt-bookings">0</span></button>
+          <a class="tab-support" href="mailto:gadget.service.solutions@gmail.com" data-i18n="nav.support">Support</a>
         </div>
         <div class="tab-content" id="provider-tab-content">
           <div data-ptab-panel="trips" class="active">
@@ -2193,10 +2225,16 @@
           </div>
         </section>
 
-        <section class="settings-section disabled">
+        <section class="settings-section">
           <h3 data-i18n="settings.section.account">Account</h3>
           <div class="settings-body">
-            <p class="lead" data-i18n="settings.section.account.soon">Coming soon.</p>
+            <div class="panel">
+              <div class="account-row">
+                <span class="account-label" data-i18n="settings.account.signed_in_as">Signed in as</span>
+                <span class="account-value" id="account-email">—</span>
+              </div>
+              <p class="lead account-note" data-i18n="settings.section.account.soon">Password reset and more coming soon.</p>
+            </div>
           </div>
         </section>
       </div>
@@ -2649,7 +2687,8 @@ const I18N = {
     'settings.lang.lead': 'Choose the app language. Affects the whole app immediately.',
     'settings.section.commissions': 'Commissions',
     'settings.section.account': 'Account',
-    'settings.section.account.soon': 'Coming soon · password reset and more.',
+    'settings.section.account.soon': 'Password reset and more coming soon.',
+    'settings.account.signed_in_as': 'Signed in as',
     'nav.settings': 'Settings',
     'commission.global.title': 'Global commission',
     'commission.global.lead': "Default rate applied when no override exists for the trip's provider or route.",
@@ -2904,7 +2943,8 @@ const I18N = {
     'settings.lang.lead': 'اختر لغة التطبيق. يطبق التغيير فوراً على كل التطبيق.',
     'settings.section.commissions': 'العمولات',
     'settings.section.account': 'الحساب',
-    'settings.section.account.soon': 'قريباً · إعادة تعيين كلمة المرور والمزيد.',
+    'settings.section.account.soon': 'إعادة تعيين كلمة المرور والمزيد قريباً.',
+    'settings.account.signed_in_as': 'مسجّل الدخول باسم',
     'nav.settings': 'الإعدادات',
     'commission.global.title': 'العمولة العامة',
     'commission.global.lead': 'النسبة الافتراضية عند عدم وجود استثناء للمشغّل أو المسار.',
@@ -3222,17 +3262,21 @@ function paintChrome() {
     session.hidden = false;
     topbar.classList.add('role-' + auth.user.role);
     $('#role-badge').textContent = t(`role.${auth.user.role}`);
-    $('#email-tag').textContent = auth.user.email;
     if (auth.user.role === 'customer') {
       nav.hidden = false;
       const cnt = STATE.awaitingCount;
       const badge = cnt > 0 ? `<span class="count">${cnt}</span>` : '';
+      // Support sits last so it renders on the right — on mobile the nav
+      // becomes a bottom tab bar with `justify-content: space-around` and
+      // per-item `flex: 1`, on desktop it's a natural inline row.
       nav.innerHTML = `
         <a class="nav-link" data-nav="customer-search">${t('nav.search')}</a>
         <a class="nav-link" data-nav="customer-my-tickets">${t('nav.mytickets')}${badge}</a>
+        <a class="nav-link support" data-nav="support" href="mailto:gadget.service.solutions@gmail.com">${t('nav.support')}</a>
       `;
       nav.querySelectorAll('a').forEach(a => {
         a.classList.toggle('active', STATE.screen === a.dataset.nav);
+        if (a.dataset.nav === 'support') return; // mailto handles itself
         a.addEventListener('click', () => {
           if (a.dataset.nav === 'customer-search') {
             STATE.history = [];
@@ -3248,12 +3292,11 @@ function paintChrome() {
       nav.hidden = true;
     }
   } else {
-    // Logged-out state: clear the role/email/badge text completely so they
-    // don't linger if some stylesheet ignored `hidden`.
+    // Logged-out state: clear the role/badge text completely so it doesn't
+    // linger if some stylesheet ignored `hidden`.
     session.hidden = true;
     nav.hidden = true;
     $('#role-badge').textContent = '';
-    $('#email-tag').textContent = '';
     $('#notif-count').hidden = true;
   }
   applyStatusBarStyle(auth?.user?.role);
@@ -4625,6 +4668,9 @@ async function refreshAdminSettings() {
   if (!STATE.auth) return;
   // Reflect current LANG in the Language pills (all roles see this).
   syncSettingsLanguagePills();
+  // Account section shows the signed-in email for every role.
+  const emailEl = $('#account-email');
+  if (emailEl) emailEl.textContent = STATE.auth.user.email || '—';
   // Commissions only fetched for admin.
   if (STATE.auth.user.role !== 'admin') return;
   try {
