@@ -245,6 +245,10 @@ def build_ticket_payload(db: Session, booking: Booking) -> dict:
         for p in booking.passengers
     ]
 
+    provider = (
+        db.query(User).filter(User.id == trip.provider_id).first()
+        if trip and trip.provider_id else None
+    )
     trip_summary = {
         "trip_id": trip.id if trip else booking.trip_id,
         "origin": route.origin if route else "—",
@@ -252,6 +256,7 @@ def build_ticket_payload(db: Session, booking: Booking) -> dict:
         "departure_time": trip.departure_time if trip else booking.created_at,
         "duration": route.duration if route else None,
         "price_per_seat": trip.price if trip else 0.0,
+        "provider_name": provider.full_name if provider else None,
     }
 
     # Simulated email delivery: look up the booking owner's address and log it.

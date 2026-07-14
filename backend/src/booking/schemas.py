@@ -67,6 +67,7 @@ class TripSummary(BaseModel):
     departure_time: datetime
     duration: Optional[str] = None
     price_per_seat: float
+    provider_name: Optional[str] = None
 
 
 class PassengerSummary(BaseModel):

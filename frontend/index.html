@@ -1468,6 +1468,12 @@
   }
   .ticket-head .brand-sm { font-family: 'Fraunces', serif; font-weight: 900; font-size: 30px; letter-spacing: -0.025em; line-height: 0.92; }
   .ticket-head .sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: var(--ink-soft); text-transform: uppercase; margin-top: 6px; }
+  .ticket-head .ticket-provider {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-soft); margin-top: 8px;
+  }
+  .ticket-head .ticket-provider b { color: var(--ink); font-weight: 700; }
   .ticket-head .bok { text-align: right; }
   .ticket-head .bok .lbl { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.3em; color: var(--ink-soft); text-transform: uppercase; }
   .ticket-head .bok .code {
@@ -2396,6 +2402,7 @@
       <div>
         <div class="brand-sm">Tazkirati.</div>
         <div class="sub" data-i18n="ticket.brand.sub">Sudan Intercity Coach · Boarding Stub</div>
+        <div class="ticket-provider" id="t-provider" hidden><span data-i18n="ticket.operated_by">Operated by</span> <b id="t-provider-name">—</b></div>
       </div>
       <div class="bok">
         <div class="lbl" data-i18n="ticket.billingref">Billing Reference</div>
@@ -2619,7 +2626,7 @@ const I18N = {
     'status.expired': 'expired',
     'channel.walkin': 'walk-in', 'channel.online': 'online',
     // ticket modal
-    'ticket.brand.sub': 'Sudan Intercity Coach · Boarding Stub',
+    'ticket.brand.sub': 'Sudan Intercity Coach · Boarding Stub', 'ticket.operated_by': 'Operated by',
     'ticket.billingref': 'Billing Reference',
     'ticket.scan': 'SCAN AT BOARDING',
     'ticket.bookingid': 'Booking ID', 'ticket.channel': 'Channel',
@@ -2874,7 +2881,7 @@ const I18N = {
     'status.expired': 'منتهي',
     'channel.walkin': 'منفذ', 'channel.online': 'إلكتروني',
     // ticket modal
-    'ticket.brand.sub': 'النقل بين مدن السودان · تذكرة ركوب',
+    'ticket.brand.sub': 'النقل بين مدن السودان · تذكرة ركوب', 'ticket.operated_by': 'المشغل',
     'ticket.billingref': 'رقم الفاتورة',
     'ticket.scan': 'امسح عند الركوب',
     'ticket.bookingid': 'رقم الحجز', 'ticket.channel': 'القناة',
@@ -4525,6 +4532,16 @@ function restartFlow() { resetBookingState(); STATE.knownVersion = null; refresh
 /* ---------- Ticket modal + QR ---------- */
 function renderTicket(ticket, { confirmed }) {
   $('#t-bok').textContent = ticket.billing_reference || '—';
+  // "Operated by <Provider>" line — hidden gracefully when the backend
+  // didn't populate the field (older ticket payload, or no provider linked).
+  const provWrap = $('#t-provider');
+  const provName = ticket.trip?.provider_name;
+  if (provName) {
+    $('#t-provider-name').textContent = provName;
+    provWrap.hidden = false;
+  } else {
+    provWrap.hidden = true;
+  }
   $('#t-origin').textContent = cityLabel(ticket.trip.origin);
   $('#t-destination').textContent = cityLabel(ticket.trip.destination);
   $('#t-departure').textContent = t('driver.dep') + ' ' + fmtTime(ticket.trip.departure_time);
