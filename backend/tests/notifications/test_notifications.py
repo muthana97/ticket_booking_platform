@@ -173,6 +173,33 @@ def test_provider_edit_notifies_admin(
     assert len(rows) == 1
     assert rows[0].payload["trip_id"] == trip_with_seats.id
     assert "price" in rows[0].payload
+    # New attribution: payload carries the acting provider's full name.
+    assert rows[0].payload["provider_name"] == "Provider One"
+
+
+def test_historical_notifs_backfilled_with_provider_name(
+    client, auth_header, admin_user, provider, trip_with_seats, db,
+):
+    """Regression: notifications written before the provider_name field
+    existed only carried provider_id. GET /notifications/me must enrich
+    them at read time so the admin console can show the name."""
+    from src.notifications.models import Notification
+    # Simulate a pre-fix notification — payload has provider_id but no name.
+    legacy = Notification(
+        user_id=admin_user.id,
+        type="trip_edited_by_provider",
+        payload={"trip_id": trip_with_seats.id, "provider_id": provider.id,
+                 "changed_fields": ["price"]},
+        created_at=datetime.utcnow(),
+    )
+    db.add(legacy); db.commit()
+    legacy_id = legacy.id
+
+    r = client.get("/notifications/me", headers=auth_header)
+    assert r.status_code == 200
+    items = r.json()["items"]
+    match = next(i for i in items if i["id"] == legacy_id)
+    assert match["payload"]["provider_name"] == "Provider One"
 
 
 def test_admin_edit_notifies_owning_provider(

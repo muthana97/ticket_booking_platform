@@ -55,7 +55,9 @@ def create_notifications_bulk(
 
 
 def list_for_user(db: Session, *, user_id: int, limit: int = 50) -> tuple[int, list[Notification]]:
-    """Return (unread_count, most_recent_items). Ordered newest-first."""
+    """Return (unread_count, most_recent_items). Ordered newest-first.
+    Enriches payloads with human-readable actor names for historical
+    notifications that were written before those fields existed."""
     items = (
         db.query(Notification)
         .filter(Notification.user_id == user_id)
@@ -63,12 +65,45 @@ def list_for_user(db: Session, *, user_id: int, limit: int = 50) -> tuple[int, l
         .limit(limit)
         .all()
     )
+    _decorate_actor_names(db, items)
     unread = (
         db.query(Notification)
         .filter(Notification.user_id == user_id, Notification.read_at.is_(None))
         .count()
     )
     return unread, items
+
+
+def _decorate_actor_names(db: Session, items: list[Notification]) -> None:
+    """Backfill actor display names on notification payloads for the response.
+    Mutation is in-memory only (no commit) — SQLAlchemy autocommit is off so
+    the row on disk stays unchanged; only the outbound serialization sees the
+    enriched payload. Batched per actor type to avoid N+1."""
+    from ..auth.models import User
+
+    provider_ids_needing_name: set[int] = set()
+    for n in items:
+        if n.type == "trip_edited_by_provider":
+            p = n.payload or {}
+            if not p.get("provider_name") and p.get("provider_id"):
+                provider_ids_needing_name.add(p["provider_id"])
+
+    if not provider_ids_needing_name:
+        return
+
+    rows = (
+        db.query(User.id, User.full_name)
+        .filter(User.id.in_(provider_ids_needing_name))
+        .all()
+    )
+    name_by_id = {row.id: row.full_name for row in rows}
+
+    for n in items:
+        if n.type == "trip_edited_by_provider":
+            p = dict(n.payload or {})
+            if not p.get("provider_name") and p.get("provider_id") in name_by_id:
+                p["provider_name"] = name_by_id[p["provider_id"]]
+                n.payload = p
 
 
 def mark_read(db: Session, *, user_id: int, notification_id: int) -> Notification:
