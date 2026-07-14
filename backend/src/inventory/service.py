@@ -247,6 +247,62 @@ def expand_repeat_pattern(
     return departures
 
 
+def update_trip(
+    db: Session,
+    *,
+    trip_id: int,
+    price: float | None = None,
+    departure_time: "datetime | None" = None,
+) -> tuple[models.Trip, dict]:
+    """Partial update of a trip's price and/or departure time.
+
+    Returns (updated_trip, delta) where `delta` is a dict of what changed —
+    used by the router to fan out notifications (Task #5) only on the fields
+    that actually moved.
+
+    Price bumps affect *new* bookings only. Existing bookings keep the price
+    they were locked at (their Booking.total_price was frozen at lock time).
+    Departure edits are blocked when they'd push the trip fully into the past
+    (per GEN-2 clarification 2026-07-13).
+    """
+    from datetime import datetime as _dt
+
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if trip is None:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    delta: dict = {}
+
+    if price is not None and price != trip.price:
+        if price <= 0:
+            raise HTTPException(status_code=400, detail="Price must be greater than zero")
+        delta["price"] = {"from": trip.price, "to": price}
+        trip.price = price
+
+    if departure_time is not None:
+        # Compare as naive UTC (matches how CreateTripRequest already handles
+        # departure_time, and how Trip.departure_time is stored).
+        new_dep = departure_time
+        if new_dep.tzinfo is not None:
+            new_dep = new_dep.astimezone(tz=None).replace(tzinfo=None)
+        if new_dep < _dt.utcnow():
+            raise HTTPException(
+                status_code=400,
+                detail="New departure time cannot be in the past.",
+            )
+        if new_dep != trip.departure_time:
+            delta["departure_time"] = {
+                "from": trip.departure_time,
+                "to": new_dep,
+            }
+            trip.departure_time = new_dep
+
+    if delta:
+        db.commit()
+        db.refresh(trip)
+    return trip, delta
+
+
 def delete_trip(db: Session, *, trip_id: int) -> None:
     """
     Remove a trip. Refuses if any confirmed booking exists for the trip;

@@ -69,3 +69,11 @@ class TripsCreatedResponse(BaseModel):
     count: int
     trips: List[TripCreatedResponse]
     message: str
+
+
+class TripUpdateRequest(BaseModel):
+    """Partial update of a trip's price and/or departure time. Any field left
+    None on the request is untouched. Price bumps only affect *new* bookings;
+    existing bookings keep the price they were locked at."""
+    price: Optional[float] = Field(None, gt=0)
+    departure_time: Optional[datetime] = None

@@ -153,6 +153,26 @@ def admin_delete_trip(trip_id: int, db: Session = Depends(get_db)):
     return None
 
 
+@router.patch("/trips/{trip_id}", response_model=inv_schemas.TripSearchResponse)
+def admin_update_trip(
+    trip_id: int,
+    payload: inv_schemas.TripUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """Admin can edit any trip's price / departure. No ownership or capability
+    gates apply here — admin bypasses both. Past-departure block still holds
+    (backend refuses retroactive moves regardless of who's editing)."""
+    trip, delta = inv_service.update_trip(
+        db=db, trip_id=trip_id,
+        price=payload.price, departure_time=payload.departure_time,
+    )
+    # TODO Task #5: fan out notifications for delta.
+    #   - If delta['departure_time'] present → notify passengers on any active
+    #     booking for this trip.
+    #   - Emit trip_edited_by_admin → owning provider.
+    return inv_service.decorate_trip_row(db, trip)
+
+
 # ---------------------------------------------------------------------------
 # Pending payment confirmation
 # ---------------------------------------------------------------------------

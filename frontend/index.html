@@ -2161,6 +2161,22 @@
   </div>
 </div>
 
+<!-- Trip Edit Modal (Task #4) -->
+<div id="trip-edit-modal" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3 data-i18n="tripedit.title">Edit Trip</h3>
+    <div class="modal-sub" data-i18n="tripedit.sub">Change the price and/or departure time. Existing bookings keep their locked price.</div>
+    <div class="modal-row">
+      <div class="field-block"><label><span data-i18n="tripedit.departure.label">Departure</span> <small style="opacity:0.5;">(<span data-i18n="tripedit.departure.hint">must be in the future</span>)</small></label><input type="datetime-local" id="ted-dep"></div>
+      <div class="field-block"><label data-i18n="tripedit.price.label">Price (SDG)</label><input type="number" id="ted-price" min="1"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="cta ghost" id="trip-edit-cancel" data-i18n="tripedit.cancel">Cancel</button>
+      <button class="cta alt" id="trip-edit-submit" data-i18n="tripedit.save">Save changes →</button>
+    </div>
+  </div>
+</div>
+
 <!-- Commission Override Modal -->
 <div id="commission-override-modal" class="modal-bg" role="dialog" aria-modal="true">
   <div class="modal-card">
@@ -2344,7 +2360,11 @@ const I18N = {
     'trips.available_of': 'available', 'trips.layout': 'layout',
     'trips.sdg_per_seat': 'SDG / SEAT',
     'trips.action.select': 'Select Seats →', 'trips.action.walkin': 'Walk-in Book →',
-    'trips.action.delete': 'Delete Trip',
+    'trips.action.delete': 'Delete Trip', 'trips.action.edit': 'Edit',
+    'tripedit.title': 'Edit Trip', 'tripedit.sub': 'Change the price and/or departure time. Existing bookings keep their locked price.',
+    'tripedit.departure.label': 'Departure', 'tripedit.departure.hint': 'must be in the future',
+    'tripedit.price.label': 'Price (SDG)', 'tripedit.cancel': 'Cancel', 'tripedit.save': 'Save changes →',
+    'tripedit.saved': 'Trip updated.',
     // booking screen
     'book.selection': 'Selection',
     'book.tapseats': 'Tap seats to select',
@@ -2581,7 +2601,11 @@ const I18N = {
     'trips.available_of': 'متاح', 'trips.layout': 'مقعد',
     'trips.sdg_per_seat': 'ج.س / مقعد',
     'trips.action.select': '→ اختر المقاعد', 'trips.action.walkin': '→ حجز عند المنفذ',
-    'trips.action.delete': 'حذف الرحلة',
+    'trips.action.delete': 'حذف الرحلة', 'trips.action.edit': 'تعديل',
+    'tripedit.title': 'تعديل الرحلة', 'tripedit.sub': 'يمكنك تعديل السعر و/أو وقت المغادرة. الحجوزات القائمة تحتفظ بسعرها.',
+    'tripedit.departure.label': 'المغادرة', 'tripedit.departure.hint': 'يجب أن يكون في المستقبل',
+    'tripedit.price.label': 'السعر (SDG)', 'tripedit.cancel': 'إلغاء', 'tripedit.save': '→ حفظ التغييرات',
+    'tripedit.saved': 'تم تحديث الرحلة.',
     // booking screen
     'book.selection': 'الاختيار',
     'book.tapseats': 'اضغط على المقاعد للاختيار',
@@ -3353,6 +3377,7 @@ function makeTripCard(trip, asProvider) {
     <div class="trip-card-actions">
       ${ asProvider
           ? `<button class="btn-inline" data-action="book">${t('trips.action.walkin')}</button>
+             <button class="btn-inline alt" data-action="edit">${t('trips.action.edit')}</button>
              <button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>`
           : `<button class="btn-inline" data-action="book">${t('trips.action.select')}</button>`
       }
@@ -3360,6 +3385,7 @@ function makeTripCard(trip, asProvider) {
   `;
   card.querySelector('[data-action="book"]').addEventListener('click', () => openBooking(trip, asProvider));
   if (asProvider) {
+    card.querySelector('[data-action="edit"]').addEventListener('click', () => openTripEdit(trip, '/trips/'));
     card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(trip.trip_id, '/trips/'));
   }
   return card;
@@ -3640,6 +3666,66 @@ function syncRepeatUi() {
 }
 
 function closeAddTrip() { $('#add-trip-modal').classList.remove('show'); }
+
+/* ---------- Trip edit modal (Task #4) ---------- */
+let _tripEditState = null;  // { tripId, basePath, refreshFn }
+function openTripEdit(trip, basePath) {
+  // basePath is '/trips/' (provider) or '/admin/trips/' (admin) — the PATCH
+  // target differs but the modal + save handler is shared.
+  _tripEditState = {
+    tripId: trip.trip_id,
+    basePath,
+    // Pick the correct refresh depending on which surface opened the modal.
+    refreshFn: basePath.startsWith('/admin') ? renderAdminTrips : refreshProviderTrips,
+    originalPrice: trip.price,
+    originalDep: trip.departure_time,
+  };
+  // Pre-fill inputs. datetime-local expects "YYYY-MM-DDTHH:mm" in local time.
+  const d = parseUtc(trip.departure_time);
+  const pad = (n) => String(n).padStart(2, '0');
+  const localValue = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  $('#ted-dep').value = localValue;
+  $('#ted-price').value = trip.price;
+  // Prevent picking a past time via the datepicker itself. Server also
+  // enforces this; the client-side min just gives faster feedback.
+  const now = new Date();
+  $('#ted-dep').min = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  $('#trip-edit-modal').classList.add('show');
+}
+function closeTripEdit() {
+  $('#trip-edit-modal').classList.remove('show');
+  _tripEditState = null;
+}
+async function submitTripEdit() {
+  if (!_tripEditState) return;
+  const { tripId, basePath, refreshFn, originalPrice, originalDep } = _tripEditState;
+  const priceRaw = parseFloat($('#ted-price').value);
+  const depRaw = $('#ted-dep').value;  // local time from the datetime-local input
+  const body = {};
+  if (isFinite(priceRaw) && priceRaw > 0 && priceRaw !== originalPrice) {
+    body.price = priceRaw;
+  }
+  if (depRaw) {
+    // Convert local wall-time back to UTC ISO so it lines up with what the
+    // server compares against (naive UTC).
+    const local = new Date(depRaw);
+    if (!isNaN(local) && local.toISOString() !== new Date(originalDep).toISOString()) {
+      body.departure_time = local.toISOString();
+    }
+  }
+  if (!Object.keys(body).length) {
+    closeTripEdit();
+    return;
+  }
+  await withLoading($('#trip-edit-submit'), async () => {
+    try {
+      await api(`${basePath}${tripId}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast(t('tripedit.saved'));
+      closeTripEdit();
+      refreshFn();
+    } catch (e) { toast(e.message, true); }
+  });
+}
 
 async function submitAddTrip() {
   const origin = $('#nt-origin').value.trim();
@@ -4342,9 +4428,11 @@ async function renderAdminTrips() {
       </div>
       <div class="price">${fmtMoney(trip.price)}<small>${t('trips.sdg_per_seat')}</small></div>
       <div class="trip-card-actions">
+        <button class="btn-inline alt" data-action="edit">${t('trips.action.edit')}</button>
         <button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>
       </div>
     `;
+    card.querySelector('[data-action="edit"]').addEventListener('click', () => openTripEdit(trip, '/admin/trips/'));
     card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(trip.trip_id, '/admin/trips/'));
     list.appendChild(card);
   });
@@ -4803,6 +4891,9 @@ function wire() {
   $('#add-trip-open-btn').addEventListener('click', openAddTrip);
   $('#add-trip-cancel').addEventListener('click', closeAddTrip);
   $('#add-trip-submit').addEventListener('click', submitAddTrip);
+  $('#trip-edit-cancel').addEventListener('click', closeTripEdit);
+  $('#trip-edit-submit').addEventListener('click', submitTripEdit);
+  $('#trip-edit-modal').addEventListener('click', e => { if (e.target.id === 'trip-edit-modal') closeTripEdit(); });
   $$('.layout-pick label').forEach(lbl => lbl.addEventListener('click', () => {
     $$('.layout-pick label').forEach(l => l.classList.remove('active'));
     lbl.classList.add('active');

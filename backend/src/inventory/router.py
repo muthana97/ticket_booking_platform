@@ -142,6 +142,41 @@ def list_my_trips(
     return [service.decorate_trip_row(db, trip) for trip in trips]
 
 
+@router.patch("/{trip_id}", response_model=schemas.TripSearchResponse)
+def update_trip(
+    trip_id: int,
+    payload: schemas.TripUpdateRequest,
+    db: Session = Depends(get_db),
+    provider=Depends(require_active_provider),
+):
+    """Provider-only. Update price and/or departure time on one of their own
+    trips. Ownership + can_edit_trips capability + past-departure block all
+    apply. Existing bookings keep their locked-in price."""
+    from fastapi import HTTPException
+    if not provider.can_edit_trips:
+        raise HTTPException(
+            status_code=403,
+            detail="Editing trips is disabled for your account. Contact the admin.",
+        )
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    if trip.provider_id != provider.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only edit trips you own.",
+        )
+    trip, delta = service.update_trip(
+        db=db, trip_id=trip_id,
+        price=payload.price, departure_time=payload.departure_time,
+    )
+    # TODO Task #5: fan out notifications for delta.
+    #   - If delta['departure_time'] present → notify passengers on any active
+    #     booking for this trip (pending / committed_pending / confirmed).
+    #   - Emit trip_edited_by_provider → admin.
+    return service.decorate_trip_row(db, trip)
+
+
 @router.delete("/{trip_id}", status_code=204)
 def delete_trip(
     trip_id: int,
