@@ -5,6 +5,87 @@ A web-portal MVP that demonstrates every role in `Context/requirements.v2.md`, *
 
 Auth is currently **email + password for all roles** (deferred realignment to phone-OTP for customer/provider per AUTH-01 / P-AUTH-01).
 
+## 🎨 Redesign in progress — "Pillow" (v2)
+
+Active full visual makeover from the current paper/terra editorial style to the **pillow** design language (soft pastel gradient · near-white 3D-pillow cards · midnight-navy `#0B1638` pill CTAs · faint diagonal-line screen texture · tabular Inter numerics). Direction picked 2026-07-17 from `demos/demo-7.html` (mobile) + `demos/demo-7-desktop.html` (desktop customer phone-column + admin dashboard shell).
+
+### Preservation setup (in place)
+- **Branch**: `redesign/pillow` off `feat/mobile-scaffold`. All v2 work lives here. `main` + `feat/mobile-scaffold` stay pristine until sign-off.
+- **Tag**: `pre-redesign-2026-07-17` on `eb08561` — always-reachable revert point.
+- **Side-by-side file**: `frontend/index-v2.html` starts as a byte-for-byte copy of `frontend/index.html` (created 2026-07-17 on `dfee59d`). `index.html` is **never** touched during the redesign — every migrated screen lands in `index-v2.html` only.
+- **Backend switch** (`backend/src/main.py` `_serve_ui`): explicit `GET /app/` and `GET /app` routes register BEFORE the static mount. They read `?ui=` query param + `taz_ui` cookie:
+  - `?ui=v2` → serves `index-v2.html` + sets year-long cookie (path `/app/`, SameSite=Lax)
+  - `?ui=v1` → serves `index.html` + sets cookie (cancels opt-in)
+  - cookie alone → whichever the cookie says
+  - neither → v1 (default)
+
+  Query param always beats cookie so users can flip via URL. Response is `Cache-Control: no-cache` so v2 iterations show up on refresh. `/app/vendor/*`, `/app/sw.js`, `/app/manifest.json` still served by the static mount unchanged. Smoke-tested end-to-end with `TestClient`.
+
+### Rollback
+- **User-level**: hand out `?ui=v1` (removes cookie); the default is v1 the whole time so no server change is needed.
+- **Full**: `git checkout pre-redesign-2026-07-17` — reachable via tag.
+- **Data**: redesign is frontend-only. Neon DB + backend untouched. Worst case a UI bug prevents booking on v2; v1 stays reachable.
+
+### Pillow design system (v2 tokens)
+Palette:
+```
+--bg-a: #E8F0FF   soft blue  --bg-b: #E9F5EC   soft mint
+--card: #FBFCFF   near-white pillow  --card-tint: #F1F5FC  secondary pillow
+--ink: #0F1526    --ink-mute: #5B6478   --ink-faint: #98A0B3
+--accent: #0B1638 midnight navy   --accent-on: #F2F4FA
+--ok: #17A66B     --warn: #E39A2A       --danger: #D94A3E
+--shadow-drop: rgba(50,80,140,0.10)     --shadow-tight: rgba(50,80,140,0.04)
+--hi-line: rgba(255,255,255,0.85)       top-highlight inset on pillows
+```
+Screen texture: `repeating-linear-gradient(-45deg, transparent 0 13px, rgba(15,21,38,0.055) 13px 14px)` layered over the pastel gradient — faint diagonal lines.
+
+Font: **Inter** (400/500/600/700/800), `font-variant-numeric: tabular-nums` on all numerics.
+
+Primitives (see `demos/demo-7.html` for reference impls):
+- `.pillow` — near-white card, 22px radius, dual-shadow (soft drop + top-highlight-inset) to fake 3D depth.
+- `.cta` — full-width 999px pill, midnight-navy fill, drop shadow tinted `rgba(11,22,56,0.45)`.
+- `.status-pill` — small dark rounded pill (nods to the reference currency-app's "1USD = 7.2493 CNY" chip).
+- `.chip` — rounded chip with tinted circular icon dot (city pickers).
+- `.swap-btn` — 44px dark circle between origin/destination pillow cards.
+- `.seat` / `.sel` / `.booked` — pillow-tile seat treatment.
+- Ticket: pillow surface with `::after` dashed perforation line.
+
+### Migration order (screens)
+Style-only rewrites where possible — keep all JS logic (`goto()` state machine, API layer, i18n, RTL, `tazStore`, `tazShare`, long-poll) byte-for-byte. Change HTML markup + `<style>` block only. All new screens/copy get EN + AR i18n keys added to the `I18N` table.
+
+**Customer**:
+- [ ] Welcome + sign-in
+- [ ] **NEW screen — category chooser**: sits between login and search. Two large pillow-icon tiles — "Bus tickets" and "Others" — with a back button. Hints at future ticket categories (train / flights / events later). Tapping Bus tickets → search; tapping Others → coming-soon.
+- [ ] **NEW screen — Others coming-soon** with back button.
+- [ ] Search trips + **bottom nav** (Search · My Tickets · Support).
+- [ ] Trip detail / booking (seat map keeps the pillow-tile treatment from demo-7).
+- [ ] My Tickets (list + past).
+- [ ] Ticket modal (existing PAID/PENDING/EXPIRED status-bar coloring stays — translate to pillow `--ok` / `--warn` / `--danger` accents).
+
+**Provider**:
+- [ ] Provider home (My Trips + My Bookings tabs).
+- [ ] **Filter strips — `From` / `To` inline with dropdown boxes** (currently on a separate row above; asked to reclaim vertical space).
+- [ ] Add-trip modal.
+- [ ] Trip-edit modal.
+- [ ] Manifest modal + CSV export.
+
+**Admin**:
+- [ ] Admin home (Providers / Trips / Bookings / Payments / Reports tabs).
+- [ ] Filter strips — same `From`/`To` inline-label fix as provider.
+- [ ] Admin Settings hub (Commissions + Account).
+
+**Cross-cutting**:
+- [ ] Notifications screen.
+- [ ] Arabic RTL pass on all v2 screens (existing polish backlog still applies: `.tab-support` font-size normalization, `→` glyph flip in RTL routes).
+- [ ] Native (Capacitor) — decide when to point mobile at v2. Currently `webDir: ../frontend` loads `index.html`; will keep loading v1 until we rename or repoint at `index-v2.html`.
+
+### Constraints carried into v2
+1. **Style-only** — keep JS/i18n/API/state byte-for-byte. Only HTML markup + CSS block change.
+2. **i18n coverage** — every new visible string gets EN + AR keys in `I18N`. Placeholders use `data-i18n-placeholder`. Numeric elements force LTR direction in RTL mode (see `frontend/index.html` for the pattern).
+3. **Ticket status bar** — PAID / PENDING / EXPIRED coloring is a hard requirement. Translate colors to pillow tokens.
+4. **Bottom nav** — customer-only on v2 mobile view. Provider + admin keep their tab-bar treatment (adapted to pillow style, but not converted to a bottom nav).
+5. **No `frontend/index.html` edits** on this branch. If a bugfix is genuinely needed in v1, land it on `feat/mobile-scaffold` and merge that branch into `redesign/pillow`.
+
 ## 👥 Roles & data isolation (live)
 | Role | Status model | Access |
 |---|---|---|
