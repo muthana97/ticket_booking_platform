@@ -19,6 +19,9 @@
      Relative path resolves correctly on both contexts: web (served at /app/)
      and Capacitor webview (served at capacitor://localhost/). -->
 <script src="vendor/qrcode.min.js"></script>
+<script src="vendor/html-to-image.min.js"></script>
+<script src="vendor/html2canvas.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
 
 <style>
   :root {
@@ -3131,6 +3134,47 @@ const tazStore = {
   },
 };
 
+/* Native file share.
+ *
+ * Android's stock WebView does not intercept `<a download>` blob URLs nor
+ * implement window.print() — the browser-only patterns silently no-op. On
+ * native we write the payload to the app cache dir via @capacitor/filesystem
+ * and pop the OS share sheet via @capacitor/share; the user picks "Save to
+ * Files", "Print", "Send via …" etc. Web keeps its existing paths.
+ *
+ * saveAndShare() returns true on success, false if the native path was
+ * unavailable or errored — callers use that as the signal to fall back. */
+const tazShare = {
+  isNative() {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  },
+  fs()    { return window.Capacitor?.Plugins?.Filesystem; },
+  share() { return window.Capacitor?.Plugins?.Share; },
+  async saveAndShare({ filename, data, dialogTitle, encoding }) {
+    // encoding: 'utf8' (text) or omitted (binary — data must already be
+    // base64-encoded, per the Capacitor Filesystem contract).
+    if (!this.isNative() || !this.fs() || !this.share()) return false;
+    try {
+      const writeArgs = {
+        path: filename,
+        data,
+        directory: 'CACHE',
+      };
+      if (encoding) writeArgs.encoding = encoding;
+      const write = await this.fs().writeFile(writeArgs);
+      await this.share().share({
+        title: filename,
+        url: write.uri,
+        dialogTitle: dialogTitle || filename,
+      });
+      return true;
+    } catch (e) {
+      console.warn('[share] native share failed', e);
+      return false;
+    }
+  },
+};
+
 const STATE = {
   screen: 'welcome',
   auth: null,
@@ -4139,7 +4183,7 @@ function _csvEscape(v) {
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function exportManifestCsv() {
+async function exportManifestCsv() {
   if (!_manifestState?.data) return;
   const { trip, data } = _manifestState;
   const header = ['Seat', 'Full Name', 'Phone', 'National ID', 'Booking ID'];
@@ -4154,16 +4198,36 @@ function exportManifestCsv() {
     ].join(','));
   });
   // Prepend BOM so Excel opens the file in UTF-8 (matters for Arabic names).
-  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const csv = '﻿' + lines.join('\r\n');
+  const depSlug = new Date(trip.departure_time).toISOString().slice(0, 10);
+  const filename = `manifest_trip${trip.trip_id}_${depSlug}.csv`;
+  if (await tazShare.saveAndShare({ filename, data: csv, dialogTitle: 'Export manifest' })) return;
+  _webDownloadText(filename, csv, 'text/csv;charset=utf-8');
+}
+
+/* Web-only file download helpers — Blob + <a download> + click. Only used
+   when we're NOT on native (native goes through tazShare). */
+function _webDownloadText(filename, text, mimeType) {
+  const blob = new Blob([text], { type: mimeType || 'text/plain;charset=utf-8' });
+  _webDownloadBlob(filename, blob);
+}
+function _webDownloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  const depSlug = new Date(trip.departure_time).toISOString().slice(0, 10);
-  a.download = `manifest_trip${trip.trip_id}_${depSlug}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function _blobToBase64(blob) {
+  const buf = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  // Chunked conversion to avoid call-stack limits on large PDFs.
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
 }
 
 /* ---------- Trip edit modal (Task #4) ---------- */
@@ -4678,6 +4742,242 @@ function renderTicket(ticket, { confirmed }) {
 }
 function closeTicket() { $('#ticket-modal').classList.remove('show'); }
 
+/* Native screenshot → crop → PDF flow. Returns true on success, false if
+   the plugin isn't wired or the crop failed — caller then falls back. */
+async function _nativeScreenshotTicketToPdf(ticket, jsPDFCtor) {
+  const ScreenshotPlugin = window.Capacitor?.Plugins?.Screenshot;
+  if (!ScreenshotPlugin) return false;
+
+  // Hide the modal buttons + snap the modal to the top before capture.
+  // Buttons are display:none'd so they neither appear in the screenshot
+  // NOR count toward the ticket's bounding rect used for cropping.
+  const modal   = $('#ticket-modal');
+  const actions = ticket.querySelector('.ticket-actions');
+  const prevScroll         = modal ? modal.scrollTop : 0;
+  const prevActionsDisplay = actions ? actions.style.display : '';
+  if (actions) actions.style.display = 'none';
+  if (modal)   modal.scrollTop = 0;
+  // Let the layout settle for two frames before firing the capture.
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const restore = () => {
+    if (actions) actions.style.display = prevActionsDisplay;
+    if (modal)   modal.scrollTop = prevScroll;
+  };
+
+  let base64;
+  try {
+    const res = await ScreenshotPlugin.take();
+    base64 = res?.base64;
+  } catch (e) {
+    console.warn('[ticket-print] Screenshot.take failed', e);
+    restore();
+    return false;
+  }
+  if (!base64) { restore(); return false; }
+
+  // Load the full-screen PNG into an <img> so we can crop with canvas.
+  const img = new Image();
+  img.decoding = 'sync';
+  const loaded = await new Promise((resolve) => {
+    img.onload  = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = 'data:image/png;base64,' + base64;
+  });
+  if (!loaded || !img.naturalWidth) { restore(); return false; }
+
+  // Compute the bitmap-to-CSS ratio from the actual document viewport, not
+  // window.innerWidth/Height (Capacitor sometimes counts safe-area padding
+  // in innerHeight, which throws off the crop). documentElement dimensions
+  // match what getBoundingClientRect returns.
+  const r = ticket.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const viewW = document.documentElement.clientWidth  || window.innerWidth;
+  const viewH = document.documentElement.clientHeight || window.innerHeight;
+  const scaleX = img.naturalWidth  / viewW;
+  const scaleY = img.naturalHeight / viewH;
+
+  // Add a small padding around the ticket bounds so glyph edges (title
+  // tops, digit tails at the right edge) aren't shaved by pixel-precision
+  // rounding. Clamped to the bitmap so we don't sample out-of-bounds.
+  const PAD = 6; // CSS pixels
+  const cssLeft   = r.left   - PAD;
+  const cssTop    = r.top    - PAD;
+  const cssRight  = r.right  + PAD;
+  const cssBottom = r.bottom + PAD;
+
+  const sx = Math.max(0, Math.floor(cssLeft   * scaleX));
+  const sy = Math.max(0, Math.floor(cssTop    * scaleY));
+  const sxEnd = Math.min(img.naturalWidth,  Math.ceil(cssRight  * scaleX));
+  const syEnd = Math.min(img.naturalHeight, Math.ceil(cssBottom * scaleY));
+  const sw = sxEnd - sx;
+  const sh = syEnd - sy;
+  if (sw < 10 || sh < 10) { restore(); return false; }
+
+  const c = document.createElement('canvas');
+  c.width = sw; c.height = sh;
+  const cx = c.getContext('2d');
+  cx.fillStyle = '#ffffff';
+  cx.fillRect(0, 0, sw, sh);
+  cx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+  // Wrap in a PDF page sized to the crop's CSS-px dimensions (so the page
+  // matches the ticket's on-screen size), clamped to A4.
+  const PX_TO_MM = 25.4 / 96;
+  let pageW = (sw / dpr) * PX_TO_MM;
+  let pageH = (sh / dpr) * PX_TO_MM;
+  const fit = Math.min(210 / pageW, 297 / pageH, 1);
+  pageW *= fit; pageH *= fit;
+  const pdf = new jsPDFCtor({
+    unit: 'mm',
+    format: [pageW, pageH],
+    orientation: pageW > pageH ? 'landscape' : 'portrait',
+    compress: true,
+  });
+  pdf.addImage(c.toDataURL('image/png'), 'PNG', 0, 0, pageW, pageH, undefined, 'FAST');
+  const blob = pdf.output('blob');
+
+  restore();
+
+  const bok = ($('#t-bok')?.textContent || 'ticket').trim().replace(/[^A-Za-z0-9-]/g, '_');
+  const b64pdf = await _blobToBase64(blob);
+  const shared = await tazShare.saveAndShare({
+    filename: `ticket_${bok}.pdf`,
+    data: b64pdf,
+    dialogTitle: 'Print or save ticket',
+  });
+  return shared;
+}
+
+/* Print / share the ticket as a PDF.
+ *
+ * Native (Capacitor): we take a real WebView pixel screenshot via the
+ * capacitor-screenshot plugin (Screenshot.take() → base64 PNG of the
+ * visible screen), then crop it to the ticket's bounding rect and wrap
+ * the cropped image in a jsPDF page sized to match. This bypasses every
+ * DOM-to-image library entirely — the pixels we capture are exactly what
+ * the WebView is drawing, so Arabic contextual shaping, RTL bidi, custom
+ * fonts, and CSS variables all render perfectly (they're already correct
+ * on screen at capture time). The output PDF is a single page whose
+ * dimensions match the ticket, guaranteed.
+ *
+ * Web: uses html-to-image / html2canvas → jsPDF. Web browsers have no
+ * screenshot API so we're back to DOM rendering, but on desktop browsers
+ * both libraries handle Arabic fine — the failure mode was Capacitor's
+ * Android WebView specifically.
+ *
+ * Ultimate fallback: window.print() so the button never appears dead. */
+async function _printOrShareTicket() {
+  const ticket = document.querySelector('#ticket-modal .ticket');
+  const jsPDFCtor = window.jspdf?.jsPDF || window.jsPDF;
+  if (!ticket || !jsPDFCtor) { window.print(); return; }
+
+  // Native path — real WebView screenshot + crop.
+  if (tazShare.isNative()) {
+    const ok = await _nativeScreenshotTicketToPdf(ticket, jsPDFCtor);
+    if (ok) return;
+    // Fall through to web path if screenshot plugin missing / crop failed.
+  }
+
+  if (typeof html2canvas === 'undefined') { window.print(); return; }
+
+  // Clone so we don't mutate the live DOM.
+  const clone = ticket.cloneNode(true);
+
+  // Bake the live QR canvas into an <img> — a canvas moved to another DOM
+  // tree paints blank because its context is bound to the original element.
+  const liveCanvas = ticket.querySelector('#t-qr-frame canvas');
+  if (liveCanvas) {
+    try {
+      const dataUrl = liveCanvas.toDataURL('image/png');
+      const cloneFrame = clone.querySelector('#t-qr-frame');
+      if (cloneFrame) {
+        cloneFrame.innerHTML = `<img src="${dataUrl}" alt="QR" style="width:84px;height:84px;image-rendering:pixelated;"/>`;
+      }
+    } catch (_) { /* tainted canvas — leave the frame empty */ }
+  }
+  // Modal chrome buttons don't belong in the printed output.
+  clone.querySelector('.ticket-actions')?.remove();
+
+  // Stage the clone offscreen at its natural width so html2canvas measures
+  // it with real CSS (any padding here shows up in the render, so zero it).
+  const stage = document.createElement('div');
+  stage.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;padding:0;margin:0;';
+  stage.appendChild(clone);
+  document.body.appendChild(stage);
+
+  const bok = ($('#t-bok')?.textContent || 'ticket').trim().replace(/[^A-Za-z0-9-]/g, '_');
+  const filename = `ticket_${bok}.pdf`;
+
+  try {
+    // Prefer html-to-image (SVG <foreignObject> under the hood — hands text
+    // back to the browser's native renderer, which preserves Arabic shaping
+    // + bidi). Fall back to html2canvas if the foreignObject path returns a
+    // blank/failed canvas (Android WebView's SVG rasterizer is not 100%
+    // reliable — a fallback that renders Arabic imperfectly is still better
+    // than a blank PDF).
+    const SCALE = 3;
+    let canvas = null;
+    if (typeof htmlToImage !== 'undefined') {
+      try {
+        canvas = await htmlToImage.toCanvas(clone, {
+          pixelRatio: SCALE,
+          backgroundColor: '#ffffff',
+          cacheBust: true,
+        });
+        if (!canvas || canvas.width < 10 || canvas.height < 10) canvas = null;
+      } catch (e) {
+        console.warn('[ticket-print] htmlToImage failed, falling back', e);
+        canvas = null;
+      }
+    }
+    if (!canvas) {
+      canvas = await html2canvas(clone, {
+        scale: SCALE,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+        windowWidth:  clone.offsetWidth,
+        windowHeight: clone.offsetHeight,
+      });
+    }
+
+    // Build a PDF page sized to the ticket's aspect ratio so the image fills
+    // the page — no whitespace, guaranteed single page. Clamp to A4 max so
+    // very tall tickets still fit on standard paper.
+    const PX_TO_MM = 25.4 / 96;  // CSS px @ 96 DPI → mm
+    let pageW = (canvas.width / SCALE) * PX_TO_MM;
+    let pageH = (canvas.height / SCALE) * PX_TO_MM;
+    const A4W = 210, A4H = 297;
+    const fit = Math.min(A4W / pageW, A4H / pageH, 1);
+    pageW *= fit; pageH *= fit;
+
+    const pdf = new jsPDFCtor({
+      unit: 'mm',
+      format: [pageW, pageH],
+      orientation: pageW > pageH ? 'landscape' : 'portrait',
+      compress: true,
+    });
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pageW, pageH, undefined, 'FAST');
+    const blob = pdf.output('blob');
+
+    if (tazShare.isNative()) {
+      const base64 = await _blobToBase64(blob);
+      const shared = await tazShare.saveAndShare({
+        filename, data: base64, dialogTitle: 'Print or save ticket',
+      });
+      if (!shared) window.print();
+    } else {
+      _webDownloadBlob(filename, blob);
+    }
+  } catch (e) {
+    console.warn('[ticket-print] PDF export failed', e);
+    window.print();
+  } finally {
+    stage.remove();
+  }
+}
+
 /* ==========================================================================
  *  ADMIN CONSOLE
  * ========================================================================== */
@@ -5121,19 +5421,17 @@ function renderReportTable(sel, headers, rows) {
     ).join('') + '</tbody>';
 }
 
-function downloadCsv(filename, headers, rows) {
+async function downloadCsv(filename, headers, rows) {
   const csvCell = (v) => {
     const s = String(v ?? '');
     return /["\n,]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = [headers.join(',')];
   rows.forEach(cells => lines.push(cells.map(csvCell).join(',')));
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // Prepend BOM so Excel opens as UTF-8 (matches the manifest export).
+  const csv = '﻿' + lines.join('\n');
+  if (await tazShare.saveAndShare({ filename, data: csv, dialogTitle: 'Export report' })) return;
+  _webDownloadText(filename, csv, 'text/csv;charset=utf-8');
 }
 
 // Debounced refetch on filter changes (matches the booking-filter pattern).
@@ -5434,7 +5732,7 @@ function wire() {
   $('#restart-flow-btn').addEventListener('click', restartFlow);
 
   $('#t-close').addEventListener('click', closeTicket);
-  $('#t-print').addEventListener('click', () => window.print());
+  $('#t-print').addEventListener('click', () => _printOrShareTicket());
   $('#ticket-modal').addEventListener('click', e => { if (e.target.id === 'ticket-modal') closeTicket(); });
 
   $$('.admin-tabs button').forEach(b => b.addEventListener('click', () => switchAdminTab(b.dataset.tab)));
