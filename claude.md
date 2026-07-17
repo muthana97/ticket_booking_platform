@@ -7,7 +7,7 @@ Auth is currently **email + password for all roles** (deferred realignment to ph
 
 ## 🎨 Redesign in progress — "Pillow" (v2)
 
-Active full visual makeover from the current paper/terra editorial style to the **pillow** design language (soft pastel gradient · near-white 3D-pillow cards · midnight-navy `#0B1638` pill CTAs · faint diagonal-line screen texture · tabular Inter numerics). Direction picked 2026-07-17 from `demos/demo-7.html` (mobile) + `demos/demo-7-desktop.html` (desktop customer phone-column + admin dashboard shell).
+Active full visual makeover from the current paper/terra editorial style to the **pillow** design language (soft pastel gradient · near-white 3D-pillow cards · amber `#F4A81D` pill CTAs · faint diagonal-line screen texture · tabular Inter numerics). Direction picked 2026-07-17 from `demos/demo-7.html` (mobile) + `demos/demo-7-desktop.html` (desktop customer phone-column + admin dashboard shell). Accent color moved from the demo's midnight navy to amber during the welcome/sign-in build — reads warmer and gives the pastel surface more energy without losing the pillow's calm.
 
 ### Preservation setup (in place)
 - **Branch**: `redesign/pillow` off `feat/mobile-scaffold`. All v2 work lives here. `main` + `feat/mobile-scaffold` stay pristine until sign-off.
@@ -32,7 +32,7 @@ Palette:
 --bg-a: #E8F0FF   soft blue  --bg-b: #E9F5EC   soft mint
 --card: #FBFCFF   near-white pillow  --card-tint: #F1F5FC  secondary pillow
 --ink: #0F1526    --ink-mute: #5B6478   --ink-faint: #98A0B3
---accent: #0B1638 midnight navy   --accent-on: #F2F4FA
+--accent: #F4A81D amber           --accent-on: #1A1000
 --ok: #17A66B     --warn: #E39A2A       --danger: #D94A3E
 --shadow-drop: rgba(50,80,140,0.10)     --shadow-tight: rgba(50,80,140,0.04)
 --hi-line: rgba(255,255,255,0.85)       top-highlight inset on pillows
@@ -43,7 +43,7 @@ Font: **Inter** (400/500/600/700/800), `font-variant-numeric: tabular-nums` on a
 
 Primitives (see `demos/demo-7.html` for reference impls):
 - `.pillow` — near-white card, 22px radius, dual-shadow (soft drop + top-highlight-inset) to fake 3D depth.
-- `.cta` — full-width 999px pill, midnight-navy fill, drop shadow tinted `rgba(11,22,56,0.45)`.
+- `.cta` — full-width 999px pill, amber fill, drop shadow tinted `rgba(180,110,10,0.45)`.
 - `.status-pill` — small dark rounded pill (nods to the reference currency-app's "1USD = 7.2493 CNY" chip).
 - `.chip` — rounded chip with tinted circular icon dot (city pickers).
 - `.swap-btn` — 44px dark circle between origin/destination pillow cards.
@@ -53,14 +53,14 @@ Primitives (see `demos/demo-7.html` for reference impls):
 ### Migration order (screens)
 Style-only rewrites where possible — keep all JS logic (`goto()` state machine, API layer, i18n, RTL, `tazStore`, `tazShare`, long-poll) byte-for-byte. Change HTML markup + `<style>` block only. All new screens/copy get EN + AR i18n keys added to the `I18N` table.
 
-**Customer**:
-- [ ] Welcome + sign-in
-- [ ] **NEW screen — category chooser**: sits between login and search. Two large pillow-icon tiles — "Bus tickets" and "Others" — with a back button. Hints at future ticket categories (train / flights / events later). Tapping Bus tickets → search; tapping Others → coming-soon.
-- [ ] **NEW screen — Others coming-soon** with back button.
-- [ ] Search trips + **bottom nav** (Search · My Tickets · Support).
-- [ ] Trip detail / booking (seat map keeps the pillow-tile treatment from demo-7).
-- [ ] My Tickets (list + past).
-- [ ] Ticket modal (existing PAID/PENDING/EXPIRED status-bar coloring stays — translate to pillow `--ok` / `--warn` / `--danger` accents).
+**Customer** (passenger cycle fully migrated — 2026-07-18):
+- [x] Welcome + sign-in
+- [x] **NEW screen — category chooser**: sits between login and search. Two large tiles — a filled bus icon and the word "Other" — no h2/lead so the tiles fill the screen; topbar-nav hidden here so the chooser is a real commit point.
+- [x] **NEW screen — Others coming-soon** with back button (via subhead + history pop).
+- [x] Search trips + **bottom nav** (Search · My Tickets · Support). Two stacked chip cards with a 46px dark swap button punched through the middle; frosted pastel bottom bar on mobile with amber active state.
+- [x] Trip detail / booking (seat map + panels). Pillow-tile seats (near-white/amber/muted/danger for available/selected/locked/booked), each right-column panel is its own pillow surface, dark ink countdown with tabular numerics.
+- [x] My Tickets (list + past). Three sections with left-edge accent stripes (warn/ok/muted), booking rows as pillow surfaces, View ticket → amber pill on Awaiting, ghost outline on Upcoming/Past.
+- [x] Ticket modal (PAID/PENDING/EXPIRED status bar preserved and mapped to `--p-ok` / `--p-warn` / `--p-danger`). Near-white pillow ticket over dark navy backdrop; perforation notches retinted; billing ref amber-outlined; amber Print CTA.
 
 **Provider**:
 - [ ] Provider home (My Trips + My Bookings tabs).
