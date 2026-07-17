@@ -13,6 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400..700&family=Hanken+Grotesk:wght@300..800&family=JetBrains+Mono:wght@300..600&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Inter — used by the v2 pillow-style screens. -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <!-- QR code (~20KB, no deps) for TKT-04. Bundled locally so the QR still
      renders inside Capacitor on cellular or first-launch (no CDN dependency).
@@ -1698,6 +1700,440 @@
     .ticket-head { grid-template-columns: 1fr; text-align: left; }
     .ticket-head .bok, .ticket-head .qr-block { text-align: left; }
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     PILLOW (v2 redesign)
+     ──────────────────────────────────────────────────────────────────────────
+     Scoped design system for migrated screens. Each `body[data-screen="…"]`
+     block below opts a screen into the pillow surface + primitives. Screens
+     without such a block keep the paper/terra treatment above.
+
+     Tokens live on the body scope so unmigrated screens inherit nothing.
+     ══════════════════════════════════════════════════════════════════════════ */
+  body[data-screen="welcome"],
+  body[data-screen="sign-in"] {
+    --p-bg-a: #E8F0FF;
+    --p-bg-b: #E9F5EC;
+    --p-card: #FBFCFF;
+    --p-card-tint: #F1F5FC;
+    --p-ink: #0F1526;
+    --p-ink-mute: #5B6478;
+    --p-ink-faint: #98A0B3;
+    --p-accent: #0B1638;
+    --p-accent-on: #F2F4FA;
+    --p-ok: #17A66B;
+    --p-warn: #E39A2A;
+    --p-danger: #D94A3E;
+    --p-shadow-drop: rgba(50,80,140,0.10);
+    --p-shadow-tight: rgba(50,80,140,0.04);
+    --p-hi-line: rgba(255,255,255,0.85);
+    --p-accent-shadow: rgba(11,22,56,0.45);
+    --p-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+    background:
+      repeating-linear-gradient(-45deg, transparent 0 13px, rgba(15,21,38,0.055) 13px 14px),
+      linear-gradient(155deg, var(--p-bg-a) 0%, #EDF3F5 55%, var(--p-bg-b) 100%);
+    color: var(--p-ink);
+    font-family: var(--p-sans);
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  /* Blend the existing topbar into the pastel surface on pillow screens.
+     The DOM stays intact; only visuals shift. */
+  body[data-screen="welcome"] .topbar,
+  body[data-screen="sign-in"] .topbar {
+    background: transparent;
+    border-bottom: 0;
+    padding: 18px 24px;
+    box-shadow: none;
+  }
+  body[data-screen="welcome"] .topbar .brand,
+  body[data-screen="sign-in"] .topbar .brand {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--p-ink);
+    letter-spacing: -0.025em;
+    display: inline-flex; align-items: center; gap: 10px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+  body[data-screen="welcome"] .topbar .brand::before,
+  body[data-screen="sign-in"] .topbar .brand::before {
+    content: 'T';
+    width: 34px; height: 34px;
+    border-radius: 11px;
+    background: linear-gradient(150deg, #FFFFFF, #E5EAF3);
+    display: grid; place-items: center;
+    box-shadow: 0 4px 10px -6px var(--p-shadow-drop), 0 1px 0 var(--p-hi-line) inset;
+    font-family: var(--p-sans);
+    font-weight: 800; font-size: 14px;
+    letter-spacing: -0.03em;
+    color: var(--p-ink);
+  }
+  body[data-screen="welcome"] .topbar .brand small,
+  body[data-screen="sign-in"] .topbar .brand small {
+    display: none;
+  }
+
+  /* Language toggle → pillow pill (pill-inside-pill pattern from demo-7). */
+  body[data-screen="welcome"] .lang-toggle,
+  body[data-screen="sign-in"] .lang-toggle {
+    background: rgba(255,255,255,0.6);
+    padding: 4px;
+    border-radius: 100px;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    display: inline-flex; gap: 2px;
+    border: 0;
+  }
+  body[data-screen="welcome"] .lang-toggle button,
+  body[data-screen="sign-in"] .lang-toggle button {
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--p-ink-mute);
+    background: transparent;
+    border: 0;
+    padding: 6px 12px;
+    border-radius: 100px;
+    cursor: pointer;
+    letter-spacing: 0;
+  }
+  body[data-screen="welcome"] .lang-toggle button.active,
+  body[data-screen="sign-in"] .lang-toggle button.active {
+    background: var(--p-card);
+    color: var(--p-ink);
+    font-weight: 700;
+    box-shadow: 0 6px 12px -8px var(--p-shadow-drop), 0 1px 0 var(--p-hi-line) inset;
+  }
+
+  /* Subhead (back button + crumb) → transparent, pillow back button */
+  body[data-screen="sign-in"] .subhead {
+    background: transparent;
+    border-bottom: 0;
+    padding: 8px 24px 0;
+  }
+  body[data-screen="sign-in"] .subhead .back {
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--p-ink);
+    background: var(--p-card);
+    border: 0;
+    padding: 8px 14px;
+    border-radius: 100px;
+    box-shadow: 0 6px 14px -10px var(--p-shadow-drop), 0 1px 0 var(--p-hi-line) inset;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+  }
+  body[data-screen="sign-in"] .subhead #crumb { display: none; }
+
+  /* Pillow layout container — overrides .screen padding + .auth-stage.
+     Uses .screen selector so no HTML change is needed. */
+  body[data-screen="welcome"] main.canvas,
+  body[data-screen="sign-in"] main.canvas {
+    padding: 0;
+    display: flex; justify-content: center;
+  }
+  body[data-screen="welcome"] .screen,
+  body[data-screen="sign-in"] .screen {
+    padding: 16px 24px 32px;
+    width: 100%;
+    max-width: 520px;
+  }
+  body[data-screen="welcome"] .auth-stage,
+  body[data-screen="sign-in"] .auth-stage {
+    max-width: none;
+    margin: 0;
+  }
+  body[data-screen="welcome"] .auth-stage.wide {
+    max-width: none;
+  }
+
+  /* Pillow typography — override headings/leads inside migrated screens */
+  body[data-screen="welcome"] .auth-stage h1,
+  body[data-screen="sign-in"] .auth-stage h1 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 34px;
+    letter-spacing: -0.032em;
+    line-height: 1.05;
+    color: var(--p-ink);
+    margin: 26px 0 10px;
+    text-transform: none;
+    border: 0;
+  }
+  body[data-screen="welcome"] .auth-stage .lead,
+  body[data-screen="sign-in"] .auth-stage .lead {
+    font-family: var(--p-sans);
+    font-weight: 400;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    text-transform: none;
+    max-width: 380px;
+    margin: 0 0 24px;
+  }
+
+  /* Dark status pill (echoes demo-7's "1USD = 7,2493 CNY" chip) */
+  .p-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    box-shadow: 0 8px 18px -10px var(--p-accent-shadow);
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+    margin-top: 18px;
+  }
+  .p-status-pill::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 100px;
+    background: var(--p-ok);
+    box-shadow: 0 0 0 3px rgba(23,166,107,0.22);
+  }
+
+  /* Pillow card — the near-white 3D surface */
+  .p-pillow {
+    background: var(--p-card);
+    border-radius: 22px;
+    padding: 18px 20px;
+    box-shadow:
+      0 8px 22px -12px var(--p-shadow-drop),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    position: relative;
+    text-align: left;
+    color: var(--p-ink);
+  }
+  .p-pillow + .p-pillow { margin-top: 12px; }
+
+  /* Pillow field (email / password inputs) */
+  .p-field {
+    display: block;
+  }
+  .p-field + .p-field { margin-top: 12px; }
+  .p-field label {
+    display: block;
+    font-family: var(--p-sans);
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--p-ink-mute);
+    margin-bottom: 6px;
+  }
+  .p-field .p-input {
+    display: flex; align-items: center; gap: 12px;
+    height: 52px;
+    padding: 0 16px;
+    border-radius: 16px;
+    background: var(--p-card);
+    box-shadow:
+      0 6px 16px -12px var(--p-shadow-drop),
+      0 1px 0 var(--p-hi-line) inset,
+      0 1px 2px var(--p-shadow-tight);
+  }
+  .p-field .p-input:focus-within {
+    box-shadow:
+      0 6px 16px -8px var(--p-shadow-drop),
+      0 0 0 2px var(--p-accent) inset;
+  }
+  .p-field .p-input .lead-icon {
+    opacity: 0.55;
+    color: var(--p-ink);
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .p-field .p-input input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-family: var(--p-sans);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--p-ink);
+    padding: 0;
+    height: 100%;
+    letter-spacing: 0;
+  }
+  .p-field .p-input input::placeholder { color: var(--p-ink-faint); }
+
+  /* Pillow CTA — the black pill button */
+  .p-cta {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 58px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: 100px;
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+    box-shadow:
+      0 14px 30px -12px var(--p-accent-shadow),
+      0 1px 0 rgba(255,255,255,0.15) inset;
+    cursor: pointer;
+    margin-top: 18px;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    text-transform: none;
+  }
+  .p-cta:hover { transform: translateY(-1px); box-shadow: 0 18px 34px -12px var(--p-accent-shadow), 0 1px 0 rgba(255,255,255,0.15) inset; }
+  .p-cta:active { transform: translateY(0); }
+  .p-cta:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+  .p-cta.ghost {
+    background: transparent;
+    color: var(--p-ink);
+    box-shadow: none;
+    font-weight: 500;
+    font-size: 14px;
+    height: 40px;
+    margin-top: 8px;
+  }
+
+  /* Welcome tile — replaces .welcome-card visual (class stays for JS) */
+  body[data-screen="welcome"] .welcome-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 8px;
+  }
+  body[data-screen="welcome"] .welcome-card {
+    background: var(--p-card);
+    border-radius: 22px;
+    padding: 20px 22px;
+    border: 0;
+    box-shadow:
+      0 8px 22px -12px var(--p-shadow-drop),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    text-align: left;
+    color: var(--p-ink);
+    cursor: pointer;
+    transform: none;
+    transition: transform 140ms ease, box-shadow 140ms ease;
+    font-family: var(--p-sans);
+  }
+  body[data-screen="welcome"] .welcome-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 14px 30px -14px var(--p-shadow-drop),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="welcome"] .welcome-card::before {
+    content: '';
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(140deg, #C6D9FE, #7999F2);
+    box-shadow: 0 1px 0 var(--p-hi-line) inset;
+    grid-column: 1; grid-row: 1 / -1;
+    align-self: center;
+  }
+  body[data-screen="welcome"] .welcome-card[data-act="register"]::before {
+    background: linear-gradient(140deg, #C6EFD1, #7ACB98);
+  }
+  body[data-screen="welcome"] .welcome-card::after {
+    content: '›';
+    grid-column: 3; grid-row: 1 / -1;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--p-ink-faint);
+    align-self: center;
+  }
+  body[data-screen="welcome"] .welcome-card .lbl {
+    grid-column: 2; grid-row: 1;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    margin: 0;
+  }
+  body[data-screen="welcome"] .welcome-card .ttl {
+    grid-column: 2; grid-row: 2;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    color: var(--p-ink);
+    margin: 2px 0 0;
+  }
+  body[data-screen="welcome"] .welcome-card .dsc {
+    grid-column: 2; grid-row: 3;
+    font-family: var(--p-sans);
+    font-weight: 400;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--p-ink-mute);
+    margin: 6px 0 0;
+  }
+
+  /* Sign-in text-link (helper) */
+  body[data-screen="sign-in"] .helper {
+    font-family: var(--p-sans);
+    font-size: 13px;
+    color: var(--p-ink-mute);
+    margin-top: 16px;
+    text-align: center;
+  }
+  body[data-screen="sign-in"] .helper .text-link,
+  body[data-screen="sign-in"] .helper a {
+    color: var(--p-ink);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* Hide the existing paper CTA that lives inside migrated screens — we
+     render the pillow CTA in its place via markup change. Not needed once
+     the markup is rewritten, but a safety net if the rewrite ever regresses. */
+
+  /* Arabic overrides — display font on pillow screens becomes Cairo, not
+     Amiri, to match the everyday-utility register. */
+  html[lang="ar"] body[data-screen="welcome"],
+  html[lang="ar"] body[data-screen="sign-in"] {
+    font-family: 'Cairo', var(--p-sans);
+  }
+  html[lang="ar"] body[data-screen="welcome"] .auth-stage h1,
+  html[lang="ar"] body[data-screen="sign-in"] .auth-stage h1,
+  html[lang="ar"] body[data-screen="welcome"] .welcome-card .ttl {
+    font-family: 'Cairo', var(--p-sans);
+    font-weight: 800;
+  }
+
+  /* Mobile tune — the phone-native reading */
+  @media (max-width: 640px) {
+    body[data-screen="welcome"] .screen,
+    body[data-screen="sign-in"] .screen {
+      padding: 8px 20px 24px;
+    }
+    body[data-screen="welcome"] .auth-stage h1,
+    body[data-screen="sign-in"] .auth-stage h1 {
+      font-size: 30px;
+    }
+  }
 </style>
 </head>
 <body data-screen="welcome">
@@ -1736,6 +2172,7 @@
     <!-- Welcome -->
     <section class="screen" id="screen-welcome">
       <div class="auth-stage wide">
+        <span class="p-status-pill" data-i18n="welcome.status">Sudan Intercity Coach · Live</span>
         <h1 data-i18n="welcome.title">Welcome aboard.</h1>
         <div class="lead" data-i18n="welcome.lead">Sudan Intercity Coach Authority · Sign in to your account or create a new one.</div>
         <div class="welcome-grid">
@@ -1761,11 +2198,26 @@
     <!-- Sign in -->
     <section class="screen" id="screen-sign-in">
       <div class="auth-stage">
+        <span class="p-status-pill" data-i18n="signin.status">Secure sign-in</span>
         <h1 data-i18n="signin.title">Sign in.</h1>
         <div class="lead" data-i18n="signin.lead">Email + password. We'll route you to the right place.</div>
-        <div class="field"><label for="si-email" data-i18n="form.email">Email</label><input type="email" id="si-email" autocomplete="email" /></div>
-        <div class="field"><label for="si-password" data-i18n="form.password">Password</label><input type="password" id="si-password" autocomplete="current-password" /></div>
-        <button class="cta" id="sign-in-btn" data-i18n="action.continue">Continue →</button>
+        <div class="p-pillow">
+          <div class="p-field">
+            <label for="si-email" data-i18n="form.email">Email</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">✉︎</span>
+              <input type="email" id="si-email" autocomplete="email" placeholder="you@example.com" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="si-password" data-i18n="form.password">Password</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">🔒</span>
+              <input type="password" id="si-password" autocomplete="current-password" />
+            </div>
+          </div>
+        </div>
+        <button class="cta p-cta" id="sign-in-btn" data-i18n="action.continue">Continue →</button>
         <div class="helper" data-i18n="signin.helper" data-i18n-html="1">Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.</div>
       </div>
     </section>
@@ -2500,6 +2952,8 @@ const I18N = {
     'role.customer': 'Passenger', 'role.provider': 'Operator', 'role.admin': 'Administrator',
     'back': '← Back',
     // welcome
+    'welcome.status': 'Sudan Intercity Coach · Live',
+    'signin.status': 'Secure sign-in',
     'welcome.title': 'Welcome aboard.',
     'welcome.lead': 'Sudan Intercity Coach Authority · Sign in to your account or create a new one.',
     'welcome.returning': 'Returning', 'welcome.signin': 'Sign in',
@@ -2757,6 +3211,8 @@ const I18N = {
     'role.customer': 'راكب', 'role.provider': 'موظف', 'role.admin': 'مدير',
     'back': 'رجوع →',
     // welcome
+    'welcome.status': 'شبكة السودان للنقل بين المدن · مباشر',
+    'signin.status': 'تسجيل دخول آمن',
     'welcome.title': 'أهلاً بك على متن الرحلة.',
     'welcome.lead': 'هيئة السودان للنقل بين المدن · سجّل الدخول أو أنشئ حساباً جديداً.',
     'welcome.returning': 'مستخدم سابق', 'welcome.signin': 'تسجيل الدخول',
