@@ -4,6 +4,8 @@ PODS:
   - CapacitorApp (6.0.3):
     - Capacitor
   - CapacitorCordova (6.2.1)
+  - CapacitorFilesystem (6.0.4):
+    - Capacitor
   - CapacitorHaptics (6.0.3):
     - Capacitor
   - CapacitorKeyboard (6.0.4):
@@ -11,6 +13,10 @@ PODS:
   - CapacitorNetwork (6.0.4):
     - Capacitor
   - CapacitorPreferences (6.0.4):
+    - Capacitor
+  - CapacitorScreenshot (6.0.1):
+    - Capacitor
+  - CapacitorShare (6.0.4):
     - Capacitor
   - CapacitorSplashScreen (6.0.4):
     - Capacitor
@@ -21,10 +27,13 @@ DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
   - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - "CapacitorNetwork (from `../../node_modules/@capacitor/network`)"
   - "CapacitorPreferences (from `../../node_modules/@capacitor/preferences`)"
+  - CapacitorScreenshot (from `../../node_modules/capacitor-screenshot`)
+  - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
 
@@ -35,6 +44,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/app"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorFilesystem:
+    :path: "../../node_modules/@capacitor/filesystem"
   CapacitorHaptics:
     :path: "../../node_modules/@capacitor/haptics"
   CapacitorKeyboard:
@@ -43,6 +54,10 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/network"
   CapacitorPreferences:
     :path: "../../node_modules/@capacitor/preferences"
+  CapacitorScreenshot:
+    :path: "../../node_modules/capacitor-screenshot"
+  CapacitorShare:
+    :path: "../../node_modules/@capacitor/share"
   CapacitorSplashScreen:
     :path: "../../node_modules/@capacitor/splash-screen"
   CapacitorStatusBar:
@@ -52,13 +67,16 @@ SPEC CHECKSUMS:
   Capacitor: c95400d761e376be9da6be5a05f226c0e865cebf
   CapacitorApp: a19ccb4f5f32d2534be5c6f524d5a9b614a1e8a7
   CapacitorCordova: 8d93e14982f440181be7304aa9559ca631d77fff
+  CapacitorFilesystem: 5b9aec35c0212bd0064e26d278c93e925864f212
   CapacitorHaptics: 40f83026feeee9cfe36e89e9c98a3baaaf20c450
   CapacitorKeyboard: e8cd50fd5cbdd023a5947a5c0f5cca6e5aa5a253
   CapacitorNetwork: 093efa3664b692a971bdd01be70523291cd6a87f
   CapacitorPreferences: 5848e0691b36b4bb4acc98e481ab56d451578d30
+  CapacitorScreenshot: b52c973e9afbda232e8d1c9e6598e9039f18d285
+  CapacitorShare: 77ff779e3b7c6ae9fb5461e52cf7ef805d429491
   CapacitorSplashScreen: ef140a8b1ea7244e0c245ce2dd4ce5251e7ab86a
   CapacitorStatusBar: 149cde8f1328ec3aa6cbdd872a55137ae3f98b16
 
-PODFILE CHECKSUM: 9f855f9d4cec66bca61684a63ad94915c4566226
+PODFILE CHECKSUM: 2ad9f1a9ee96b63b99e93ccb76a940ff8563f476
 
 COCOAPODS: 1.16.2
