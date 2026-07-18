@@ -1792,6 +1792,29 @@
     border-color: transparent;
   }
 
+  /* Sign out — frosted rounded chip, Inter, matches the pillow chrome */
+  body.pillow .topbar .session button.signout {
+    appearance: none;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: background 180ms ease, transform 120ms ease;
+  }
+  body.pillow .topbar .session button.signout:hover {
+    background: var(--p-card);
+    color: var(--p-ink);
+    transform: translateY(-1px);
+  }
+
   /* Language toggle → pill-inside-pill */
   body.pillow .lang-toggle {
     background: rgba(255,255,255,0.6);
@@ -2114,8 +2137,9 @@
     display: none;
   }
 
-  /* Sign-in text-link (helper) */
-  body[data-screen="sign-in"] .helper {
+  /* Sign-in / register text-link (helper) */
+  body[data-screen="sign-in"] .helper,
+  body[data-screen="register"] .helper {
     font-family: var(--p-sans);
     font-size: 13px;
     color: var(--p-ink-mute);
@@ -2123,11 +2147,75 @@
     text-align: center;
   }
   body[data-screen="sign-in"] .helper .text-link,
-  body[data-screen="sign-in"] .helper a {
+  body[data-screen="sign-in"] .helper a,
+  body[data-screen="register"] .helper .text-link,
+  body[data-screen="register"] .helper a {
     color: var(--p-ink);
     font-weight: 700;
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+
+  /* Register — role-pick pillow style (Passenger / Operator). Mirrors the
+     admin-settings language chips, but keeps the .rp-desc subtitle line. */
+  body[data-screen="register"].pillow .role-pick {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  body[data-screen="register"].pillow .role-pick label {
+    background: var(--p-card-tint);
+    border: 0;
+    border-radius: 16px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: transform 140ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+    display: flex; flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="register"].pillow .role-pick label:hover {
+    transform: translateY(-1px);
+    background: var(--p-card);
+    box-shadow: 0 6px 14px -8px var(--p-shadow-drop), 0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="register"].pillow .role-pick label.active {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    box-shadow:
+      0 12px 24px -12px var(--p-accent-shadow),
+      0 1px 0 rgba(255,255,255,0.15) inset;
+    transform: translateY(-1px);
+  }
+  body[data-screen="register"].pillow .role-pick label .rp-title {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.005em;
+    color: inherit;
+  }
+  body[data-screen="register"].pillow .role-pick label .rp-desc {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0;
+    color: var(--p-ink-mute);
+    text-transform: none;
+  }
+  body[data-screen="register"].pillow .role-pick label.active .rp-desc {
+    color: var(--p-accent-on);
+    opacity: 0.75;
+  }
+  body[data-screen="register"].pillow .role-pick .role-label {
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    margin: 0 0 8px;
+    display: block;
+    grid-column: 1 / -1;
   }
 
   /* ── Category chooser tiles ─────────────────────────────────────────── */
@@ -3786,22 +3874,25 @@
     box-shadow: 0 10px 18px -8px rgba(15,21,38,0.4);
   }
 
-  /* Gear button in the topbar (all pillow screens) — small circular icon
-     instead of the v1 bordered chip */
+  /* Gear button in the topbar (all pillow screens) — bare icon, no chip.
+     Same visual footprint as the old circle, just without the surround. */
   body.pillow .gear-btn {
-    background: rgba(255,255,255,0.6);
+    background: transparent;
     color: var(--p-ink);
     border: 0;
-    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
-    padding: 7px 10px;
-    font-size: 16px;
-    border-radius: 999px;
-    transition: background 180ms ease, transform 120ms ease;
+    box-shadow: none;
+    padding: 0;
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    line-height: 1;
+    border-radius: 0;
+    transition: color 180ms ease, transform 260ms ease;
   }
   body.pillow .gear-btn:hover {
-    background: var(--p-card);
-    color: var(--p-ink);
-    transform: translateY(-1px);
+    background: transparent;
+    color: var(--p-accent);
+    transform: rotate(45deg);
   }
 
   /* ── Topbar nav on pillow screens (desktop = inline chips; mobile bottom
@@ -4124,13 +4215,45 @@
       <div class="auth-stage">
         <h1 data-i18n="register.title">Create an account.</h1>
         <div class="lead" data-i18n="register.lead">Role is set now and stays with the account.</div>
-        <div class="field"><label for="rg-name" data-i18n="form.fullname">Full name</label><input type="text" id="rg-name" autocomplete="name" /></div>
-        <div class="field"><label for="rg-email" data-i18n="form.email">Email</label><input type="email" id="rg-email" autocomplete="email" /></div>
-        <div class="field"><label for="rg-password" data-i18n="form.password">Password</label><input type="password" id="rg-password" autocomplete="new-password" /></div>
-        <div class="field"><label for="rg-password-confirm" data-i18n="form.password.confirm">Confirm password</label><input type="password" id="rg-password-confirm" autocomplete="new-password" /></div>
-        <div class="field"><label for="rg-phone" data-i18n="form.phone">Phone (optional)</label><input type="tel" id="rg-phone" autocomplete="tel" placeholder="249…" /></div>
-        <div class="field">
-          <label data-i18n="register.role.label">Account type</label>
+        <div class="p-pillow">
+          <div class="p-field">
+            <label for="rg-name" data-i18n="form.fullname">Full name</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">☺</span>
+              <input type="text" id="rg-name" autocomplete="name" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="rg-email" data-i18n="form.email">Email</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">✉︎</span>
+              <input type="email" id="rg-email" autocomplete="email" placeholder="you@example.com" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="rg-password" data-i18n="form.password">Password</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">🔒</span>
+              <input type="password" id="rg-password" autocomplete="new-password" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="rg-password-confirm" data-i18n="form.password.confirm">Confirm password</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">🔒</span>
+              <input type="password" id="rg-password-confirm" autocomplete="new-password" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="rg-phone" data-i18n="form.phone">Phone (optional)</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">☎</span>
+              <input type="tel" id="rg-phone" autocomplete="tel" placeholder="249…" />
+            </div>
+          </div>
+        </div>
+        <div class="p-field" style="margin-top: 16px;">
+          <label class="role-label" data-i18n="register.role.label">Account type</label>
           <div class="role-pick">
             <label class="active" data-role="customer">
               <input type="radio" name="rg-role" value="customer" checked>
@@ -4144,7 +4267,7 @@
             </label>
           </div>
         </div>
-        <button class="cta" id="register-btn" data-i18n="register.cta">Create account →</button>
+        <button class="cta p-cta" id="register-btn" data-i18n="register.cta">Create account →</button>
         <div class="helper" data-i18n="register.helper" data-i18n-html="1">Operator accounts require admin approval before they can host trips.<br>Already have an account? <a href="#" id="goto-signin" class="text-link">Sign in</a>.</div>
       </div>
     </section>
@@ -5704,7 +5827,7 @@ function escapeHtml(s) {
 // Screens that use the v2 pillow design language. body.classList.toggle('pillow', …)
 // happens in paintChrome so CSS can scope to `body.pillow` for shared tokens.
 const PILLOW_SCREENS = new Set([
-  'welcome', 'sign-in', 'customer-category', 'customer-coming-soon',
+  'welcome', 'sign-in', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
   'admin-settings',
 ]);
