@@ -193,8 +193,8 @@ _FRONTEND_CANDIDATES = [
 ]
 _FRONTEND_DIR = next((p for p in _FRONTEND_CANDIDATES if p.is_dir()), None)
 
-# UI switch: /app/ serves either index.html (v1, default) or index-v2.html (redesign).
-# Opt-in with ?ui=v2 — persists via cookie. Revert with ?ui=v1 or clear the cookie.
+# UI switch: /app/ serves either index-v2.html (v2, default on this branch) or index.html (v1).
+# Opt out with ?ui=v1 — persists via cookie. Revert with ?ui=v2 or clear the cookie.
 # Registered BEFORE the static mount so the explicit route wins at /app/.
 if _FRONTEND_DIR is not None:
     @app.get("/app/", include_in_schema=False)
@@ -202,9 +202,9 @@ if _FRONTEND_DIR is not None:
     async def _serve_ui(request: Request):
         q = request.query_params.get("ui")
         cookie = request.cookies.get("taz_ui")
-        which = q or cookie or "v1"
+        which = q or cookie or "v2"
         if which not in ("v1", "v2"):
-            which = "v1"
+            which = "v2"
         target = _FRONTEND_DIR / ("index-v2.html" if which == "v2" else "index.html")
         if not target.is_file():
             target = _FRONTEND_DIR / "index.html"
