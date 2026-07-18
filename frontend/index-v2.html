@@ -8824,16 +8824,29 @@ async function _nativeScreenshotTicketToPdf(ticket, jsPDFCtor) {
   });
   if (!loaded || !img.naturalWidth) { restore(); return false; }
 
-  // Compute the bitmap-to-CSS ratio from the actual document viewport, not
-  // window.innerWidth/Height (Capacitor sometimes counts safe-area padding
-  // in innerHeight, which throws off the crop). documentElement dimensions
-  // match what getBoundingClientRect returns.
+  // Compute the bitmap-to-CSS ratio. Screenshot.take() captures the full
+  // device screen INCLUDING the iOS status bar / notch above the WebView,
+  // so bitmap.height > viewH * devicePixelRatio. Using
+  // scaleY = img.naturalHeight / viewH would fold that extra height into
+  // the scale factor and drag the ticket crop upward — the classic iPhone
+  // "black strip at the top of the PDF" bug. Fix: derive one scale from
+  // width (which typically has no horizontal safe-area inset), then add
+  // the top safe-area inset as an explicit Y offset.
   const r = ticket.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
   const viewW = document.documentElement.clientWidth  || window.innerWidth;
-  const viewH = document.documentElement.clientHeight || window.innerHeight;
-  const scaleX = img.naturalWidth  / viewW;
-  const scaleY = img.naturalHeight / viewH;
+  const scale = img.naturalWidth / viewW;
+
+  // Measure the top safe-area inset (status bar / notch height) in CSS px
+  // via a hidden probe pinned to env(safe-area-inset-top). Then convert to
+  // bitmap pixels via the same scale.
+  const probe = document.createElement('div');
+  probe.style.cssText =
+    'position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);' +
+    'pointer-events:none;visibility:hidden;';
+  document.body.appendChild(probe);
+  const topInsetCss = probe.offsetHeight || 0;
+  probe.remove();
+  const topOffsetBitmap = topInsetCss * scale;
 
   // Add a small padding around the ticket bounds so glyph edges (title
   // tops, digit tails at the right edge) aren't shaved by pixel-precision
@@ -8844,13 +8857,14 @@ async function _nativeScreenshotTicketToPdf(ticket, jsPDFCtor) {
   const cssRight  = r.right  + PAD;
   const cssBottom = r.bottom + PAD;
 
-  const sx = Math.max(0, Math.floor(cssLeft   * scaleX));
-  const sy = Math.max(0, Math.floor(cssTop    * scaleY));
-  const sxEnd = Math.min(img.naturalWidth,  Math.ceil(cssRight  * scaleX));
-  const syEnd = Math.min(img.naturalHeight, Math.ceil(cssBottom * scaleY));
+  const sx = Math.max(0, Math.floor(cssLeft   * scale));
+  const sy = Math.max(0, Math.floor(topOffsetBitmap + cssTop    * scale));
+  const sxEnd = Math.min(img.naturalWidth,  Math.ceil(cssRight  * scale));
+  const syEnd = Math.min(img.naturalHeight, Math.ceil(topOffsetBitmap + cssBottom * scale));
   const sw = sxEnd - sx;
   const sh = syEnd - sy;
   if (sw < 10 || sh < 10) { restore(); return false; }
+  const dpr = window.devicePixelRatio || 1;
 
   const c = document.createElement('canvas');
   c.width = sw; c.height = sh;
