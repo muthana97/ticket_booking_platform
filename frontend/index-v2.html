@@ -2501,6 +2501,7 @@
     --terra-dim: var(--p-accent);
     --ink-soft: var(--p-ink-mute);
     --ink: var(--p-ink);
+    --paper-2: var(--p-card-tint);
   }
   body[data-screen="customer-trips"].pillow .screen {
     padding: 12px 20px 32px;
@@ -2533,12 +2534,16 @@
     text-transform: none;
     margin: 0;
   }
-  body[data-screen="customer-trips"].pillow .trip-list {
+  body[data-screen="customer-trips"].pillow .trip-list,
+  body[data-screen="provider-home"].pillow .trip-list,
+  body[data-screen="admin-home"].pillow .trip-list {
     gap: 12px;
     max-width: none;
     margin: 4px 0 0;
   }
-  body[data-screen="customer-trips"].pillow .trip-card {
+  body[data-screen="customer-trips"].pillow .trip-card,
+  body[data-screen="provider-home"].pillow .trip-card,
+  body[data-screen="admin-home"].pillow .trip-card {
     background: var(--p-card);
     border: 0;
     border-radius: 22px;
@@ -2552,18 +2557,24 @@
     transition: transform 180ms ease, box-shadow 220ms ease;
     font-family: var(--p-sans);
   }
-  body[data-screen="customer-trips"].pillow .trip-card:hover {
+  body[data-screen="customer-trips"].pillow .trip-card:hover,
+  body[data-screen="provider-home"].pillow .trip-card:hover,
+  body[data-screen="admin-home"].pillow .trip-card:hover {
     transform: translateY(-2px);
     box-shadow:
       0 14px 30px -14px var(--p-shadow-drop),
       0 2px 4px var(--p-shadow-tight),
       0 1px 0 var(--p-hi-line) inset;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .meta-row {
+  body[data-screen="customer-trips"].pillow .trip-card .meta-row,
+  body[data-screen="provider-home"].pillow .trip-card .meta-row,
+  body[data-screen="admin-home"].pillow .trip-card .meta-row {
     gap: 10px;
     margin-bottom: 6px;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .chip-id {
+  body[data-screen="customer-trips"].pillow .trip-card .chip-id,
+  body[data-screen="provider-home"].pillow .trip-card .chip-id,
+  body[data-screen="admin-home"].pillow .trip-card .chip-id {
     font-family: var(--p-sans);
     font-weight: 700;
     font-size: 9.5px;
@@ -2575,11 +2586,15 @@
     color: var(--p-ink-mute);
     font-variant-numeric: tabular-nums;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .ff-mono {
+  body[data-screen="customer-trips"].pillow .trip-card .ff-mono,
+  body[data-screen="provider-home"].pillow .trip-card .ff-mono,
+  body[data-screen="admin-home"].pillow .trip-card .ff-mono {
     font-family: var(--p-sans);
     font-variant-numeric: tabular-nums;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .route {
+  body[data-screen="customer-trips"].pillow .trip-card .route,
+  body[data-screen="provider-home"].pillow .trip-card .route,
+  body[data-screen="admin-home"].pillow .trip-card .route {
     font-family: var(--p-sans);
     font-weight: 800;
     font-size: 22px;
@@ -2587,12 +2602,16 @@
     line-height: 1.15;
     color: var(--p-ink);
   }
-  body[data-screen="customer-trips"].pillow .trip-card .route .arrow {
+  body[data-screen="customer-trips"].pillow .trip-card .route .arrow,
+  body[data-screen="provider-home"].pillow .trip-card .route .arrow,
+  body[data-screen="admin-home"].pillow .trip-card .route .arrow {
     color: var(--p-accent);
     margin: 0 10px;
     font-weight: 700;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .stats {
+  body[data-screen="customer-trips"].pillow .trip-card .stats,
+  body[data-screen="provider-home"].pillow .trip-card .stats,
+  body[data-screen="admin-home"].pillow .trip-card .stats {
     font-family: var(--p-sans);
     font-variant-numeric: tabular-nums;
     font-weight: 500;
@@ -2601,11 +2620,15 @@
     margin-top: 6px;
     letter-spacing: 0;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .stats b {
+  body[data-screen="customer-trips"].pillow .trip-card .stats b,
+  body[data-screen="provider-home"].pillow .trip-card .stats b,
+  body[data-screen="admin-home"].pillow .trip-card .stats b {
     color: var(--p-ink);
     font-weight: 700;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .price {
+  body[data-screen="customer-trips"].pillow .trip-card .price,
+  body[data-screen="provider-home"].pillow .trip-card .price,
+  body[data-screen="admin-home"].pillow .trip-card .price {
     font-family: var(--p-sans);
     font-weight: 800;
     font-size: 26px;
@@ -2614,7 +2637,9 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .price small {
+  body[data-screen="customer-trips"].pillow .trip-card .price small,
+  body[data-screen="provider-home"].pillow .trip-card .price small,
+  body[data-screen="admin-home"].pillow .trip-card .price small {
     display: block;
     font-family: var(--p-sans);
     font-weight: 600;
@@ -2624,14 +2649,18 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
-  body[data-screen="customer-trips"].pillow .trip-card-actions {
+  body[data-screen="customer-trips"].pillow .trip-card-actions,
+  body[data-screen="provider-home"].pillow .trip-card-actions,
+  body[data-screen="admin-home"].pillow .trip-card-actions {
     grid-column: 1 / -1;
     border-top: 1px dashed rgba(50,80,140,0.10);
     padding-top: 14px;
     margin-top: 4px;
     gap: 10px;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .btn-inline {
+  body[data-screen="customer-trips"].pillow .trip-card .btn-inline,
+  body[data-screen="provider-home"].pillow .trip-card .btn-inline,
+  body[data-screen="admin-home"].pillow .trip-card .btn-inline {
     appearance: none;
     background: var(--p-accent);
     color: var(--p-accent-on);
@@ -2647,17 +2676,23 @@
     transition: transform 120ms ease, box-shadow 120ms ease;
     cursor: pointer;
   }
-  body[data-screen="customer-trips"].pillow .trip-card .btn-inline:hover {
+  body[data-screen="customer-trips"].pillow .trip-card .btn-inline:hover,
+  body[data-screen="provider-home"].pillow .trip-card .btn-inline:hover,
+  body[data-screen="admin-home"].pillow .trip-card .btn-inline:hover {
     background: var(--p-accent);
     transform: translateY(-1px);
     box-shadow: 0 12px 24px -8px var(--p-accent-shadow), 0 1px 0 rgba(255,255,255,0.15) inset;
   }
-  body[data-screen="customer-trips"].pillow .empty-state {
+  body[data-screen="customer-trips"].pillow .empty-state,
+  body[data-screen="provider-home"].pillow .empty-state,
+  body[data-screen="admin-home"].pillow .empty-state {
     text-align: center;
     margin: 40px auto;
     max-width: 420px;
   }
-  body[data-screen="customer-trips"].pillow .empty-state h3 {
+  body[data-screen="customer-trips"].pillow .empty-state h3,
+  body[data-screen="provider-home"].pillow .empty-state h3,
+  body[data-screen="admin-home"].pillow .empty-state h3 {
     font-family: var(--p-sans);
     font-weight: 800;
     font-size: 24px;
@@ -2667,7 +2702,9 @@
     text-transform: none;
     border: 0;
   }
-  body[data-screen="customer-trips"].pillow .empty-state p {
+  body[data-screen="customer-trips"].pillow .empty-state p,
+  body[data-screen="provider-home"].pillow .empty-state p,
+  body[data-screen="admin-home"].pillow .empty-state p {
     font-family: var(--p-sans);
     font-size: 13.5px;
     color: var(--p-ink-mute);
@@ -3462,6 +3499,734 @@
     text-transform: none;
   }
 
+  /* ── Provider home (My Trips + My Bookings) ─────────────────────────── */
+  /* Layout: reuse the .provider-stage container but retint everything to
+     pillow. Trip-card rules are shared with customer-trips via widened
+     selectors above; here we add the shell, tabs, filter strip, booking
+     rows, and footer. */
+  body[data-screen="provider-home"].pillow .screen,
+  body[data-screen="admin-home"].pillow .screen {
+    padding: 20px 24px 48px;
+  }
+  body[data-screen="provider-home"].pillow .provider-stage,
+  body[data-screen="admin-home"].pillow .admin-stage {
+    max-width: 1080px;
+  }
+
+  /* Head (title + subtitle + "New Trip" CTA on provider) */
+  body[data-screen="provider-home"].pillow .provider-head,
+  body[data-screen="admin-home"].pillow .provider-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  body[data-screen="provider-home"].pillow .provider-stage h2,
+  body[data-screen="admin-home"].pillow .admin-stage h2 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--p-ink);
+    margin: 0 0 4px;
+    border: 0;
+    padding: 0;
+  }
+  body[data-screen="provider-home"].pillow .provider-stage .lead,
+  body[data-screen="admin-home"].pillow .admin-stage .lead {
+    font-family: var(--p-sans);
+    font-weight: 400;
+    font-size: 13.5px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    text-transform: none;
+    margin: 0;
+  }
+  /* + New Trip button — amber pill (btn-inline.alt in v1) */
+  body[data-screen="provider-home"].pillow #add-trip-open-btn {
+    appearance: none;
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 10px 20px -10px var(--p-accent-shadow), 0 1px 0 rgba(255,255,255,0.15) inset;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    white-space: nowrap;
+  }
+  body[data-screen="provider-home"].pillow #add-trip-open-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px -10px var(--p-accent-shadow), 0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+
+  /* Tab bar — swap underline chips for pillow pill treatment */
+  body[data-screen="provider-home"].pillow .tab-bar,
+  body[data-screen="admin-home"].pillow .tab-bar {
+    display: flex; gap: 8px;
+    background: var(--p-card);
+    border: 0;
+    border-radius: 999px;
+    padding: 6px;
+    box-shadow:
+      0 6px 16px -10px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  body[data-screen="provider-home"].pillow .tab-bar button,
+  body[data-screen="admin-home"].pillow .tab-bar button {
+    appearance: none;
+    background: transparent;
+    color: var(--p-ink-mute);
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+  }
+  body[data-screen="provider-home"].pillow .tab-bar button:hover,
+  body[data-screen="admin-home"].pillow .tab-bar button:hover {
+    color: var(--p-ink);
+    background: var(--p-card-tint);
+  }
+  body[data-screen="provider-home"].pillow .tab-bar button.active,
+  body[data-screen="admin-home"].pillow .tab-bar button.active {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    border-bottom: 0;
+    box-shadow: 0 8px 18px -8px var(--p-accent-shadow), 0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+  body[data-screen="provider-home"].pillow .tab-bar button .count,
+  body[data-screen="admin-home"].pillow .tab-bar button .count {
+    background: var(--p-card-tint);
+    color: var(--p-ink-mute);
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-screen="provider-home"].pillow .tab-bar button.active .count,
+  body[data-screen="admin-home"].pillow .tab-bar button.active .count {
+    background: rgba(26, 16, 0, 0.15);
+    color: var(--p-accent-on);
+  }
+  /* Support link inside the tab bar (provider) */
+  body[data-screen="provider-home"].pillow .tab-bar .tab-support {
+    margin-inline-start: auto;
+    color: var(--p-ink-mute);
+    text-decoration: none;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    transition: background 180ms ease, color 180ms ease;
+  }
+  body[data-screen="provider-home"].pillow .tab-bar .tab-support:hover {
+    color: var(--p-ink);
+    background: var(--p-card-tint);
+  }
+
+  /* Filter strip — inline `From:` / `To:` labels next to the dropdown
+     (reclaims vertical space that the stacked-label layout was eating). */
+  body[data-screen="provider-home"].pillow .filter-strip,
+  body[data-screen="admin-home"].pillow .filter-strip {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 14px;
+    border: 0;
+  }
+  body[data-screen="provider-home"].pillow .filter-strip input[type="text"],
+  body[data-screen="provider-home"].pillow .filter-strip > select,
+  body[data-screen="admin-home"].pillow .filter-strip input[type="text"],
+  body[data-screen="admin-home"].pillow .filter-strip > select {
+    background: var(--p-card);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 13.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow:
+      0 6px 16px -12px var(--p-shadow-drop),
+      0 1px 0 var(--p-hi-line) inset,
+      0 1px 2px var(--p-shadow-tight);
+    outline: 0;
+    min-width: 180px;
+  }
+  body[data-screen="provider-home"].pillow .filter-strip input[type="text"] {
+    flex: 1 1 260px;
+  }
+  body[data-screen="provider-home"].pillow .filter-strip input[type="text"]:focus,
+  body[data-screen="provider-home"].pillow .filter-strip > select:focus,
+  body[data-screen="admin-home"].pillow .filter-strip input[type="text"]:focus,
+  body[data-screen="admin-home"].pillow .filter-strip > select:focus {
+    box-shadow: 0 6px 16px -8px var(--p-shadow-drop), 0 0 0 2px var(--p-accent) inset;
+  }
+  body[data-screen="provider-home"].pillow .filter-strip input::placeholder,
+  body[data-screen="admin-home"].pillow .filter-strip input::placeholder {
+    color: var(--p-ink-faint);
+  }
+  /* Inline label chip — turns `.fld` into a horizontal row with `From:`
+     text glued to the select */
+  body[data-screen="provider-home"].pillow .filter-strip .fld,
+  body[data-screen="admin-home"].pillow .filter-strip .fld {
+    display: inline-flex; flex-direction: row; align-items: center;
+    gap: 0;
+    background: var(--p-card);
+    border: 0;
+    border-radius: 999px;
+    padding: 0 6px 0 16px;
+    box-shadow:
+      0 6px 16px -12px var(--p-shadow-drop),
+      0 1px 0 var(--p-hi-line) inset,
+      0 1px 2px var(--p-shadow-tight);
+    min-width: 180px;
+  }
+  body[data-screen="provider-home"].pillow .filter-strip .fld > .lbl,
+  body[data-screen="admin-home"].pillow .filter-strip .fld > .lbl {
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--p-ink-mute);
+    margin: 0 8px 0 0;
+    padding: 0;
+    white-space: nowrap;
+  }
+  body[data-screen="provider-home"].pillow .filter-strip .fld > .lbl::after,
+  body[data-screen="admin-home"].pillow .filter-strip .fld > .lbl::after {
+    content: ':';
+  }
+  body[data-screen="provider-home"].pillow .filter-strip .fld > select,
+  body[data-screen="admin-home"].pillow .filter-strip .fld > select {
+    background: transparent;
+    color: var(--p-ink);
+    border: 0;
+    padding: 10px 8px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    outline: 0;
+    box-shadow: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Booking row (My Bookings tab) — pillow surface + inner meta */
+  body[data-screen="provider-home"].pillow .booking-row,
+  body[data-screen="admin-home"].pillow .booking-row {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    margin-bottom: 10px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    transition: transform 180ms ease, box-shadow 220ms ease;
+    font-family: var(--p-sans);
+  }
+  body[data-screen="provider-home"].pillow .booking-row:hover,
+  body[data-screen="admin-home"].pillow .booking-row:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 14px 30px -14px var(--p-shadow-drop),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="provider-home"].pillow .booking-row.past,
+  body[data-screen="admin-home"].pillow .booking-row.past {
+    opacity: 0.75;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .meta-row,
+  body[data-screen="admin-home"].pillow .booking-row .meta-row {
+    gap: 10px;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .chip-id,
+  body[data-screen="admin-home"].pillow .booking-row .chip-id {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 9.5px;
+    padding: 3px 9px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--p-card-tint);
+    color: var(--p-ink-mute);
+    letter-spacing: 0.14em;
+    font-variant-numeric: tabular-nums;
+    text-transform: none;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .ff-mono,
+  body[data-screen="admin-home"].pillow .booking-row .ff-mono {
+    font-family: var(--p-sans);
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .route-line,
+  body[data-screen="admin-home"].pillow .booking-row .route-line {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--p-ink);
+  }
+  body[data-screen="provider-home"].pillow .booking-row .route-line .arrow,
+  body[data-screen="admin-home"].pillow .booking-row .route-line .arrow {
+    color: var(--p-accent);
+    margin: 0 8px;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .info-line,
+  body[data-screen="admin-home"].pillow .booking-row .info-line {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 12.5px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    line-height: 1.55;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .info-line b,
+  body[data-screen="admin-home"].pillow .booking-row .info-line b {
+    color: var(--p-ink);
+    font-weight: 700;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .commission-line,
+  body[data-screen="admin-home"].pillow .booking-row .commission-line {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(50,80,140,0.10);
+  }
+  body[data-screen="provider-home"].pillow .booking-row .walkin-tag {
+    color: var(--p-accent);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Action buttons on rows/cards — retint by variant */
+  body[data-screen="provider-home"].pillow .booking-row .btn-inline,
+  body[data-screen="admin-home"].pillow .booking-row .btn-inline,
+  body[data-screen="provider-home"].pillow .trip-card .btn-inline.alt,
+  body[data-screen="admin-home"].pillow .trip-card .btn-inline.alt {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+  }
+  body[data-screen="provider-home"].pillow .booking-row .btn-inline:hover,
+  body[data-screen="admin-home"].pillow .booking-row .btn-inline:hover,
+  body[data-screen="provider-home"].pillow .trip-card .btn-inline.alt:hover,
+  body[data-screen="admin-home"].pillow .trip-card .btn-inline.alt:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
+  }
+  /* Success variant (Confirm Payment on walk-ins) — moss green pill */
+  body[data-screen="provider-home"].pillow .booking-row .btn-inline.success,
+  body[data-screen="admin-home"].pillow .booking-row .btn-inline.success {
+    background: var(--p-ok);
+    color: white;
+    box-shadow: 0 8px 18px -8px rgba(23,166,107,0.5), 0 1px 0 rgba(255,255,255,0.2) inset;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .btn-inline.success:hover,
+  body[data-screen="admin-home"].pillow .booking-row .btn-inline.success:hover {
+    background: var(--p-ok);
+    filter: brightness(1.05);
+  }
+  /* Ghost variant (View ticket) */
+  body[data-screen="provider-home"].pillow .booking-row .btn-inline.ghost,
+  body[data-screen="admin-home"].pillow .booking-row .btn-inline.ghost {
+    background: transparent;
+    color: var(--p-ink-mute);
+    box-shadow: 0 0 0 1px rgba(50,80,140,0.14) inset;
+  }
+  body[data-screen="provider-home"].pillow .booking-row .btn-inline.ghost:hover,
+  body[data-screen="admin-home"].pillow .booking-row .btn-inline.ghost:hover {
+    background: var(--p-card-tint);
+    color: var(--p-ink);
+    transform: none;
+  }
+  /* Danger variant (Delete trip) */
+  body[data-screen="provider-home"].pillow .trip-card .btn-inline.danger,
+  body[data-screen="admin-home"].pillow .trip-card .btn-inline.danger {
+    background: rgba(217, 74, 62, 0.12);
+    color: var(--p-danger);
+    box-shadow: 0 0 0 1px rgba(217,74,62,0.22) inset;
+  }
+  body[data-screen="provider-home"].pillow .trip-card .btn-inline.danger:hover,
+  body[data-screen="admin-home"].pillow .trip-card .btn-inline.danger:hover {
+    background: var(--p-danger);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px -10px rgba(217,74,62,0.6);
+  }
+
+  /* Status pills — retint to pillow tokens */
+  body.pillow .status-pill {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10px;
+    padding: 3px 10px;
+    border: 0;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+  }
+  body.pillow .status-pill.pending           { background: rgba(227,154,42,0.16);  color: var(--p-warn);   }
+  body.pillow .status-pill.committed_pending { background: rgba(227,154,42,0.24);  color: var(--p-warn);   }
+  body.pillow .status-pill.confirmed         { background: rgba(23,166,107,0.16);  color: var(--p-ok);     }
+  body.pillow .status-pill.expired           { background: rgba(217,74,62,0.16);   color: var(--p-danger); }
+  body.pillow .status-pill.active            { background: rgba(23,166,107,0.16);  color: var(--p-ok);     }
+  body.pillow .status-pill.blocked           { background: rgba(217,74,62,0.16);   color: var(--p-danger); }
+  body.pillow .status-pill.walkin            { background: var(--p-card-tint);     color: var(--p-ink);    }
+  body.pillow .status-pill.paid              { background: rgba(23,166,107,0.16);  color: var(--p-ok);     }
+
+  /* Provider bookings footer (Gross / Commission / Net totals) */
+  body[data-screen="provider-home"].pillow .provider-bookings-footer {
+    display: flex; flex-wrap: wrap; gap: 20px;
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 14px 20px;
+    margin-top: 12px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-screen="provider-home"].pillow .provider-bookings-footer b {
+    color: var(--p-ink);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    margin-right: 6px;
+  }
+
+  /* Trip-card actions button spacing — flex layout with wrap */
+  body[data-screen="provider-home"].pillow .trip-card-actions,
+  body[data-screen="admin-home"].pillow .trip-card-actions {
+    display: flex; flex-wrap: wrap;
+  }
+
+  /* ── Shared modal pillow (add-trip, trip-edit, manifest) ────────────── */
+  /* Modals open regardless of underlying screen; scope to body.pillow so
+     the pillow language flows through as long as the caller is on a pillow
+     screen. */
+  body.pillow .modal-bg {
+    background: rgba(15, 21, 38, 0.60);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  body.pillow .modal-card {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 24px;
+    padding: 24px 26px;
+    box-shadow:
+      0 40px 80px -20px rgba(15, 21, 38, 0.5),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    font-family: var(--p-sans);
+  }
+  body.pillow .modal-card h3 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--p-ink);
+    margin: 0 0 4px;
+  }
+  body.pillow .modal-card .modal-sub {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 12.5px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+  body.pillow .modal-row {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  body.pillow .field-block label {
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    margin-bottom: 6px;
+    display: block;
+  }
+  body.pillow .field-block label small {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+  body.pillow .field-block input,
+  body.pillow .field-block select {
+    background: var(--p-card-tint);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0;
+    box-shadow:
+      0 1px 0 var(--p-hi-line) inset,
+      0 1px 2px var(--p-shadow-tight);
+    outline: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  body.pillow .field-block input:focus,
+  body.pillow .field-block select:focus {
+    box-shadow: 0 0 0 2px var(--p-accent) inset;
+    background: var(--p-card);
+  }
+  body.pillow .field-block select:invalid {
+    color: var(--p-ink-faint);
+  }
+
+  /* Layout-pick (45 / 48) — pillow chips */
+  body.pillow .layout-pick,
+  body.pillow .repeat-pick {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  body.pillow .layout-pick label,
+  body.pillow .repeat-pick label {
+    background: var(--p-card-tint);
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: transform 140ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+    display: flex; flex-direction: column; gap: 2px;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset;
+    text-align: center;
+  }
+  body.pillow .layout-pick label:hover,
+  body.pillow .repeat-pick label:hover {
+    transform: translateY(-1px);
+    background: var(--p-card);
+    box-shadow: 0 6px 14px -8px var(--p-shadow-drop), 0 1px 0 var(--p-hi-line) inset;
+  }
+  body.pillow .layout-pick label.active,
+  body.pillow .repeat-pick label.active {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    box-shadow:
+      0 12px 24px -12px var(--p-accent-shadow),
+      0 1px 0 rgba(255,255,255,0.15) inset;
+    transform: translateY(-1px);
+  }
+  body.pillow .layout-pick label .l-num {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+  body.pillow .layout-pick label .l-desc {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--p-ink-mute);
+  }
+  body.pillow .layout-pick label.active .l-desc {
+    color: var(--p-accent-on);
+    opacity: 0.85;
+  }
+  body.pillow .repeat-pick label {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--p-ink);
+  }
+  body.pillow .repeat-pick label.active {
+    color: var(--p-accent-on);
+  }
+
+  /* DOW-pick (Mon / Tue / … chips) */
+  body.pillow .dow-pick {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  body.pillow .dow-pick label {
+    background: var(--p-card-tint);
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset;
+    transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  }
+  body.pillow .dow-pick label:has(input:checked) {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    box-shadow:
+      0 8px 18px -10px var(--p-accent-shadow),
+      0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+
+  /* Modal actions row (Cancel + Save/Create) */
+  body.pillow .modal-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 20px;
+  }
+  body.pillow .modal-actions .cta {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 24px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 13.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    box-shadow: 0 12px 26px -12px var(--p-accent-shadow), 0 1px 0 rgba(255,255,255,0.15) inset;
+    width: auto;
+    min-width: 140px;
+    margin: 0;
+    height: auto;
+  }
+  body.pillow .modal-actions .cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px -12px var(--p-accent-shadow), 0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+  body.pillow .modal-actions .cta.ghost {
+    background: transparent;
+    color: var(--p-ink-mute);
+    box-shadow: 0 0 0 1px rgba(50,80,140,0.14) inset;
+    min-width: 100px;
+  }
+  body.pillow .modal-actions .cta.ghost:hover {
+    background: var(--p-card-tint);
+    color: var(--p-ink);
+    transform: none;
+    box-shadow: 0 0 0 1px rgba(50,80,140,0.14) inset;
+  }
+
+  /* Manifest modal (task #6): pillow table + header/footer */
+  body.pillow .modal-card.manifest-card {
+    max-width: 820px;
+  }
+  body.pillow .manifest-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px dashed rgba(50,80,140,0.14);
+  }
+  body.pillow .manifest-meta {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 12.5px;
+    color: var(--p-ink-mute);
+    text-align: right;
+    letter-spacing: 0;
+    line-height: 1.55;
+    font-variant-numeric: tabular-nums;
+  }
+  body.pillow .manifest-meta b {
+    color: var(--p-ink);
+    font-weight: 700;
+  }
+  body.pillow .manifest-body {
+    max-height: 55vh;
+    overflow-y: auto;
+  }
+  body.pillow .manifest-table {
+    font-family: var(--p-sans);
+    font-size: 13px;
+  }
+  body.pillow .manifest-table th {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    border-bottom: 1px solid rgba(50,80,140,0.16);
+    text-align: left;
+    padding: 10px 12px;
+  }
+  body.pillow .manifest-table td {
+    padding: 12px;
+    border-bottom: 1px dashed rgba(50,80,140,0.10);
+    color: var(--p-ink);
+    vertical-align: top;
+  }
+  body.pillow .manifest-table td.seat {
+    background: var(--p-ink);
+    color: var(--p-card);
+    font-family: var(--p-sans);
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.02em;
+    border-radius: 8px;
+  }
+
   /* ── Ticket modal (paper receipt in pillow tokens) ─────────────────── */
   /* The modal can open from any pillow screen (My Tickets, booking flow,
      etc.). Scoping to body.pillow makes the modal follow the current
@@ -4156,14 +4921,20 @@
     body[data-screen="customer-search"].pillow .p-chip-select {
       font-size: 19px;
     }
-    body[data-screen="customer-trips"].pillow .trip-card {
+    body[data-screen="customer-trips"].pillow .trip-card,
+  body[data-screen="provider-home"].pillow .trip-card,
+  body[data-screen="admin-home"].pillow .trip-card {
       padding: 14px 18px;
       border-radius: 20px;
     }
-    body[data-screen="customer-trips"].pillow .trip-card .route {
+    body[data-screen="customer-trips"].pillow .trip-card .route,
+  body[data-screen="provider-home"].pillow .trip-card .route,
+  body[data-screen="admin-home"].pillow .trip-card .route {
       font-size: 18px;
     }
-    body[data-screen="customer-trips"].pillow .trip-card .price {
+    body[data-screen="customer-trips"].pillow .trip-card .price,
+  body[data-screen="provider-home"].pillow .trip-card .price,
+  body[data-screen="admin-home"].pillow .trip-card .price {
       font-size: 22px;
     }
     body[data-screen="customer-trips"].pillow .provider-head h2 {
@@ -6006,7 +6777,7 @@ function escapeHtml(s) {
 const PILLOW_SCREENS = new Set([
   'welcome', 'sign-in', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
-  'admin-settings', 'notifications',
+  'admin-settings', 'notifications', 'provider-home', 'provider-book',
 ]);
 function goto(screen, opts = {}) {
   if (!opts.replaceHistory && STATE.screen !== screen) STATE.history.push(STATE.screen);
