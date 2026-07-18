@@ -5241,6 +5241,45 @@
     body.pillow .auth-stage h1 {
       font-size: 30px;
     }
+
+    /* Un-fix the provider + admin tab-bar on pillow mobile. V1 pinned it as
+       a fixed bottom nav; pillow keeps it inline like the desktop treatment
+       so admin/provider chrome doesn't clash with the customer bottom nav
+       pattern. Also frees the extra bottom padding v1 reserved. */
+    body[data-screen="provider-home"].pillow .admin-stage .tab-bar.provider-tabs,
+    body[data-screen="provider-home"].pillow .provider-stage .tab-bar.provider-tabs,
+    body[data-screen="admin-home"].pillow .admin-stage .tab-bar.admin-tabs {
+      position: static;
+      background: var(--p-card);
+      border-top: 0;
+      border-bottom: 0;
+      padding: 6px;
+      justify-content: flex-start;
+      gap: 8px;
+      box-shadow:
+        0 6px 16px -10px var(--p-shadow-drop),
+        0 1px 3px var(--p-shadow-tight),
+        0 1px 0 var(--p-hi-line) inset;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    body[data-screen="provider-home"].pillow .provider-stage .tab-bar button,
+    body[data-screen="admin-home"].pillow .admin-stage .tab-bar button {
+      flex: 0 0 auto;
+      padding: 8px 14px;
+      font-size: 12px;
+      letter-spacing: 0;
+      border-bottom: 0;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      line-height: 1;
+      text-transform: none;
+    }
+    body[data-screen="provider-home"].pillow main.canvas,
+    body[data-screen="admin-home"].pillow main.canvas {
+      padding-bottom: 24px;
+    }
     body[data-screen="customer-category"] .p-tile {
       min-height: 200px;
       border-radius: 22px;
