@@ -5153,6 +5153,106 @@
     box-shadow: 0 10px 18px -8px rgba(15,21,38,0.4);
   }
 
+  /* Rate-kind chips (Percentage / Flat per seat) — tone down the v1 Fraunces
+     22px "loud" title into a friendlier Inter 15px title case. Defensive
+     text-transform: none in case an ancestor tries to uppercase. */
+  body[data-screen="admin-settings"].pillow .settings-section .role-pick label {
+    padding: 12px 16px;
+    text-align: left;
+    align-items: flex-start;
+  }
+  body[data-screen="admin-settings"].pillow .settings-section .role-pick label .rp-title {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--p-ink);
+  }
+  body[data-screen="admin-settings"].pillow .settings-section .role-pick label.active .rp-title {
+    color: var(--p-accent-on);
+  }
+
+  /* ── Commission override rows ────────────────────────────────────────
+     Rows inside the Overrides pillow card. Retint the scope badge (was
+     dark v1 admin chip), swap the label + rate to Inter tabular, and
+     recast the Edit / Delete buttons as pillow chips (frosted default,
+     danger-tinted Delete). */
+  body[data-screen="admin-settings"].pillow .commission-override-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px dashed rgba(50,80,140,0.14);
+    font-family: var(--p-sans);
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row:last-child {
+    border-bottom: 0;
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row .scope-badge {
+    background: rgba(244,168,29,0.14);
+    color: var(--p-accent);
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 0;
+    flex: 0 0 auto;
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row .label {
+    flex: 1;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0;
+    color: var(--p-ink);
+    min-width: 0;
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row .rate {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--p-ink);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row .actions {
+    display: flex; gap: 6px; flex-shrink: 0;
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row .actions button {
+    appearance: none;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: background 180ms ease, transform 120ms ease, color 180ms ease, box-shadow 180ms ease;
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row .actions button:hover {
+    background: var(--p-card);
+    color: var(--p-ink);
+    transform: translateY(-1px);
+  }
+  /* Delete button (second in .actions) — danger-tinted */
+  body[data-screen="admin-settings"].pillow .commission-override-row .actions button:last-child {
+    background: rgba(217, 74, 62, 0.12);
+    color: var(--p-danger);
+    box-shadow: 0 0 0 1px rgba(217,74,62,0.22) inset;
+  }
+  body[data-screen="admin-settings"].pillow .commission-override-row .actions button:last-child:hover {
+    background: var(--p-danger);
+    color: white;
+    box-shadow: 0 10px 20px -10px rgba(217,74,62,0.6);
+  }
+
   /* Gear button in the topbar (all pillow screens) — bare icon, no chip.
      Same visual footprint as the old circle, just without the surround. */
   body.pillow .gear-btn {
