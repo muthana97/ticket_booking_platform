@@ -4227,6 +4227,343 @@
     border-radius: 8px;
   }
 
+  /* ── Admin home (Providers / Trips / Bookings / Payments / Reports) ── */
+  /* Trip-card, booking-row, tab-bar, filter-strip, empty-state, and modal
+     rules are all widened to admin-home above. Here we add the admin-only
+     pieces: .admin-row (Providers + Payments lists) with its capability
+     toggles, and the Reports tab (headline tiles + panels + tables). */
+
+  /* Provider / Payment rows */
+  body[data-screen="admin-home"].pillow .admin-row {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 18px 22px;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 10px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    transition: transform 180ms ease, box-shadow 220ms ease;
+    font-family: var(--p-sans);
+  }
+  body[data-screen="admin-home"].pillow .admin-row:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 14px 30px -14px var(--p-shadow-drop),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .main > div:first-child {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .name {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.015em;
+    color: var(--p-ink);
+  }
+  body[data-screen="admin-home"].pillow .admin-row .sub {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 12.5px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    line-height: 1.55;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .sub b {
+    color: var(--p-ink);
+    font-weight: 700;
+  }
+
+  /* Capability toggles (ADMIN-2) — pillow chips with amber-active state */
+  body[data-screen="admin-home"].pillow .admin-row .caps {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(50,80,140,0.10);
+    font-family: var(--p-sans);
+    font-size: 12px;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .caps .cap-label {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    margin-right: 4px;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .caps label.cap {
+    display: inline-flex; align-items: center;
+    gap: 0;
+    padding: 6px 12px;
+    background: var(--p-card-tint);
+    color: var(--p-ink-mute);
+    border-radius: 999px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset;
+    transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .caps label.cap input {
+    display: none;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked) {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    box-shadow:
+      0 8px 18px -10px var(--p-accent-shadow),
+      0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+
+  /* Row action buttons */
+  body[data-screen="admin-home"].pillow .admin-row .actions {
+    display: flex; gap: 8px; flex-shrink: 0;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .btn-inline {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+  }
+  body[data-screen="admin-home"].pillow .admin-row .btn-inline:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
+  }
+  body[data-screen="admin-home"].pillow .admin-row .btn-inline.success {
+    background: var(--p-ok);
+    color: white;
+    box-shadow: 0 8px 18px -8px rgba(23,166,107,0.5), 0 1px 0 rgba(255,255,255,0.2) inset;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .btn-inline.success:hover {
+    background: var(--p-ok);
+    filter: brightness(1.05);
+  }
+  body[data-screen="admin-home"].pillow .admin-row .btn-inline.danger {
+    background: rgba(217, 74, 62, 0.12);
+    color: var(--p-danger);
+    box-shadow: 0 0 0 1px rgba(217,74,62,0.22) inset;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .btn-inline.danger:hover {
+    background: var(--p-danger);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px -10px rgba(217,74,62,0.6);
+  }
+
+  /* ── Reports tab ────────────────────────────────────────────────────── */
+  body[data-screen="admin-home"].pillow .report-section {
+    margin: 24px 0;
+  }
+  body[data-screen="admin-home"].pillow .report-section h3 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.015em;
+    color: var(--p-ink);
+    margin: 0 0 14px;
+    padding-left: 12px;
+    position: relative;
+  }
+  body[data-screen="admin-home"].pillow .report-section h3::before {
+    content: '';
+    position: absolute; left: 0; top: 4px; bottom: 4px;
+    width: 4px;
+    border-radius: 4px;
+    background: var(--p-accent);
+  }
+
+  /* Headline tiles (Commission earned; Total bookings / Total passengers) */
+  body[data-screen="admin-home"].pillow .report-headline {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+    display: flex; align-items: baseline; gap: 14px;
+    flex-wrap: wrap;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-home"].pillow .report-headline-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  body[data-screen="admin-home"].pillow .report-headline-grid > div {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 4px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-home"].pillow .kv-label {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+  }
+  body[data-screen="admin-home"].pillow .kv-value {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    color: var(--p-ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Report panel — table wrapped in a pillow surface */
+  body[data-screen="admin-home"].pillow .report-panel {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-home"].pillow .report-panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  body[data-screen="admin-home"].pillow .report-panel-head h4 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+    color: var(--p-ink);
+    margin: 0;
+  }
+  /* Export CSV button */
+  body[data-screen="admin-home"].pillow .report-panel-head .btn-inline {
+    appearance: none;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: background 180ms ease, transform 120ms ease;
+  }
+  body[data-screen="admin-home"].pillow .report-panel-head .btn-inline:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
+  }
+
+  /* Report table — Inter, tabular numerics */
+  body[data-screen="admin-home"].pillow .report-table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--p-sans);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-screen="admin-home"].pillow .report-table th {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(50,80,140,0.16);
+    text-align: left;
+  }
+  body[data-screen="admin-home"].pillow .report-table td {
+    padding: 10px 12px;
+    border-bottom: 1px dashed rgba(50,80,140,0.10);
+    color: var(--p-ink);
+    font-weight: 500;
+    text-align: left;
+  }
+  body[data-screen="admin-home"].pillow .report-table tr:nth-child(even) td {
+    background: transparent;
+  }
+  body[data-screen="admin-home"].pillow .report-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* Reports filter strip — uses <label> wrappers with inline <span> +
+     <input>/<select> (different markup from the trips/bookings filter). */
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip {
+    gap: 10px;
+  }
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--p-card);
+    border: 0;
+    border-radius: 999px;
+    padding: 4px 6px 4px 16px;
+    box-shadow:
+      0 6px 16px -12px var(--p-shadow-drop),
+      0 1px 0 var(--p-hi-line) inset,
+      0 1px 2px var(--p-shadow-tight);
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    text-transform: none;
+    min-width: 180px;
+  }
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label > span::after {
+    content: ':';
+  }
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label input,
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label select {
+    background: transparent;
+    color: var(--p-ink);
+    border: 0;
+    padding: 8px 8px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    outline: 0;
+    box-shadow: none;
+    flex: 1;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
   /* ── Ticket modal (paper receipt in pillow tokens) ─────────────────── */
   /* The modal can open from any pillow screen (My Tickets, booking flow,
      etc.). Scoping to body.pillow makes the modal follow the current
@@ -6778,6 +7115,7 @@ const PILLOW_SCREENS = new Set([
   'welcome', 'sign-in', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
   'admin-settings', 'notifications', 'provider-home', 'provider-book',
+  'admin-home',
 ]);
 function goto(screen, opts = {}) {
   if (!opts.replaceHistory && STATE.screen !== screen) STATE.history.push(STATE.screen);
