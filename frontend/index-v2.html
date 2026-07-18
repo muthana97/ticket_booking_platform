@@ -5499,11 +5499,32 @@
       font-size: 10px;
     }
 
-    /* Print-mode only: while the native screenshot flow captures the
-       ticket, snap the modal to edge-to-edge so the screenshot has no
-       backdrop bleed for the crop to include. The class is toggled by
-       _nativeScreenshotTicketToPdf and removed as soon as the pixels
-       are grabbed — the live modal view keeps its floating card look. */
+    /* Ticket modal on phone — force a compact floating-card layout with
+       a solid dark backdrop. Some iOS WebView builds render backdrop-
+       filter as a no-op which lets the underlying screen bleed through
+       the semi-transparent overlay; bumping opacity to 0.88 keeps the
+       backdrop opaque even without blur. Ticket itself picks up a
+       max-width so the "SETTLE WITHIN…" stamp + total row don't stretch
+       the card to viewport-width on a narrow screen. */
+    body.pillow #ticket-modal.modal-bg {
+      background: rgba(15, 21, 38, 0.88);
+      padding: 16px 12px calc(16px + env(safe-area-inset-bottom));
+      align-items: center;
+      justify-content: center;
+    }
+    body.pillow #ticket-modal .ticket {
+      width: 100%;
+      max-width: 460px;
+      max-height: none;
+      height: auto;
+      min-height: 0;
+      margin: 0 auto;
+    }
+
+    /* Print-mode only: snap the modal to edge-to-edge for the duration
+       of Screenshot.take() so the captured pixels have no backdrop
+       bleed. The class is added by _nativeScreenshotTicketToPdf and
+       removed as soon as capture returns. */
     body.pillow.ticket-print-mode #ticket-modal.modal-bg {
       padding: 0;
       background: var(--p-card);
