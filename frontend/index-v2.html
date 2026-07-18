@@ -3285,6 +3285,183 @@
     text-transform: none;
   }
 
+  /* ── Notifications screen (universal — all 3 roles) ───────────────── */
+  /* Bell in the topbar: keep the bare icon but retint the unread pill to
+     amber (was oxblood + JetBrains). Applies on every pillow screen so the
+     bell reads consistently as you navigate. */
+  body.pillow .topbar .session button.notif-btn {
+    color: var(--p-ink);
+    padding: 4px 6px;
+  }
+  body.pillow .topbar .session button.notif-btn svg { opacity: 0.9; }
+  body.pillow .topbar .session button.notif-btn:hover svg { opacity: 1; }
+  body.pillow .topbar .session button.notif-btn .notif-count {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 0;
+    padding: 1px 5px;
+    border-radius: 999px;
+    box-shadow: 0 4px 10px -4px var(--p-accent-shadow);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Screen layout */
+  body[data-screen="notifications"].pillow .screen {
+    padding: 24px 20px 48px;
+  }
+  body[data-screen="notifications"].pillow #screen-notifications .canvas-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Header — title + Mark all */
+  body[data-screen="notifications"].pillow .notif-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px; padding-bottom: 0; border-bottom: 0;
+    gap: 12px;
+  }
+  body[data-screen="notifications"].pillow .notif-head h2 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: -0.02em;
+    color: var(--p-ink);
+    margin: 0;
+  }
+  body[data-screen="notifications"].pillow .notif-head .mark-all {
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: background 180ms ease, transform 120ms ease;
+  }
+  body[data-screen="notifications"].pillow .notif-head .mark-all:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
+  }
+
+  /* List + rows (pillow surfaces) */
+  body[data-screen="notifications"].pillow .notif-list {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  body[data-screen="notifications"].pillow .notif-row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 14px 18px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    cursor: pointer;
+    transition: transform 180ms ease, box-shadow 220ms ease;
+    font-family: var(--p-sans);
+    position: relative;
+    overflow: hidden;
+  }
+  body[data-screen="notifications"].pillow .notif-row:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 14px 30px -14px var(--p-shadow-drop),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  /* Unread — amber left stripe (matches My Tickets Awaiting) + tinted icon */
+  body[data-screen="notifications"].pillow .notif-row.unread {
+    border-left: 0;
+  }
+  body[data-screen="notifications"].pillow .notif-row.unread::before {
+    content: '';
+    position: absolute; left: 0; top: 14px; bottom: 14px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: var(--p-accent);
+  }
+  body[data-screen="notifications"].pillow .notif-row.unread .n-icon {
+    background: rgba(244, 168, 29, 0.16);
+    color: var(--p-accent);
+  }
+
+  /* Icon dot */
+  body[data-screen="notifications"].pillow .notif-row .n-icon {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    display: grid; place-items: center;
+    background: var(--p-card-tint);
+    color: var(--p-ink);
+    font-size: 18px;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 1px 2px var(--p-shadow-tight);
+  }
+
+  /* Body — title + sub */
+  body[data-screen="notifications"].pillow .notif-row .n-body {
+    min-width: 0;
+  }
+  body[data-screen="notifications"].pillow .notif-row .n-body .n-title {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+    color: var(--p-ink);
+    margin-bottom: 2px;
+    line-height: 1.25;
+  }
+  body[data-screen="notifications"].pillow .notif-row .n-body .n-sub {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 12.5px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    line-height: 1.35;
+  }
+
+  /* When (relative timestamp) */
+  body[data-screen="notifications"].pillow .notif-row .n-when {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--p-ink-faint);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    align-self: center;
+  }
+
+  /* Empty state */
+  body[data-screen="notifications"].pillow .notif-empty {
+    background: var(--p-card);
+    border-radius: 22px;
+    padding: 48px 24px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    text-align: center;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
   /* ── Ticket modal (paper receipt in pillow tokens) ─────────────────── */
   /* The modal can open from any pillow screen (My Tickets, booking flow,
      etc.). Scoping to body.pillow makes the modal follow the current
@@ -5829,7 +6006,7 @@ function escapeHtml(s) {
 const PILLOW_SCREENS = new Set([
   'welcome', 'sign-in', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
-  'admin-settings',
+  'admin-settings', 'notifications',
 ]);
 function goto(screen, opts = {}) {
   if (!opts.replaceHistory && STATE.screen !== screen) STATE.history.push(STATE.screen);
