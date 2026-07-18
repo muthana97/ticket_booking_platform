@@ -8924,8 +8924,13 @@ async function _printOrShareTicket() {
   const jsPDFCtor = window.jspdf?.jsPDF || window.jsPDF;
   if (!ticket || !jsPDFCtor) { window.print(); return; }
 
-  // Native path — real WebView screenshot + crop.
-  if (tazShare.isNative()) {
+  // Native path — real WebView screenshot + crop. Only Android takes
+  // this path: iOS WKWebView renders <foreignObject> SVG correctly, so
+  // the DOM-render path below produces cleaner PDFs than screenshot-and-
+  // crop (which is inherently viewport-bound and picks up status-bar
+  // pixels + misses any content that scrolled off-screen).
+  const platform = window.Capacitor?.getPlatform?.() || '';
+  if (tazShare.isNative() && platform !== 'ios') {
     const ok = await _nativeScreenshotTicketToPdf(ticket, jsPDFCtor);
     if (ok) return;
     // Fall through to web path if screenshot plugin missing / crop failed.
