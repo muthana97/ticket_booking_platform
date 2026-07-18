@@ -3577,9 +3577,35 @@
     line-height: 1.5;
   }
   body[data-screen="admin-settings"].pillow .settings-section .panel-head {
+    background: transparent;
+    border: 0;
+    padding: 0;
     align-items: center;
     gap: 12px;
     margin-bottom: 8px;
+    font-family: var(--p-sans);
+    font-size: inherit;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  body[data-screen="admin-settings"].pillow .settings-section .btn-inline {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 8px 16px -8px var(--p-accent-shadow);
+    transition: transform 140ms ease, box-shadow 180ms ease;
+  }
+  body[data-screen="admin-settings"].pillow .settings-section .btn-inline:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 20px -10px var(--p-accent-shadow);
   }
 
   /* Role-pick — used for the Language section (English / عربي) */
