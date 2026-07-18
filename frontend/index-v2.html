@@ -5499,11 +5499,12 @@
       font-size: 10px;
     }
 
-    /* Phone treatment — ticket fills the viewport edge-to-edge like a
-       document preview (matches the saved-PDF look on Android's share
-       sheet). Kills the 12px modal padding + backdrop blur so the
-       underlying screen no longer bleeds around the ticket card. */
-    body.pillow #ticket-modal.modal-bg {
+    /* Print-mode only: while the native screenshot flow captures the
+       ticket, snap the modal to edge-to-edge so the screenshot has no
+       backdrop bleed for the crop to include. The class is toggled by
+       _nativeScreenshotTicketToPdf and removed as soon as the pixels
+       are grabbed — the live modal view keeps its floating card look. */
+    body.pillow.ticket-print-mode #ticket-modal.modal-bg {
       padding: 0;
       background: var(--p-card);
       -webkit-backdrop-filter: none;
@@ -5511,7 +5512,7 @@
       align-items: flex-start;
       justify-content: flex-start;
     }
-    body.pillow #ticket-modal .ticket {
+    body.pillow.ticket-print-mode #ticket-modal .ticket {
       width: 100%;
       max-width: 100%;
       min-height: 100%;
@@ -5519,10 +5520,8 @@
       box-shadow: none;
       margin: 0;
     }
-    /* Perforations retinted for the near-white backdrop so they still
-       read as boarding-stub notches instead of blending in. */
-    body.pillow #ticket-modal .ticket::before,
-    body.pillow #ticket-modal .ticket::after {
+    body.pillow.ticket-print-mode #ticket-modal .ticket::before,
+    body.pillow.ticket-print-mode #ticket-modal .ticket::after {
       background: radial-gradient(circle at 9px 50%, rgba(15,21,38,0.35) 5px, transparent 5.5px) repeat-x;
       background-size: 18px 18px;
     }
@@ -8761,16 +8760,23 @@ async function _nativeScreenshotTicketToPdf(ticket, jsPDFCtor) {
   // Hide the modal buttons + snap the modal to the top before capture.
   // Buttons are display:none'd so they neither appear in the screenshot
   // NOR count toward the ticket's bounding rect used for cropping.
+  //
+  // Print-mode class snaps the modal to edge-to-edge for the capture
+  // only — kills the backdrop bleed the crop would otherwise sample
+  // from — and is removed immediately after so the live modal keeps
+  // its floating-card look.
   const modal   = $('#ticket-modal');
   const actions = ticket.querySelector('.ticket-actions');
   const prevScroll         = modal ? modal.scrollTop : 0;
   const prevActionsDisplay = actions ? actions.style.display : '';
   if (actions) actions.style.display = 'none';
   if (modal)   modal.scrollTop = 0;
+  document.body.classList.add('ticket-print-mode');
   // Let the layout settle for two frames before firing the capture.
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   const restore = () => {
+    document.body.classList.remove('ticket-print-mode');
     if (actions) actions.style.display = prevActionsDisplay;
     if (modal)   modal.scrollTop = prevScroll;
   };
