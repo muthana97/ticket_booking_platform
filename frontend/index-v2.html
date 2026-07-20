@@ -3753,7 +3753,9 @@
     content: ':';
   }
   body[data-screen="provider-home"].pillow .filter-strip .fld > select,
-  body[data-screen="admin-home"].pillow .filter-strip .fld > select {
+  body[data-screen="admin-home"].pillow .filter-strip .fld > select,
+  body[data-screen="provider-home"].pillow .filter-strip .fld > input,
+  body[data-screen="admin-home"].pillow .filter-strip .fld > input {
     background: transparent;
     color: var(--p-ink);
     border: 0;
@@ -3767,6 +3769,20 @@
     box-shadow: none;
     flex: 1;
     min-width: 0;
+  }
+  /* Date input inside a chip renders with light default text when empty;
+     nudge the placeholder to the muted ink so the chip reads correctly. */
+  body[data-screen="provider-home"].pillow .filter-strip .fld > input[type="date"]:invalid,
+  body[data-screen="admin-home"].pillow .filter-strip .fld > input[type="date"]:invalid {
+    color: var(--p-ink-faint);
+  }
+  /* Native date-picker's calendar icon — retint via filter so it reads
+     against the near-white pillow chip instead of default grey. */
+  body[data-screen="provider-home"].pillow .filter-strip .fld > input[type="date"]::-webkit-calendar-picker-indicator,
+  body[data-screen="admin-home"].pillow .filter-strip .fld > input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.55;
+    filter: invert(28%);
   }
 
   /* Booking row (My Bookings tab) — pillow surface + inner meta */
@@ -6066,11 +6082,7 @@
               <input type="text" id="pt-q" data-i18n-placeholder="provider.trips.q" placeholder="Search by origin, destination, trip id…" />
               <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="pt-origin" data-optional="1"></select></div>
               <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="pt-destination" data-optional="1"></select></div>
-              <select id="pt-time">
-                <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
-                <option value="past" data-i18n="admin.trips.time.past">Past</option>
-                <option value="all" data-i18n="admin.trips.time.all">All</option>
-              </select>
+              <div class="fld"><span class="lbl" data-i18n="search.date">Date</span><input type="date" id="pt-date" /></div>
             </div>
             <div class="trip-list" id="provider-trip-list"></div>
             <div class="empty-state hidden" id="provider-trip-empty">
@@ -6083,6 +6095,7 @@
               <input type="text" id="pb-q" data-i18n-placeholder="provider.bookings.q" placeholder="Search by customer, billing ref, booking id…" />
               <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="pb-origin" data-optional="1"></select></div>
               <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="pb-destination" data-optional="1"></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.date">Date</span><input type="date" id="pb-date" /></div>
               <select id="pb-status">
                 <option value="any" data-i18n="status.filter.any">Any status</option>
                 <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
@@ -6137,11 +6150,6 @@
               <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="at-destination" data-optional="1"></select></div>
               <div class="fld"><span class="lbl" data-i18n="search.operator">Operator</span><select id="at-provider"><option value="" data-i18n="search.operator.any">Any operator</option></select></div>
               <div class="fld"><span class="lbl" data-i18n="search.date">Date</span><input type="date" id="at-date" /></div>
-              <select id="at-time">
-                <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
-                <option value="past" data-i18n="admin.trips.time.past">Past</option>
-                <option value="all" data-i18n="admin.trips.time.all">All</option>
-              </select>
             </div>
             <div id="admin-trip-list"></div>
             <div class="empty-state hidden" id="admin-trip-empty">
@@ -7898,6 +7906,11 @@ async function refreshProviderTab() {
   // switchProviderTab) covers the initial provider-home entry, where the
   // click handler never fires.
   $('#add-trip-open-btn').classList.toggle('hidden', STATE.providerTab !== 'trips');
+  // Operator's own My Trips list feeds the walk-in booking flow, so pin
+  // the date filter to today+ — an operator shouldn't be able to walk-in
+  // on a trip that already departed. Bookings tab is a historic view of
+  // records, so it deliberately stays unguarded.
+  if (STATE.providerTab === 'trips') pinDateFloor('#pt-date');
   if (STATE.providerTab === 'trips')    return refreshProviderTrips();
   if (STATE.providerTab === 'bookings') return refreshProviderBookings();
 }
@@ -7913,16 +7926,20 @@ function switchProviderTab(tab) {
   refreshProviderTab();
 }
 
-async function refreshProviderTrips() {
+async function refreshProviderTrips(opts = {}) {
   const q = $('#pt-q')?.value.trim() || '';
   const origin = $('#pt-origin')?.value.trim() || '';
   const destination = $('#pt-destination')?.value.trim() || '';
-  const time = $('#pt-time')?.value || 'upcoming';
+  const travel_date = $('#pt-date')?.value || '';
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (origin) params.set('origin', origin);
   if (destination) params.set('destination', destination);
-  if (time) params.set('time', time);
+  // Empty date → server default (upcoming). Set → narrows to that day.
+  // allTime=true is used by notification routing so a specific trip id
+  // resolves even if it's in the past.
+  if (travel_date) params.set('travel_date', travel_date);
+  else if (opts.allTime) params.set('time', 'all');
   try {
     const trips = await api('/trips/mine?' + params);
     $('#pcnt-trips').textContent = trips.length;
@@ -7942,11 +7959,13 @@ async function refreshProviderBookings() {
   const origin = $('#pb-origin')?.value.trim() || '';
   const destination = $('#pb-destination')?.value.trim() || '';
   const status = $('#pb-status')?.value || 'any';
+  const travel_date = $('#pb-date')?.value || '';
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (origin) params.set('origin', origin);
   if (destination) params.set('destination', destination);
   if (status) params.set('status', status);
+  if (travel_date) params.set('travel_date', travel_date);
   try {
     const bookings = await api('/bookings/provider/mine?' + params);
     $('#pcnt-bookings').textContent = bookings.length;
@@ -8203,19 +8222,19 @@ function _routeFromNotif(n) {
 function _openAdminTripsFiltered(tripId) {
   goto('admin-home');
   switchAdminTab('trips');
-  const q = $('#at-q'); const time = $('#at-time');
+  const q = $('#at-q'); const date = $('#at-date');
   if (q)    q.value = String(tripId);
-  if (time) time.value = 'all';
-  renderAdminTrips();
+  if (date) date.value = '';
+  renderAdminTrips({ allTime: true });
 }
 
 function _openProviderTripsFiltered(tripId) {
   goto('provider-home');
   switchProviderTab('trips');
-  const q = $('#pt-q'); const time = $('#pt-time');
+  const q = $('#pt-q'); const date = $('#pt-date');
   if (q)    q.value = String(tripId);
-  if (time) time.value = 'all';
-  refreshProviderTrips();
+  if (date) date.value = '';
+  refreshProviderTrips({ allTime: true });
 }
 
 async function renderNotifications() {
@@ -9431,21 +9450,22 @@ async function setProviderCapability(providerId, key, value, checkbox) {
   }
 }
 
-async function renderAdminTrips() {
+async function renderAdminTrips(opts = {}) {
   const q = $('#at-q').value.trim();
   const origin = $('#at-origin').value.trim();
   const destination = $('#at-destination').value.trim();
-  const time = $('#at-time').value || 'upcoming';
   const provider_id = $('#at-provider')?.value || '';
   const travel_date = $('#at-date')?.value || '';
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (origin) params.set('origin', origin);
   if (destination) params.set('destination', destination);
-  // travel_date overrides the upcoming/past/all bucket — the API refuses
-  // both at once cleanly, but we skip `time` when a specific day is set.
+  // Date empty → server default (upcoming). Date set → server narrows
+  // to that calendar day only. Notification routing sets allTime=true
+  // to include past trips so a specific trip id resolves regardless
+  // of when it departed.
   if (travel_date) params.set('travel_date', travel_date);
-  else if (time) params.set('time', time);
+  else if (opts.allTime) params.set('time', 'all');
   if (provider_id) params.set('provider_id', provider_id);
   const trips = await api('/admin/trips?' + params);
   $('#cnt-trips').textContent = trips.length;
@@ -9737,11 +9757,13 @@ function populateCitySelects() {
   });
 }
 
-// Pin the search-date input's `min` to today so the browser's native
-// date picker greys out past days — you can't book a trip in the past.
-// Also bump the current value forward if it's already stale.
-function setSearchDateFloor() {
-  const inp = document.getElementById('search-date');
+// Pin a date input's `min` to today so the browser's native date picker
+// greys out past days — you can't book a trip in the past. Also bump
+// the current value forward if it's already stale. Historic-lookup
+// pickers (admin trips, admin/provider bookings) deliberately don't
+// call this so admins can still filter to past dates.
+function pinDateFloor(sel) {
+  const inp = document.querySelector(sel);
   if (!inp) return;
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -9751,6 +9773,8 @@ function setSearchDateFloor() {
   inp.min = isoToday;
   if (inp.value && inp.value < isoToday) inp.value = isoToday;
 }
+// Back-compat wrapper for the customer search screen call site.
+function setSearchDateFloor() { pinDateFloor('#search-date'); }
 
 // Populate an admin filter's operator dropdown from the /trips/providers
 // roster. Kept separate from populateOperatorSelect (which is scoped to
@@ -10054,7 +10078,6 @@ function wire() {
       tripFilterTimer = setTimeout(renderAdminTrips, 280);
     });
   });
-  $('#at-time').addEventListener('change', renderAdminTrips);
   $('#at-provider')?.addEventListener('change', renderAdminTrips);
   $('#at-date')?.addEventListener('change', renderAdminTrips);
 
@@ -10066,7 +10089,7 @@ function wire() {
       providerTripFilterTimer = setTimeout(refreshProviderTrips, 280);
     });
   });
-  $('#pt-time').addEventListener('change', refreshProviderTrips);
+  $('#pt-date')?.addEventListener('change', refreshProviderTrips);
 
   // Provider bookings filter strip
   let providerBookingFilterTimer = null;
@@ -10077,6 +10100,7 @@ function wire() {
     });
   });
   $('#pb-status').addEventListener('change', refreshProviderBookings);
+  $('#pb-date')?.addEventListener('change', refreshProviderBookings);
 }
 
 /* PWA service worker (no-op on initial fail).
