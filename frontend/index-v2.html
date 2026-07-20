@@ -8791,14 +8791,37 @@ async function _nativeScreenshotTicketToPdf(ticket, jsPDFCtor) {
   const actions = ticket.querySelector('.ticket-actions');
   const prevScroll         = modal ? modal.scrollTop : 0;
   const prevActionsDisplay = actions ? actions.style.display : '';
+  const prevTicketTransform = ticket.style.transform;
+  const prevTicketTransformOrigin = ticket.style.transformOrigin;
   if (actions) actions.style.display = 'none';
   if (modal)   modal.scrollTop = 0;
   document.body.classList.add('ticket-print-mode');
-  // Let the layout settle for two frames before firing the capture.
+  // Let the layout settle for one frame so print-mode CSS + hidden
+  // actions are applied before we measure the ticket.
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  // Screenshot.take() only captures the visible viewport — if the ticket
+  // is taller than the phone screen, the bottom would be cut off in the
+  // saved PDF. Fit the full ticket into the viewport by shrinking it via
+  // CSS transform, then measure the scaled bounding rect. Layout box
+  // stays the same so the modal-bg scrollbar doesn't reappear.
+  const viewH0 = document.documentElement.clientHeight || window.innerHeight;
+  const rawH   = ticket.offsetHeight || ticket.getBoundingClientRect().height;
+  const HEIGHT_MARGIN = 8;                       // small breathing room
+  const fitScale = rawH > (viewH0 - HEIGHT_MARGIN)
+    ? (viewH0 - HEIGHT_MARGIN) / rawH
+    : 1;
+  if (fitScale < 1) {
+    ticket.style.transformOrigin = 'top left';
+    ticket.style.transform       = `scale(${fitScale})`;
+    // Wait for the transform to paint before capturing.
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
 
   const restore = () => {
     document.body.classList.remove('ticket-print-mode');
+    ticket.style.transform       = prevTicketTransform;
+    ticket.style.transformOrigin = prevTicketTransformOrigin;
     if (actions) actions.style.display = prevActionsDisplay;
     if (modal)   modal.scrollTop = prevScroll;
   };
@@ -8836,16 +8859,50 @@ async function _nativeScreenshotTicketToPdf(ticket, jsPDFCtor) {
   const viewW = document.documentElement.clientWidth  || window.innerWidth;
   const scale = img.naturalWidth / viewW;
 
-  // Measure the top safe-area inset (status bar / notch height) in CSS px
-  // via a hidden probe pinned to env(safe-area-inset-top). Then convert to
-  // bitmap pixels via the same scale.
-  const probe = document.createElement('div');
-  probe.style.cssText =
-    'position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);' +
-    'pointer-events:none;visibility:hidden;';
-  document.body.appendChild(probe);
-  const topInsetCss = probe.offsetHeight || 0;
-  probe.remove();
+  // Measure the top safe-area inset (status bar / notch height) in CSS px.
+  // Try a few approaches — iOS Capacitor returns 0 from a simple height:env()
+  // probe on some builds, so we cascade through multiple methods.
+  let topInsetCss = 0;
+
+  // Method 1: injected CSS custom property, read via getComputedStyle.
+  try {
+    if (!document.querySelector('#taz-sat-probe')) {
+      const s = document.createElement('style');
+      s.id = 'taz-sat-probe';
+      s.textContent = ':root { --taz-sat: env(safe-area-inset-top, 0px); }';
+      document.head.appendChild(s);
+    }
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--taz-sat').trim();
+    topInsetCss = parseFloat(raw) || 0;
+  } catch (_) { /* fall through */ }
+
+  // Method 2: hidden probe using padding-top:env() — padding tends to be
+  // more reliable than height:env() across WebViews.
+  if (!topInsetCss) {
+    try {
+      const probe = document.createElement('div');
+      probe.style.cssText =
+        'position:fixed;top:0;left:0;width:1px;padding-top:env(safe-area-inset-top,0px);' +
+        'pointer-events:none;visibility:hidden;';
+      document.body.appendChild(probe);
+      topInsetCss = probe.getBoundingClientRect().height || 0;
+      probe.remove();
+    } catch (_) { /* fall through */ }
+  }
+
+  // Method 3: bitmap size minus WebView size — the delta is the total safe
+  // area. On iOS with contentInset:'always' the WebView sits between status
+  // bar (top) and home indicator (bottom); assume the top gets the majority
+  // (~65%) since notches dwarf the home indicator. Clamped to avoid over-
+  // offsetting on non-notched devices.
+  if (!topInsetCss) {
+    const dprLocal = window.devicePixelRatio || 1;
+    const bitmapCssH = img.naturalHeight / dprLocal;
+    const viewH = document.documentElement.clientHeight || window.innerHeight;
+    const totalExtra = Math.max(0, bitmapCssH - viewH);
+    topInsetCss = Math.min(80, Math.round(totalExtra * 0.65));
+  }
+
   const topOffsetBitmap = topInsetCss * scale;
 
   // Add a small padding around the ticket bounds so glyph edges (title
@@ -8924,13 +8981,8 @@ async function _printOrShareTicket() {
   const jsPDFCtor = window.jspdf?.jsPDF || window.jsPDF;
   if (!ticket || !jsPDFCtor) { window.print(); return; }
 
-  // Native path — real WebView screenshot + crop. Only Android takes
-  // this path: iOS WKWebView renders <foreignObject> SVG correctly, so
-  // the DOM-render path below produces cleaner PDFs than screenshot-and-
-  // crop (which is inherently viewport-bound and picks up status-bar
-  // pixels + misses any content that scrolled off-screen).
-  const platform = window.Capacitor?.getPlatform?.() || '';
-  if (tazShare.isNative() && platform !== 'ios') {
+  // Native path — real WebView screenshot + crop.
+  if (tazShare.isNative()) {
     const ok = await _nativeScreenshotTicketToPdf(ticket, jsPDFCtor);
     if (ok) return;
     // Fall through to web path if screenshot plugin missing / crop failed.
