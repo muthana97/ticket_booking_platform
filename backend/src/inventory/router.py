@@ -125,12 +125,17 @@ def search_trips(
     origin: Optional[str] = Query(default=None),
     destination: Optional[str] = Query(default=None),
     travel_date: Optional[datetime] = Query(default=None),
+    provider_id: Optional[int] = Query(default=None),
+    sort_by: Optional[str] = Query(default="time"),
     db: Session = Depends(get_db),
 ):
     """
-    SRCH-02: Search trips by origin / destination. `travel_date` is optional —
-    omit to see every future trip on the route. With no filters at all,
-    returns all future trips (useful for the provider dashboard).
+    SRCH-02: Search trips by origin / destination + optional date filter,
+    optional operator filter, and sort mode. `sort_by` accepts:
+      - "time"       (departure time ascending, the default)
+      - "price_asc"  (cheapest first, then time)
+      - "price_desc" (most expensive first, then time)
+    Any other value falls back to "time".
     """
     query = db.query(models.Trip).join(models.Route)
 
@@ -138,6 +143,8 @@ def search_trips(
         query = query.filter(models.Route.origin.ilike(f"%{origin}%"))
     if destination:
         query = query.filter(models.Route.destination.ilike(f"%{destination}%"))
+    if provider_id:
+        query = query.filter(models.Trip.provider_id == provider_id)
 
     if travel_date:
         start = travel_date.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -149,8 +156,32 @@ def search_trips(
     else:
         query = query.filter(models.Trip.departure_time >= datetime.utcnow())
 
-    trips = query.order_by(models.Trip.departure_time.asc()).all()
+    if sort_by == "price_asc":
+        query = query.order_by(models.Trip.price.asc(), models.Trip.departure_time.asc())
+    elif sort_by == "price_desc":
+        query = query.order_by(models.Trip.price.desc(), models.Trip.departure_time.asc())
+    else:
+        query = query.order_by(models.Trip.departure_time.asc())
+
+    trips = query.all()
     return [service.decorate_trip_row(db, trip) for trip in trips]
+
+
+@router.get("/providers", response_model=List[dict])
+def list_active_providers(db: Session = Depends(get_db)):
+    """
+    Lightweight roster of active operators, used to populate the customer
+    search screen's optional operator filter. Names are already exposed via
+    the trip card's "Operated by …" line, so this doesn't leak anything new.
+    """
+    from ..auth.models import User
+    rows = (
+        db.query(User.id, User.full_name)
+        .filter(User.role == "provider", User.status == "active")
+        .order_by(User.full_name.asc())
+        .all()
+    )
+    return [{"id": r[0], "name": r[1]} for r in rows]
 
 
 # ---------------------------------------------------------------------------
