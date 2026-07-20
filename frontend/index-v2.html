@@ -4333,12 +4333,16 @@
     color: var(--p-ink-mute);
     margin-right: 4px;
   }
+  /* Sliding switch. Track = ::before (a rounded rail sitting in the flex
+     row before the label text). Knob = ::after, absolutely positioned so
+     it can slide independently. Native checkbox stays hidden. */
   body[data-screen="admin-home"].pillow .admin-row .caps label.cap {
+    position: relative;
     display: inline-flex; align-items: center;
-    gap: 0;
-    padding: 6px 12px;
-    background: var(--p-card-tint);
-    color: var(--p-ink-mute);
+    gap: 10px;
+    padding: 4px 10px 4px 4px;
+    background: transparent;
+    color: var(--p-ink);
     border-radius: 999px;
     font-family: var(--p-sans);
     font-weight: 600;
@@ -4346,18 +4350,41 @@
     letter-spacing: 0;
     cursor: pointer;
     user-select: none;
-    box-shadow: 0 1px 0 var(--p-hi-line) inset;
-    transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+    box-shadow: none;
+    transition: color 180ms ease;
   }
   body[data-screen="admin-home"].pillow .admin-row .caps label.cap input {
     display: none;
   }
-  body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked) {
+  body[data-screen="admin-home"].pillow .admin-row .caps label.cap::before {
+    content: '';
+    width: 34px; height: 20px;
+    border-radius: 999px;
+    background: rgba(50,80,140,0.22);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08) inset;
+    transition: background 180ms ease, box-shadow 180ms ease;
+    flex-shrink: 0;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .caps label.cap::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    margin-top: -8px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.28), 0 0 0 0.5px rgba(0,0,0,0.05);
+    transition: transform 220ms cubic-bezier(.4,1.6,.4,1);
+    transform: translateX(0);
+    pointer-events: none;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::before {
     background: var(--p-accent);
-    color: var(--p-accent-on);
-    box-shadow:
-      0 8px 18px -10px var(--p-accent-shadow),
-      0 1px 0 rgba(255,255,255,0.15) inset;
+    box-shadow: 0 4px 10px -4px var(--p-accent-shadow) inset;
+  }
+  body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after {
+    transform: translateX(14px);
   }
 
   /* Row action buttons */
@@ -6108,6 +6135,8 @@
               <input type="text" id="at-q" data-i18n-placeholder="admin.trips.q" placeholder="Search by origin, destination, provider, trip id…" />
               <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="at-origin" data-optional="1"></select></div>
               <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="at-destination" data-optional="1"></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.operator">Operator</span><select id="at-provider"><option value="" data-i18n="search.operator.any">Any operator</option></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.date">Date</span><input type="date" id="at-date" /></div>
               <select id="at-time">
                 <option value="upcoming" data-i18n="admin.trips.time.upcoming">Upcoming</option>
                 <option value="past" data-i18n="admin.trips.time.past">Past</option>
@@ -6125,6 +6154,8 @@
               <input type="text" id="ab-q" data-i18n-placeholder="admin.bookings.q" placeholder="Search by customer name, passenger, billing ref, booking id…" />
               <div class="fld"><span class="lbl" data-i18n="search.from">From</span><select class="city-select" id="ab-origin" data-optional="1"></select></div>
               <div class="fld"><span class="lbl" data-i18n="search.to">To</span><select class="city-select" id="ab-destination" data-optional="1"></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.operator">Operator</span><select id="ab-provider"><option value="" data-i18n="search.operator.any">Any operator</option></select></div>
+              <div class="fld"><span class="lbl" data-i18n="search.date">Date</span><input type="date" id="ab-date" /></div>
               <select id="ab-status">
                 <option value="confirmed" data-i18n="status.filter.confirmed">Confirmed only</option>
                 <option value="committed_pending" data-i18n="status.filter.committed_pending">Awaiting Payment</option>
@@ -7380,7 +7411,7 @@ function goto(screen, opts = {}) {
   STATE.screen = screen;
   document.body.dataset.screen = screen;
   if (screen !== 'admin-home') stopAdminRefresh();
-  if (screen === 'customer-search') populateOperatorSelect();
+  if (screen === 'customer-search') { populateOperatorSelect(); setSearchDateFloor(); }
   paintChrome();
 }
 function back() {
@@ -9319,6 +9350,10 @@ function renderOverrideList(rows) {
 async function refreshAdminTab() {
   if (STATE.auth?.user.role !== 'admin') return;
   const tab = STATE.adminTab;
+  // Populate provider filter dropdowns on Trips + Bookings tabs the first
+  // time either is opened. Silent-fail — dropdown stays on "Any operator".
+  if (tab === 'trips')    populateAdminProviderSelect('#at-provider');
+  if (tab === 'bookings') populateAdminProviderSelect('#ab-provider');
   try {
     if (tab === 'providers') await renderAdminProviders();
     if (tab === 'trips')     await renderAdminTrips();
@@ -9401,11 +9436,17 @@ async function renderAdminTrips() {
   const origin = $('#at-origin').value.trim();
   const destination = $('#at-destination').value.trim();
   const time = $('#at-time').value || 'upcoming';
+  const provider_id = $('#at-provider')?.value || '';
+  const travel_date = $('#at-date')?.value || '';
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (origin) params.set('origin', origin);
   if (destination) params.set('destination', destination);
-  if (time) params.set('time', time);
+  // travel_date overrides the upcoming/past/all bucket — the API refuses
+  // both at once cleanly, but we skip `time` when a specific day is set.
+  if (travel_date) params.set('travel_date', travel_date);
+  else if (time) params.set('time', time);
+  if (provider_id) params.set('provider_id', provider_id);
   const trips = await api('/admin/trips?' + params);
   $('#cnt-trips').textContent = trips.length;
   const list = $('#admin-trip-list');
@@ -9447,11 +9488,15 @@ async function renderAdminBookings() {
   const origin      = $('#ab-origin').value.trim();
   const destination = $('#ab-destination').value.trim();
   const status      = $('#ab-status').value;
+  const provider_id = $('#ab-provider')?.value || '';
+  const travel_date = $('#ab-date')?.value || '';
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   if (q) params.set('q', q);
   if (origin) params.set('origin', origin);
   if (destination) params.set('destination', destination);
+  if (provider_id) params.set('provider_id', provider_id);
+  if (travel_date) params.set('travel_date', travel_date);
 
   const bookings = await api('/admin/bookings?' + params);
   $('#cnt-bookings').textContent = bookings.length;
@@ -9690,6 +9735,38 @@ function populateCitySelects() {
     if (prevValue) sel.value = prevValue;
     sel.dataset.populated = '1';
   });
+}
+
+// Pin the search-date input's `min` to today so the browser's native
+// date picker greys out past days — you can't book a trip in the past.
+// Also bump the current value forward if it's already stale.
+function setSearchDateFloor() {
+  const inp = document.getElementById('search-date');
+  if (!inp) return;
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const isoToday = `${yyyy}-${mm}-${dd}`;
+  inp.min = isoToday;
+  if (inp.value && inp.value < isoToday) inp.value = isoToday;
+}
+
+// Populate an admin filter's operator dropdown from the /trips/providers
+// roster. Kept separate from populateOperatorSelect (which is scoped to
+// the customer search) so the admin dropdowns can be re-populated per
+// tab without stomping the customer selection. Silent-fail.
+async function populateAdminProviderSelect(sel) {
+  const el = document.querySelector(sel);
+  if (!el || el.dataset.populated === '1') return;
+  try {
+    const providers = await api('/trips/providers');
+    const prevValue = el.value;
+    const head = `<option value="" data-i18n="search.operator.any">${t('search.operator.any')}</option>`;
+    el.innerHTML = head + providers.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if (prevValue) el.value = prevValue;
+    el.dataset.populated = '1';
+  } catch (_) { /* silent */ }
 }
 
 // Populate the customer-search "Operator" filter dropdown from active
@@ -9966,6 +10043,8 @@ function wire() {
     });
   });
   $('#ab-status').addEventListener('change', renderAdminBookings);
+  $('#ab-provider')?.addEventListener('change', renderAdminBookings);
+  $('#ab-date')?.addEventListener('change', renderAdminBookings);
 
   // Admin trips filter strip — same debounce pattern
   let tripFilterTimer = null;
@@ -9976,6 +10055,8 @@ function wire() {
     });
   });
   $('#at-time').addEventListener('change', renderAdminTrips);
+  $('#at-provider')?.addEventListener('change', renderAdminTrips);
+  $('#at-date')?.addEventListener('change', renderAdminTrips);
 
   // Provider trips filter strip
   let providerTripFilterTimer = null;
