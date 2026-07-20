@@ -249,6 +249,7 @@ def list_my_trips(
     origin: Optional[str] = Query(default=None),
     destination: Optional[str] = Query(default=None),
     time: Optional[str] = Query(default=None, regex="^(upcoming|past|all)$"),
+    travel_date: Optional[str] = Query(default=None, description="ISO date (YYYY-MM-DD) — filters to that calendar day"),
     db: Session = Depends(get_db),
     provider=Depends(require_active_provider),
 ):
@@ -262,10 +263,22 @@ def list_my_trips(
         query = query.filter(models.Route.origin.ilike(f"%{origin}%"))
     if destination:
         query = query.filter(models.Route.destination.ilike(f"%{destination}%"))
-    if time == "upcoming":
+    if travel_date:
+        try:
+            day = _dt.fromisoformat(travel_date[:10])
+            start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = day.replace(hour=23, minute=59, second=59, microsecond=999_999)
+            query = query.filter(models.Trip.departure_time >= start, models.Trip.departure_time <= end)
+        except ValueError:
+            pass  # bad input — treat as no date filter
+    elif time == "upcoming":
         query = query.filter(models.Trip.departure_time >= _dt.utcnow())
     elif time == "past":
         query = query.filter(models.Trip.departure_time < _dt.utcnow())
+    elif time is None:
+        # Default: upcoming only. UI dropped its explicit picker so this
+        # matches what admins + operators see when they open the tab.
+        query = query.filter(models.Trip.departure_time >= _dt.utcnow())
     trips = query.order_by(models.Trip.departure_time.asc()).all()
 
     if q:

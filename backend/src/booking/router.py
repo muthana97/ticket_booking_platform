@@ -243,11 +243,13 @@ def list_provider_bookings(
     origin: str | None = Query(default=None),
     destination: str | None = Query(default=None),
     status: str | None = Query(default=None),
+    travel_date: str | None = Query(default=None, description="ISO date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_active_provider),
 ):
     """P-EXT-04 / P-EXT-05: bookings on this provider's trips (both channels).
     Filter params parallel /admin/bookings."""
+    from datetime import datetime as _dt
     rows = service.list_provider_bookings(db=db, provider_id=current_user.id)
     # Filter in Python — the result set is small per provider.
     if status and status != "any":
@@ -256,6 +258,17 @@ def list_provider_bookings(
         o = origin.lower(); rows = [r for r in rows if o in r["origin"].lower()]
     if destination:
         d = destination.lower(); rows = [r for r in rows if d in r["destination"].lower()]
+    if travel_date:
+        try:
+            day = _dt.fromisoformat(travel_date[:10])
+            start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = day.replace(hour=23, minute=59, second=59, microsecond=999_999)
+            def _in_range(r):
+                dep = r.get("departure_time")
+                return dep is not None and start <= dep <= end
+            rows = [r for r in rows if _in_range(r)]
+        except ValueError:
+            pass  # bad input — treat as no date filter
     if q:
         q_low = q.strip().lower()
         rows = [
