@@ -2378,6 +2378,31 @@
     display: flex; flex-direction: column;
     gap: 12px;
   }
+  /* Secondary filter row (Date · Sort · Operator) — compact chips
+     underneath the origin/destination pair, so the primary lookup still
+     dominates the screen. */
+  body[data-screen="customer-search"].pillow .p-search-extra {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  body[data-screen="customer-search"].pillow .p-search-extra > .p-chip {
+    padding: 10px 16px 12px;
+  }
+  body[data-screen="customer-search"].pillow .p-search-extra > .p-chip .p-chip-lbl {
+    font-size: 9.5px;
+    margin-bottom: 2px;
+  }
+  body[data-screen="customer-search"].pillow .p-search-extra > .p-chip .p-chip-select {
+    font-size: 15px;
+    background-position: right center;
+  }
+  /* The Operator chip spans the full row on mobile since operator names
+     tend to be longer than either "Date" or "Sort by" values. */
+  body[data-screen="customer-search"].pillow .p-search-extra > .p-chip:last-child {
+    grid-column: 1 / -1;
+  }
   body[data-screen="customer-search"].pillow .p-chip {
     display: block;
     background: var(--p-card);
@@ -2807,10 +2832,14 @@
     color: var(--p-ink);
     border: 0;
     box-shadow:
-      0 3px 8px -4px var(--p-shadow-drop),
+      0 0 0 0.5px rgba(50,80,140,0.14),
+      0 4px 10px -3px var(--p-shadow-drop),
+      0 -2px 6px -3px var(--p-shadow-tight),
+      2px 0 6px -3px var(--p-shadow-tight),
+      -2px 0 6px -3px var(--p-shadow-tight),
       0 1px 0 var(--p-hi-line) inset,
       inset 0 -2px 0 rgba(50,80,140,0.10);
-    border-radius: 8px 8px 10px 10px;
+    border-radius: 10px;
     font-family: var(--p-sans);
     font-weight: 700;
     font-size: 10.5px;
@@ -2820,7 +2849,11 @@
   body[data-screen="customer-book"].pillow .seat:not([disabled]):hover {
     transform: translateY(-2px);
     box-shadow:
-      0 6px 12px -4px var(--p-shadow-drop),
+      0 0 0 0.5px rgba(50,80,140,0.16),
+      0 8px 16px -4px var(--p-shadow-drop),
+      0 -2px 8px -3px var(--p-shadow-tight),
+      3px 0 8px -3px var(--p-shadow-tight),
+      -3px 0 8px -3px var(--p-shadow-tight),
       0 1px 0 var(--p-hi-line) inset,
       inset 0 -2px 0 rgba(50,80,140,0.10);
   }
@@ -5724,6 +5757,13 @@
               <input type="tel" id="rg-phone" autocomplete="tel" placeholder="249…" />
             </div>
           </div>
+          <div class="p-field">
+            <label for="rg-national-id" data-i18n="form.national_id">National ID No. (optional)</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">🪪</span>
+              <input type="text" id="rg-national-id" autocomplete="off" inputmode="numeric" />
+            </div>
+          </div>
         </div>
         <div class="p-field" style="margin-top: 16px;">
           <label class="role-label" data-i18n="register.role.label">Account type</label>
@@ -5841,6 +5881,26 @@
           <label class="p-chip">
             <span class="p-chip-lbl" data-i18n="search.to">To</span>
             <select class="p-chip-select city-select" id="search-destination" required></select>
+          </label>
+        </div>
+        <div class="p-search-extra">
+          <label class="p-chip">
+            <span class="p-chip-lbl" data-i18n="search.date">Date</span>
+            <input class="p-chip-select" type="date" id="search-date" />
+          </label>
+          <label class="p-chip">
+            <span class="p-chip-lbl" data-i18n="search.sort">Sort by</span>
+            <select class="p-chip-select" id="search-sort">
+              <option value="time" data-i18n="search.sort.time">Departure time</option>
+              <option value="price_asc" data-i18n="search.sort.price_asc">Price (low → high)</option>
+              <option value="price_desc" data-i18n="search.sort.price_desc">Price (high → low)</option>
+            </select>
+          </label>
+          <label class="p-chip">
+            <span class="p-chip-lbl" data-i18n="search.operator">Operator</span>
+            <select class="p-chip-select" id="search-operator">
+              <option value="" data-i18n="search.operator.any">Any operator</option>
+            </select>
           </label>
         </div>
         <button class="cta" id="search-btn" data-i18n="search.cta">Find Trips →</button>
@@ -6550,7 +6610,7 @@ const I18N = {
     // form labels
     'form.email': 'Email', 'form.password': 'Password',
     'form.password.confirm': 'Confirm password',
-    'form.fullname': 'Full name', 'form.phone': 'Phone (optional)',
+    'form.fullname': 'Full name', 'form.phone': 'Phone (optional)', 'form.national_id': 'National ID No. (optional)',
     'toast.fullname_required': 'Full name required',
     'toast.email_required': 'Email required',
     'toast.password_min': 'Password must be at least 6 characters',
@@ -6560,6 +6620,11 @@ const I18N = {
     'search.title': 'Where are we going today?',
     'search.lead': 'Sudan Intercity Coach Network',
     'search.from': 'From', 'search.to': 'To', 'search.cta': 'Find Trips →',
+    'search.date': 'Date', 'search.sort': 'Sort by', 'search.operator': 'Operator',
+    'search.sort.time': 'Departure time',
+    'search.sort.price_asc': 'Price (low → high)',
+    'search.sort.price_desc': 'Price (high → low)',
+    'search.operator.any': 'Any operator',
     'search.placeholder.from': 'e.g. Khartoum', 'search.placeholder.to': 'e.g. Port Sudan',
     'city.select': 'Select a city', 'city.any': 'All cities',
     // customer trips list
@@ -6766,7 +6831,7 @@ const I18N = {
   ar: {
     // top bar / nav
     'signout': 'تسجيل الخروج', 'nav.search': 'بحث', 'nav.mytickets': 'تذاكري', 'nav.support': 'الدعم',
-    'role.customer': 'راكب', 'role.provider': 'موظف', 'role.admin': 'مدير',
+    'role.customer': 'راكب', 'role.provider': 'مشغل', 'role.admin': 'مدير',
     'back': 'رجوع →',
     // welcome
     'welcome.status': 'شبكة السودان للنقل بين المدن · مباشر',
@@ -6776,7 +6841,7 @@ const I18N = {
     'welcome.returning': 'مستخدم سابق', 'welcome.signin': 'تسجيل الدخول',
     'welcome.signin.desc': 'استخدم بريدك وكلمة المرور.',
     'welcome.new': 'مستخدم جديد', 'welcome.register': 'إنشاء حساب',
-    'welcome.register.desc': 'سجّل كراكب أو كموظف تذاكر.',
+    'welcome.register.desc': 'سجّل كراكب أو كمشغل تذاكر.',
     // category chooser (post-login landing)
     'category.bus': 'تذاكر الحافلات',
     'category.others': 'أخرى',
@@ -6793,10 +6858,10 @@ const I18N = {
     'register.title': 'إنشاء حساب.',
     'register.lead': 'الدور يُحدّد الآن ويبقى مع الحساب. لتغيير الدور تحتاج إلى تسجيل حساب جديد.',
     'register.cta': '→ إنشاء حساب',
-    'register.helper': 'حسابات الموظفين تحتاج إلى موافقة المدير قبل إضافة الرحلات.<br>لديك حساب؟ <a href="#" id="goto-signin" class="text-link">سجّل الدخول</a>.',
+    'register.helper': 'حسابات المشغلين تحتاج إلى موافقة المدير قبل إضافة الرحلات.<br>لديك حساب؟ <a href="#" id="goto-signin" class="text-link">سجّل الدخول</a>.',
     'register.role.label': 'نوع الحساب',
     'register.role.passenger': 'راكب', 'register.role.passenger.desc': 'بحث · حجز · دفع',
-    'register.role.operator': 'موظف', 'register.role.operator.desc': 'تذاكر · إضافة رحلات',
+    'register.role.operator': 'مشغل', 'register.role.operator.desc': 'تذاكر · إضافة رحلات',
     // verify
     'verify.title': 'تحقق من بريدك.',
     'verify.lead': 'أرسلنا رمزاً مكوّناً من 6 أرقام إلى',
@@ -6809,14 +6874,14 @@ const I18N = {
     'verify.toast.new_code': 'تم إصدار رمز جديد',
     // provider-pending
     'pending.title': 'بانتظار الموافقة.',
-    'pending.lead': 'شكراً لتسجيلك كموظف. سيراجع المدير حسابك قريباً.',
+    'pending.lead': 'شكراً لتسجيلك كمشغل. سيراجع المدير حسابك قريباً.',
     'pending.next': 'الخطوات التالية؟',
     'pending.steps': '• المدير يراجع حسابك من <b>/admin · Providers</b><br>• بعد الموافقة، يمكنك الوصول إلى إدارة الرحلات والحجز عند المنفذ<br>• ابقَ على هذه الصفحة — اضغط تحديث عند توقّع الموافقة',
     'pending.refresh': 'تحديث الحالة',
     // form labels
     'form.email': 'البريد الإلكتروني', 'form.password': 'كلمة المرور',
     'form.password.confirm': 'تأكيد كلمة المرور',
-    'form.fullname': 'الاسم الكامل', 'form.phone': 'رقم الهاتف (اختياري)',
+    'form.fullname': 'الاسم الكامل', 'form.phone': 'رقم الهاتف (اختياري)', 'form.national_id': 'الرقم الوطني (اختياري)',
     'toast.fullname_required': 'الاسم الكامل مطلوب',
     'toast.email_required': 'البريد الإلكتروني مطلوب',
     'toast.password_min': 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
@@ -6826,6 +6891,11 @@ const I18N = {
     'search.title': 'إلى أين نسافر اليوم؟',
     'search.lead': 'شبكة السودان للنقل بين المدن',
     'search.from': 'من', 'search.to': 'إلى', 'search.cta': '→ البحث عن رحلات',
+    'search.date': 'التاريخ', 'search.sort': 'ترتيب حسب', 'search.operator': 'المشغل',
+    'search.sort.time': 'وقت المغادرة',
+    'search.sort.price_asc': 'السعر (من الأقل)',
+    'search.sort.price_desc': 'السعر (من الأعلى)',
+    'search.operator.any': 'أي مشغل',
     'search.placeholder.from': 'مثلاً الخرطوم', 'search.placeholder.to': 'مثلاً بورتسودان',
     'city.select': 'اختر مدينة', 'city.any': 'كل المدن',
     // customer trips list
@@ -6885,7 +6955,7 @@ const I18N = {
     'mytickets.empty.upcoming': 'لا رحلات قادمة.',
     'mytickets.empty.past': 'لا حجوزات سابقة بعد.',
     // provider home
-    'provider.title': 'لوحة الموظف',
+    'provider.title': 'لوحة المشغل',
     'provider.lead': 'رحلاتك وحجوزاتك.',
     'provider.newtrip': '+ رحلة جديدة',
     'provider.tab.trips': 'رحلاتي', 'provider.tab.bookings': 'حجوزاتي',
@@ -6914,14 +6984,14 @@ const I18N = {
     'addtrip.cancel': 'إلغاء', 'addtrip.create': '→ إنشاء',
     // admin
     'admin.title': 'لوحة المدير',
-    'admin.lead': 'إدارة الموظفين · مراجعة الرحلات · بحث الحجوزات · المدفوعات المعلّقة',
-    'admin.tab.providers': 'الموظفون', 'admin.tab.trips': 'الرحلات',
+    'admin.lead': 'إدارة المشغلين · مراجعة الرحلات · بحث الحجوزات · المدفوعات المعلّقة',
+    'admin.tab.providers': 'المشغلون', 'admin.tab.trips': 'الرحلات',
     'admin.tab.bookings': 'الحجوزات', 'admin.tab.payments': 'مدفوعات معلّقة',
-    'admin.providers.empty.title': 'لا يوجد موظفون بعد.',
-    'admin.providers.empty.desc': 'بمجرد تسجيل الموظفين سيظهرون هنا.',
+    'admin.providers.empty.title': 'لا يوجد مشغلون بعد.',
+    'admin.providers.empty.desc': 'بمجرد تسجيل المشغلين سيظهرون هنا.',
     'admin.trips.empty.title': 'لا توجد رحلات في النظام.',
-    'admin.trips.empty.desc': 'يمكن لأي موظف معتمد إضافة رحلة من لوحته.',
-    'admin.trips.q': 'بحث بالمدينة، الوجهة، الموظف، رقم الرحلة…',
+    'admin.trips.empty.desc': 'يمكن لأي مشغل معتمد إضافة رحلة من لوحته.',
+    'admin.trips.q': 'بحث بالمدينة، الوجهة، المشغل، رقم الرحلة…',
     'admin.trips.time.upcoming': 'القادمة', 'admin.trips.time.past': 'السابقة', 'admin.trips.time.all': 'الكل',
     'admin.bookings.q': 'بحث بالاسم، الراكب، رقم الفاتورة، رقم الحجز…',
     'admin.bookings.origin': 'المدينة (مثلاً الخرطوم)',
@@ -7310,6 +7380,7 @@ function goto(screen, opts = {}) {
   STATE.screen = screen;
   document.body.dataset.screen = screen;
   if (screen !== 'admin-home') stopAdminRefresh();
+  if (screen === 'customer-search') populateOperatorSelect();
   paintChrome();
 }
 function back() {
@@ -7503,6 +7574,7 @@ async function doRegister() {
   const password  = $('#rg-password').value;
   const password_confirm = $('#rg-password-confirm').value;
   const phone_number = $('#rg-phone').value.trim() || null;
+  const national_id  = $('#rg-national-id').value.trim() || null;
   const role = $$('input[name="rg-role"]').find(r => r.checked).value;
   if (!full_name) return toast(t('toast.fullname_required'), true);
   if (!email)     return toast(t('toast.email_required'), true);
@@ -7510,7 +7582,7 @@ async function doRegister() {
   if (password !== password_confirm) return toast(t('toast.password_mismatch'), true);
   await withLoading($('#register-btn'), async () => {
     try {
-      const r = await api('/auth/register', { method: 'POST', body: JSON.stringify({ full_name, email, password, phone_number, role }) });
+      const r = await api('/auth/register', { method: 'POST', body: JSON.stringify({ full_name, email, password, phone_number, national_id, role }) });
       STATE.pendingRegister = { email: r.email, role: r.role };
       $('#vf-email').textContent = r.email;
       if (r.dev_otp) {
@@ -7634,7 +7706,7 @@ function logout() {
   resetBookingState();
   $('#si-email').value = ''; $('#si-password').value = '';
   $('#rg-name').value = ''; $('#rg-email').value = ''; $('#rg-password').value = '';
-  $('#rg-password-confirm').value = ''; $('#rg-phone').value = '';
+  $('#rg-password-confirm').value = ''; $('#rg-phone').value = ''; $('#rg-national-id').value = '';
   $('#vf-input').value = '';
   goto('welcome', { replaceHistory: true });
 }
@@ -7643,10 +7715,19 @@ function logout() {
 async function doSearch() {
   const origin = $('#search-origin').value.trim();
   const destination = $('#search-destination').value.trim();
+  const date = $('#search-date')?.value || '';
+  const sort_by = $('#search-sort')?.value || 'time';
+  const provider_id = $('#search-operator')?.value || '';
   if (!origin || !destination) return toast('Enter both cities', true);
   await withLoading($('#search-btn'), async () => {
     try {
-      const params = new URLSearchParams({ origin, destination });
+      const params = new URLSearchParams({ origin, destination, sort_by });
+      if (date) {
+        // Backend accepts ISO datetime for travel_date; midday is a safe pick
+        // so no timezone edge trims the day.
+        params.set('travel_date', date + 'T12:00:00');
+      }
+      if (provider_id) params.set('provider_id', provider_id);
       const trips = await api('/trips/search?' + params);
       renderCustomerTrips(trips, origin, destination);
       goto('customer-trips');
@@ -9609,6 +9690,23 @@ function populateCitySelects() {
     if (prevValue) sel.value = prevValue;
     sel.dataset.populated = '1';
   });
+}
+
+// Populate the customer-search "Operator" filter dropdown from active
+// providers. Called once when the search screen is opened; silently
+// skipped if the fetch fails (dropdown just stays on "Any operator").
+async function populateOperatorSelect() {
+  const sel = document.getElementById('search-operator');
+  if (!sel) return;
+  if (sel.dataset.populated === '1') return;
+  try {
+    const providers = await api('/trips/providers');
+    const prevValue = sel.value;
+    const head = `<option value="" data-i18n="search.operator.any">${t('search.operator.any')}</option>`;
+    sel.innerHTML = head + providers.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if (prevValue) sel.value = prevValue;
+    sel.dataset.populated = '1';
+  } catch (_) { /* silent — dropdown stays default */ }
 }
 
 /* ==========================================================================
