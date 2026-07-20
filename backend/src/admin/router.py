@@ -100,6 +100,7 @@ def list_trips(
     origin: Optional[str] = Query(default=None),
     destination: Optional[str] = Query(default=None),
     time: Optional[str] = Query(default=None, regex="^(upcoming|past|all)$"),
+    travel_date: Optional[str] = Query(default=None, description="ISO date (YYYY-MM-DD) — filters to that calendar day"),
     db: Session = Depends(get_db),
 ):
     """All trips in the system. Filters mirror /admin/bookings for parity."""
@@ -115,7 +116,15 @@ def list_trips(
         query = query.filter(Route.origin.ilike(f"%{origin}%"))
     if destination:
         query = query.filter(Route.destination.ilike(f"%{destination}%"))
-    if time == "upcoming":
+    if travel_date:
+        try:
+            day = _dt.fromisoformat(travel_date[:10])
+            start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = day.replace(hour=23, minute=59, second=59, microsecond=999_999)
+            query = query.filter(Trip.departure_time >= start, Trip.departure_time <= end)
+        except ValueError:
+            pass  # bad input — treat as no date filter
+    elif time == "upcoming":
         query = query.filter(Trip.departure_time >= _dt.utcnow())
     elif time == "past":
         query = query.filter(Trip.departure_time < _dt.utcnow())
@@ -186,13 +195,16 @@ def list_all_bookings(
     q: Optional[str] = Query(default=None, description="Fuzzy match on customer / passenger / billing ref / booking id"),
     origin: Optional[str] = Query(default=None),
     destination: Optional[str] = Query(default=None),
+    provider_id: Optional[int] = Query(default=None),
+    travel_date: Optional[str] = Query(default=None, description="ISO date (YYYY-MM-DD) — filters to bookings whose trip departs that day"),
     db: Session = Depends(get_db),
 ):
     """A-OP-06: All bookings, searchable. Defaults to status='confirmed'."""
     # Treat empty status (or status="any") as no filter
     real_status = None if (status in (None, "", "any")) else status
     return service.list_all_bookings(
-        db, status=real_status, q=q, origin=origin, destination=destination
+        db, status=real_status, q=q, origin=origin, destination=destination,
+        provider_id=provider_id, travel_date=travel_date,
     )
 
 

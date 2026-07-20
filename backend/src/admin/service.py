@@ -180,6 +180,8 @@ def list_all_bookings(
     q: Optional[str] = None,
     origin: Optional[str] = None,
     destination: Optional[str] = None,
+    provider_id: Optional[int] = None,
+    travel_date: Optional[str] = None,
 ) -> list[dict]:
     """
     All bookings in the system. Filters:
@@ -187,7 +189,12 @@ def list_all_bookings(
       - q:      fuzzy match against customer name, customer email, passenger
                 name, billing reference, or booking id
       - origin / destination: ilike match on trip route
+      - provider_id: restrict to trips run by a specific operator
+      - travel_date: ISO YYYY-MM-DD; restricts to bookings whose trip
+                     departs that calendar day
     """
+    from datetime import datetime as _dt
+
     query = db.query(Booking).join(Trip, Trip.id == Booking.trip_id).join(
         Route, Route.id == Trip.route_id
     )
@@ -197,6 +204,16 @@ def list_all_bookings(
         query = query.filter(Route.origin.ilike(f"%{origin}%"))
     if destination:
         query = query.filter(Route.destination.ilike(f"%{destination}%"))
+    if provider_id is not None:
+        query = query.filter(Trip.provider_id == provider_id)
+    if travel_date:
+        try:
+            day = _dt.fromisoformat(travel_date[:10])
+            start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = day.replace(hour=23, minute=59, second=59, microsecond=999_999)
+            query = query.filter(Trip.departure_time >= start, Trip.departure_time <= end)
+        except ValueError:
+            pass  # bad input — treat as no date filter
 
     rows = query.order_by(Booking.created_at.desc()).all()
 
