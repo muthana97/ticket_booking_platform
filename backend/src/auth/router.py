@@ -24,6 +24,7 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
         full_name=payload.full_name,
         role=payload.role,
         phone_number=payload.phone_number,
+        national_id=payload.national_id,
     )
     return {
         "message": "Account created. Check your email for the 6-digit code.",

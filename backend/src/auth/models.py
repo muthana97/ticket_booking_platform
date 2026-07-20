@@ -12,6 +12,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
+    national_id = Column(String, nullable=True)
 
     # 'customer' | 'provider' | 'admin' — set at registration, persisted forever.
     role = Column(String, nullable=False, default="customer")

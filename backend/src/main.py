@@ -47,6 +47,7 @@ def _migrate_if_needed():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_add_trips BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_edit_trips BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_delete_trips BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS national_id VARCHAR",
     ]
     # The original FK above lacks ON DELETE SET NULL — drop + re-add so admins
     # can remove a rule even after it's been snapshotted onto a booking. The

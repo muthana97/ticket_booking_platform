@@ -121,6 +121,7 @@ def register_user(
     full_name: str,
     role: str,
     phone_number: str | None = None,
+    national_id: str | None = None,
 ) -> tuple[models.User, str]:
     """Register a new user.
 
@@ -152,6 +153,7 @@ def register_user(
         existing.password_hash = utils.hash_password(password)
         existing.full_name = full_name.strip()
         existing.phone_number = phone_number
+        existing.national_id = national_id
         existing.role = role
         existing.status = new_status
         # Drop any prior unverified OTPs for this email so only the new one
@@ -169,6 +171,7 @@ def register_user(
         password_hash=utils.hash_password(password),
         full_name=full_name.strip(),
         phone_number=phone_number,
+        national_id=national_id,
         role=role,
         status=new_status,
         email_verified=False,

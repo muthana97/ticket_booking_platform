@@ -16,6 +16,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=6, max_length=128)
     full_name: str = Field(..., min_length=2, max_length=120)
     phone_number: Optional[str] = Field(default=None, max_length=20)
+    national_id: Optional[str] = Field(default=None, max_length=40)
     # Admin role cannot be self-registered — that route is blocked server-side.
     role: Literal["customer", "provider"] = "customer"
 
@@ -43,6 +44,7 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str
     phone_number: Optional[str] = None
+    national_id: Optional[str] = None
     role: UserRole
     status: UserStatus
     email_verified: bool
