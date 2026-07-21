@@ -208,8 +208,14 @@
     text-rendering: optimizeLegibility;
     height: auto;
     min-height: 100dvh;
-    overflow-x: clip;
+    /* `clip` behaves flakily on older Android WebView; use `hidden` as the
+       primary guard so any intrinsic child width can never induce a
+       horizontal scroll on mobile. */
+    overflow-x: hidden;
   }
+  /* Belt + braces: main.canvas is the vertical scroll container. Force
+     horizontal to hidden so no descendant can widen the viewport. */
+  main.canvas { overflow-x: hidden; }
   body::before {
     content: '';
     position: fixed; inset: 0;
