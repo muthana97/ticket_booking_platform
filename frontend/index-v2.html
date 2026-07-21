@@ -4501,6 +4501,17 @@
   body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after {
     transform: translateX(14px);
   }
+  /* RTL: the knob is absolutely positioned with `left: 6px` which is
+     physical-left, not logical-start. In Arabic the track flips visually
+     to the right, so the knob was landing on the wrong end (over the
+     label text). Pin to inset-inline-start instead and mirror the slide. */
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap::after {
+    left: auto;
+    right: 6px;
+  }
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after {
+    transform: translateX(-14px);
+  }
 
   /* Row action buttons */
   body[data-screen="admin-home"].pillow .admin-row .actions {
