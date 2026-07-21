@@ -189,9 +189,14 @@ def lock_seats(
             .first()
         )
         if already is not None:
+            # Present as "expired" from the customer's perspective — once
+            # they've redeemed a code it's effectively used up for them,
+            # and a shorter message is friendlier than the per-account
+            # explanation. The hint under the input already explains the
+            # one-per-account rule upfront.
             raise HTTPException(
                 status_code=400,
-                detail="You've already used this promo. It's one per account.",
+                detail="This promo has expired.",
             )
         # Reserve the slot atomically. Row lock prevents two concurrent
         # locks from both slipping past the cap check.

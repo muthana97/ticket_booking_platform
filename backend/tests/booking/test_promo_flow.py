@@ -255,7 +255,8 @@ def test_second_use_by_same_customer_rejected(db, provider, customer_a):
             promo_code="LIBRE",
         )
     assert exc.value.status_code == 400
-    assert "already used" in exc.value.detail.lower()
+    # Copy simplified to "expired" from the customer's POV (2026-07-21).
+    assert "expired" in exc.value.detail.lower()
 
 
 def test_different_customer_can_use_same_promo(db, provider, customer_a, customer_b):
