@@ -7046,7 +7046,9 @@ const I18N = {
     'promos.err.no_routes': 'This provider has no routes yet.',
     'promo.apply': 'Apply',
     'promo.placeholder': 'Promo code',
-    'promo.applied': 'Promo applied.',
+    'promo.applied': 'Promo applied',
+    'promo.checking': 'Checking',
+    'promo.err.generic': 'Promo unavailable.',
     'promo.total_discount': 'Discount',
     'promo.hint.single_seat': 'Promo codes apply to single-seat bookings only — one per account.',
     'action.cancel': 'Cancel',
@@ -7364,7 +7366,9 @@ const I18N = {
     'promos.err.no_routes': 'لا يوجد لهذا المشغل خطوط سير بعد.',
     'promo.apply': 'تطبيق',
     'promo.placeholder': 'كوبون الخصم',
-    'promo.applied': 'تم تطبيق الكوبون.',
+    'promo.applied': 'تم تطبيق الكوبون',
+    'promo.checking': 'جارٍ التحقق',
+    'promo.err.generic': 'الكوبون غير متاح.',
     'promo.total_discount': 'الخصم',
     'promo.hint.single_seat': 'الكوبون يُطبَّق على مقعد واحد فقط — مرة واحدة لكل حساب.',
     'action.cancel': 'إلغاء',
@@ -10708,17 +10712,40 @@ function wire() {
   $('#add-trip-modal').addEventListener('click', e => { if (e.target.id === 'add-trip-modal') closeAddTrip(); });
 
   $('#lock-btn').addEventListener('click', doLock);
-  // Promo Apply just stashes the code — actual validation happens on Lock.
-  // A dedicated pre-validate endpoint could avoid the round-trip; skipped
-  // for MVP since the lock-failure message already tells the user why.
-  $('#promo-apply-btn')?.addEventListener('click', () => {
+  // Promo Apply hits /promos/validate before saying "applied" so a
+  // typo / expired / wrong-scope code shows an honest error immediately,
+  // instead of the old optimistic "Promo applied — GARBAGE" message.
+  $('#promo-apply-btn')?.addEventListener('click', async () => {
     const inp = $('#promo-input');
     const status = $('#promo-status');
     if (!inp || !inp.value.trim()) return;
-    inp.value = inp.value.trim().toUpperCase();
-    status.textContent = t('promo.applied') + ' — ' + inp.value;
+    const code = inp.value.trim().toUpperCase();
+    inp.value = code;
+    // Optimistic "checking…" state while the request is in flight.
     status.classList.remove('hidden', 'err');
-    $('#promo-clear-btn')?.classList.remove('hidden');
+    status.textContent = t('promo.checking') + '…';
+    const trip = STATE.activeTrip;
+    if (!trip) return;
+    // Preview total = seats × per-seat price. Backend needs a positive
+    // total to run the flat-discount clamp; seat count is always ≥ 1
+    // when the Apply button is enabled.
+    const seatCount = Math.max(1, STATE.selected.size);
+    const total = seatCount * trip.price;
+    const params = new URLSearchParams({
+      code, trip_id: String(trip.trip_id), total_price: String(total),
+    });
+    try {
+      const r = await api('/promos/validate?' + params);
+      status.classList.remove('err');
+      status.textContent = `${t('promo.applied')} — ${r.code} (−${fmtMoney(r.discount_amount)})`;
+      $('#promo-clear-btn')?.classList.remove('hidden');
+    } catch (e) {
+      // Server detail is human-readable already ("This promo has expired.",
+      // "Promo code not found.", "This promo isn't valid on this trip.").
+      status.classList.add('err');
+      status.textContent = e.message || t('promo.err.generic');
+      $('#promo-clear-btn')?.classList.remove('hidden');
+    }
   });
   $('#promo-clear-btn')?.addEventListener('click', () => {
     const inp = $('#promo-input');

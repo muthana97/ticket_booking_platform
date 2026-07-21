@@ -14,7 +14,7 @@ from .booking.tasks import cleanup_expired_bookings # <--- Import the task
 from .admin.router import router as admin_router
 from .finance.router import router as finance_router
 from .notifications.router import router as notifications_router
-from .promo.router import router as promo_router
+from .promo.router import router as promo_router, validate_router as promo_validate_router
 # Import the model so Base.metadata.create_all() picks up the table.
 from .notifications import models as _notifications_models  # noqa: F401
 from .promo import models as _promo_models  # noqa: F401
@@ -209,6 +209,7 @@ app.include_router(admin_router)
 app.include_router(finance_router)
 app.include_router(notifications_router)
 app.include_router(promo_router)
+app.include_router(promo_validate_router)
 
 @app.get("/")
 def health_check():
