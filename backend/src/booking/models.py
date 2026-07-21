@@ -46,6 +46,18 @@ class Booking(Base):
     # `confirmed`. Drives the monthly bucket on /admin/reports.
     confirmed_at = Column(DateTime, nullable=True, index=True)
 
+    # Promo snapshot — captured at lock time so a promo can be flipped off
+    # after locking without changing the price the customer already saw.
+    # promo_id is nullable + ondelete=SET NULL so deleting a promo doesn't
+    # cascade to bookings.
+    promo_code = Column(String, nullable=True)
+    promo_discount = Column(Float, nullable=True)
+    promo_id = Column(
+        Integer,
+        ForeignKey("promo_codes.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     passengers = relationship("Passenger", back_populates="booking", cascade="all, delete-orphan")
 
 

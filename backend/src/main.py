@@ -14,8 +14,10 @@ from .booking.tasks import cleanup_expired_bookings # <--- Import the task
 from .admin.router import router as admin_router
 from .finance.router import router as finance_router
 from .notifications.router import router as notifications_router
+from .promo.router import router as promo_router
 # Import the model so Base.metadata.create_all() picks up the table.
 from .notifications import models as _notifications_models  # noqa: F401
+from .promo import models as _promo_models  # noqa: F401
 
 def _ensure_schema():
     """Create tables on the configured engine. Lifted out of module scope so
@@ -48,6 +50,28 @@ def _migrate_if_needed():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_edit_trips BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_delete_trips BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS national_id VARCHAR",
+        # Promo snapshot columns on bookings + the promo_codes table itself.
+        # promo_codes gets created via Base.metadata.create_all() on first
+        # boot; on repeat boots CREATE TABLE IF NOT EXISTS is a no-op.
+        """
+        CREATE TABLE IF NOT EXISTS promo_codes (
+            id SERIAL PRIMARY KEY,
+            code VARCHAR UNIQUE NOT NULL,
+            discount_kind VARCHAR NOT NULL,
+            discount_value DOUBLE PRECISION NOT NULL,
+            max_redemptions INTEGER NULL,
+            redemption_count INTEGER NOT NULL DEFAULT 0,
+            provider_id INTEGER NULL REFERENCES users(id),
+            trip_id INTEGER NULL REFERENCES trips(id),
+            active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes (code)",
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_code VARCHAR",
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_discount DOUBLE PRECISION",
+        "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_id INTEGER REFERENCES promo_codes(id) ON DELETE SET NULL",
     ]
     # The original FK above lacks ON DELETE SET NULL — drop + re-add so admins
     # can remove a rule even after it's been snapshotted onto a booking. The
@@ -180,6 +204,7 @@ app.include_router(booking_router)
 app.include_router(admin_router)
 app.include_router(finance_router)
 app.include_router(notifications_router)
+app.include_router(promo_router)
 
 @app.get("/")
 def health_check():
