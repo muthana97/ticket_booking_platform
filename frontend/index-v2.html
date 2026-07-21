@@ -1041,6 +1041,10 @@
   .status-pill.pending           { background: var(--amber);   color: var(--ink);  border-color: var(--amber); }
   .status-pill.committed_pending { background: var(--terra);   color: var(--bone); border-color: var(--terra); }
   .status-pill.confirmed         { background: var(--moss);    color: var(--bone); border-color: var(--moss); }
+  /* Confirmed + trip already departed: grey it out — the trip is history,
+     not an upcoming ride. Override wins because .confirmed.past has the
+     same specificity but comes later in the sheet. */
+  .status-pill.confirmed.past    { background: #8a94a8;         color: var(--bone); border-color: #8a94a8; }
   .status-pill.expired           { background: var(--oxblood); color: var(--bone); border-color: var(--oxblood); }
   .status-pill.active            { background: var(--moss);    color: var(--bone); border-color: var(--moss); }
   .status-pill.blocked           { background: var(--oxblood); color: var(--bone); border-color: var(--oxblood); }
@@ -3068,6 +3072,12 @@
     font-family: var(--p-sans, 'JetBrains Mono');
     font-size: 12px;
     color: var(--p-ok, #17A66B);
+    /* Long error messages must wrap inside the panel — otherwise a wide
+       error like "404 Not Found — …" pushes the whole layout right on
+       narrow screens (seen on Android WebView). */
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.35;
   }
   .promo-status.err { color: var(--p-danger, #D94A3E); }
   .promo-hint {
@@ -3368,6 +3378,10 @@
   }
   body[data-screen="customer-my-tickets"].pillow .booking-row .status-pill.confirmed {
     background: var(--p-ok); color: #fff; border-color: transparent;
+  }
+  /* Past-departed confirmed rides: greyed to match the past-section palette. */
+  body[data-screen="customer-my-tickets"].pillow .booking-row .status-pill.confirmed.past {
+    background: var(--p-ink-mute); color: #fff; border-color: transparent;
   }
   body[data-screen="customer-my-tickets"].pillow .booking-row .status-pill.expired {
     background: var(--p-danger); color: #fff; border-color: transparent;
@@ -4021,6 +4035,8 @@
   body.pillow .status-pill.pending           { background: rgba(227,154,42,0.16);  color: var(--p-warn);   }
   body.pillow .status-pill.committed_pending { background: rgba(227,154,42,0.24);  color: var(--p-warn);   }
   body.pillow .status-pill.confirmed         { background: rgba(23,166,107,0.16);  color: var(--p-ok);     }
+  /* Confirmed + past: grey it out. Muted pill so it recedes visually. */
+  body.pillow .status-pill.confirmed.past    { background: var(--p-card-tint);     color: var(--p-ink-mute); }
   body.pillow .status-pill.expired           { background: rgba(217,74,62,0.16);   color: var(--p-danger); }
   body.pillow .status-pill.active            { background: rgba(23,166,107,0.16);  color: var(--p-ok);     }
   body.pillow .status-pill.blocked           { background: rgba(217,74,62,0.16);   color: var(--p-danger); }
@@ -7700,6 +7716,15 @@ function fmtDateOnly(iso) {
 }
 // Money stays in en-US digits regardless of language — clearer for receipts.
 function fmtMoney(n) { return Number(n).toLocaleString('en-US'); }
+// Class string for a booking's status pill. Confirmed bookings whose
+// trip has already departed grey out — the ticket is history, not an
+// upcoming ride — while future confirmed rides stay green.
+function _statusPillClass(b) {
+  if (b.status !== 'confirmed') return b.status;
+  const past = b.is_past === true
+    || (b.departure_time && parseUtc(b.departure_time) < new Date());
+  return past ? 'confirmed past' : 'confirmed';
+}
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -8174,10 +8199,11 @@ function makeMyTicketRow(b, kind) {
   const action = (kind === 'awaiting')
     ? `<button class="btn-inline alt" data-action="open-ticket">${t('mytickets.viewticket')} →</button>`
     : `<button class="btn-inline ghost" data-action="open-ticket">${t('mytickets.viewticket')}</button>`;
+  const statusCls = _statusPillClass(b);
   row.innerHTML = `
     <div class="main">
       <div class="meta-row">
-        <span class="status-pill ${b.status}">${tStatus(b.status)}</span>
+        <span class="status-pill ${statusCls}">${tStatus(b.status)}</span>
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
       </div>
@@ -8315,10 +8341,11 @@ function makeProviderBookingRow(b) {
     </div>`;
   }
 
+  const statusCls = _statusPillClass(b);
   row.innerHTML = `
     <div class="main">
       <div class="meta-row">
-        <span class="status-pill ${b.status}">${tStatus(b.status)}</span>
+        <span class="status-pill ${statusCls}">${tStatus(b.status)}</span>
         ${channelPill}
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
@@ -10157,10 +10184,11 @@ function makeAdminBookingRow(b) {
   const channelPill = b.channel === 'walkin'
     ? `<span class="status-pill walkin">${tChannel('walkin')}</span>`
     : `<span class="status-pill" style="background: var(--paper-2); color: var(--ink-soft);">${tChannel('online')}</span>`;
+  const statusCls = _statusPillClass(b);
   row.innerHTML = `
     <div class="main">
       <div class="meta-row">
-        <span class="status-pill ${b.status}">${tStatus(b.status)}</span>
+        <span class="status-pill ${statusCls}">${tStatus(b.status)}</span>
         ${channelPill}
         <span class="chip-id">#${b.booking_id}</span>
         <span class="ff-mono" style="font-size: 11px; color: var(--ink-soft);">${fmtTime(b.departure_time)}</span>
@@ -10742,8 +10770,13 @@ function wire() {
     } catch (e) {
       // Server detail is human-readable already ("This promo has expired.",
       // "Promo code not found.", "This promo isn't valid on this trip.").
+      // api() prefixes with "<status> <statusText> — "; strip that so the
+      // pill just shows the friendly bit (also keeps the line short on
+      // mobile so it doesn't overflow the panel).
       status.classList.add('err');
-      status.textContent = e.message || t('promo.err.generic');
+      const raw = e.message || t('promo.err.generic');
+      const stripped = raw.replace(/^\d{3}\s+[^—]*—\s*/, '');
+      status.textContent = stripped;
       $('#promo-clear-btn')?.classList.remove('hidden');
     }
   });
