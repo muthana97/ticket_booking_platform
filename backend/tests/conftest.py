@@ -31,6 +31,7 @@ def engine():
     import src.booking.models  # noqa: F401
     import src.finance.models  # noqa: F401
     import src.notifications.models  # noqa: F401
+    import src.promo.models  # noqa: F401
     Base.metadata.create_all(bind=eng)
     yield eng
     eng.dispose()
