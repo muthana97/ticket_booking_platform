@@ -329,11 +329,9 @@ def confirm_payment(
     if _trip:
         snapshot_commission(db, booking, _trip)
 
-    # Bump promo redemption counter — happens here (not at lock time) so a
-    # booking that expires without confirming doesn't burn a redemption.
-    if booking.promo_id:
-        from ..promo import service as _promo_svc
-        _promo_svc.bump_redemption(db, promo_id=booking.promo_id)
+    # Redemption is counted at lock time (reserve-at-lock, 2026-07-21). The
+    # Reaper decrements on expiry, so no counter change here — confirming
+    # simply keeps what was already reserved.
 
     db.commit()
     db.refresh(booking)

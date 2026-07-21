@@ -148,16 +148,67 @@ def lock_seats(
 
     # 2.5. Resolve promo (if supplied) BEFORE we flip seat status — errors
     #     here surface before any state change and don't strand held seats.
+    #
+    #     Business rules (2026-07-21):
+    #       - Promos are consumer-only. Walk-ins can't apply them.
+    #       - One promo per booking = one seat max. A customer wanting
+    #         multi-seat discount needs multiple accounts booking 1 each.
+    #       - One redemption per (promo, customer). Repeat use is refused.
+    #       - Reserve-at-lock: increment redemption_count now under a row
+    #         lock so max_redemptions is exact even with concurrent locks.
+    #         The Reaper releases the reservation on booking expiry.
     promo_row = None
     promo_discount = 0.0
     final_price = total_price
     if promo_code:
+        if channel != "consumer":
+            raise HTTPException(
+                status_code=400,
+                detail="Promo codes are only available on customer bookings.",
+            )
+        if len(seat_numbers) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Promo codes only apply to single-seat bookings.",
+            )
         trip = db.query(_Trip).filter(_Trip.id == trip_id).first()
         if not trip:
             raise HTTPException(status_code=404, detail="Trip not found")
         promo_row, promo_discount = _promo_svc.resolve_and_price(
             db, code=promo_code, trip=trip, total_before=total_price,
         )
+        # Per-user cap — any of the customer's non-expired bookings against
+        # this promo counts as "already used".
+        already = (
+            db.query(Booking)
+            .filter(
+                Booking.customer_id == customer_id,
+                Booking.promo_id == promo_row.id,
+                Booking.status.in_(["pending", "committed_pending", "confirmed"]),
+            )
+            .first()
+        )
+        if already is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="You've already used this promo. It's one per account.",
+            )
+        # Reserve the slot atomically. Row lock prevents two concurrent
+        # locks from both slipping past the cap check.
+        from ..promo import models as _promo_models
+        locked_promo = (
+            db.query(_promo_models.PromoCode)
+            .filter(_promo_models.PromoCode.id == promo_row.id)
+            .with_for_update()
+            .first()
+        )
+        if locked_promo.max_redemptions is not None and locked_promo.redemption_count >= locked_promo.max_redemptions:
+            raise HTTPException(
+                status_code=400,
+                detail="This promo has reached its redemption limit.",
+            )
+        locked_promo.redemption_count = (locked_promo.redemption_count or 0) + 1
+        promo_row = locked_promo
         final_price = round(total_price - promo_discount, 2)
 
     # 3. Flip seats → locked

@@ -25,6 +25,10 @@ async def cleanup_expired_bookings():
             ).all()
 
             if expired_bookings:
+                # Local import — avoids pulling the promo module into module
+                # scope where it might affect the sanctified Reaper import graph.
+                from ..promo.models import PromoCode
+
                 for booking in expired_bookings:
                     # 2. Revert the physical Seat rows to 'available'
                     # seat_ids is tracked as an array of IDs inside our JSON column
@@ -33,6 +37,15 @@ async def cleanup_expired_bookings():
                             Seat.id.in_(booking.seat_ids),
                             Seat.trip_id == booking.trip_id
                         ).update({"status": "available"}, synchronize_session=False)
+
+                    # 2.5. Release the reserved promo slot (reserve-at-lock,
+                    # 2026-07-21). Only bookings that carried a promo_id
+                    # incremented the counter at lock time, so we decrement
+                    # here to keep max_redemptions exact for the next attempt.
+                    if booking.promo_id:
+                        promo = db.query(PromoCode).filter(PromoCode.id == booking.promo_id).first()
+                        if promo and (promo.redemption_count or 0) > 0:
+                            promo.redemption_count -= 1
 
                     # 3. Terminate the Booking record lifecycle state
                     booking.status = "expired"
