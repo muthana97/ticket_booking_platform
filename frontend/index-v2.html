@@ -3016,6 +3016,61 @@
     color: var(--p-ink-faint);
   }
 
+  /* Promo input row (booking screen) */
+  .promo-input-row {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .promo-input-row input {
+    flex: 1;
+    border: 1px solid var(--rule);
+    padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--paper);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  body.pillow .promo-input-row input {
+    background: var(--p-card-tint);
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    color: var(--p-ink);
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 1px 2px var(--p-shadow-tight);
+  }
+  body.pillow .promo-input-row input:focus {
+    outline: 0;
+    box-shadow: 0 0 0 2px var(--p-accent) inset;
+    background: var(--p-card);
+  }
+  body.pillow .promo-input-row .btn-inline {
+    background: var(--p-accent);
+    color: var(--p-accent-on);
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 6px 14px -6px var(--p-accent-shadow);
+  }
+  body.pillow .promo-input-row .btn-inline.ghost {
+    background: transparent;
+    color: var(--p-ink-mute);
+    box-shadow: 0 0 0 1px rgba(50,80,140,0.14) inset;
+  }
+  .promo-status {
+    margin-top: 8px;
+    font-family: var(--p-sans, 'JetBrains Mono');
+    font-size: 12px;
+    color: var(--p-ok, #17A66B);
+  }
+  .promo-status.err { color: var(--p-danger, #D94A3E); }
+
   /* Total */
   body[data-screen="customer-book"].pillow .summary-row .k {
     font-family: var(--p-sans);
@@ -6034,8 +6089,23 @@
             <div class="panel-body" id="pax-body"><div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);" data-i18n="book.fillnames">Select seats to fill in passenger names.</div></div>
           </div>
           <div class="panel">
+            <div class="panel-head"><span data-i18n="book.promo">Promo</span></div>
+            <div class="panel-body">
+              <div class="promo-input-row">
+                <input type="text" id="promo-input" data-i18n-placeholder="promo.placeholder" placeholder="Promo code" />
+                <button id="promo-apply-btn" type="button" class="btn-inline" data-i18n="promo.apply">Apply</button>
+                <button id="promo-clear-btn" type="button" class="btn-inline ghost hidden" data-i18n="action.cancel">Cancel</button>
+              </div>
+              <div class="promo-status hidden" id="promo-status"></div>
+            </div>
+          </div>
+          <div class="panel">
             <div class="panel-head"><span data-i18n="book.total">Total</span></div>
             <div class="panel-body">
+              <div class="summary-row promo-line hidden" id="promo-discount-row" style="margin-bottom: 6px;">
+                <div><div class="k" data-i18n="promo.total_discount">Discount</div><div class="v ff-mono" id="promo-discount-amount" style="font-size: 16px; color: var(--p-ok, #17A66B);">–0</div></div>
+                <div style="text-align:right;"><div class="k">CODE</div><div class="v ff-mono" id="promo-discount-code" style="font-size: 12px;">—</div></div>
+              </div>
               <div class="summary-row">
                 <div><div class="k">SDG</div><div class="v" id="total-amount">0</div></div>
                 <div style="text-align:right;"><div class="k">×</div><div class="v ff-mono" id="seat-count" style="font-size:18px;">0 seats</div></div>
@@ -6330,6 +6400,21 @@
           </div>
         </section>
 
+        <section class="settings-section" id="settings-promos-section">
+          <h3 data-i18n="settings.section.promos">Promos</h3>
+          <div class="settings-body">
+            <div class="panel" id="promos-card">
+              <div class="panel-head">
+                <h4 data-i18n="promos.title">Promo codes</h4>
+                <button class="btn-inline admin" id="promos-add-btn" data-i18n="promos.add">Add promo</button>
+              </div>
+              <p class="lead" data-i18n="promos.lead">Discount codes customers or operators can apply at booking.</p>
+              <div id="promos-list"></div>
+              <div id="promos-empty" class="empty-state" data-i18n="promos.empty">No promos yet.</div>
+            </div>
+          </div>
+        </section>
+
         <section class="settings-section">
           <h3 data-i18n="settings.section.account">Account</h3>
           <div class="settings-body">
@@ -6344,6 +6429,88 @@
         </section>
       </div>
     </section>
+
+    <!-- Promo Modal (Create / Edit) -->
+    <div id="promo-modal" class="modal-bg" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <h3 id="promo-modal-title" data-i18n="promos.modal.title.add">Add promo</h3>
+        <div class="modal-sub" data-i18n="promos.modal.sub">Create a code and set its scope + limits.</div>
+        <div class="modal-row">
+          <div class="field-block full">
+            <label data-i18n="promos.field.code">Code</label>
+            <input type="text" id="pm-code" placeholder="SUMMER10" />
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="field-block full">
+            <label data-i18n="promos.field.kind">Discount</label>
+            <div class="role-pick" id="pm-kind">
+              <label class="active" data-kind="percentage">
+                <input type="radio" name="pm-kind" value="percentage" checked>
+                <span class="rp-title" data-i18n="promos.kind.percentage">Percentage</span>
+              </label>
+              <label data-kind="flat">
+                <input type="radio" name="pm-kind" value="flat">
+                <span class="rp-title" data-i18n="promos.kind.flat">Flat (SDG)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="field-block">
+            <label data-i18n="promos.field.value">Value</label>
+            <input type="number" id="pm-value" min="0.01" step="0.01" />
+          </div>
+          <div class="field-block">
+            <label><span data-i18n="promos.field.max_redemptions">Max redemptions</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
+            <input type="number" id="pm-max" min="1" step="1" />
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="field-block full">
+            <label data-i18n="promos.field.scope">Scope</label>
+            <div class="role-pick" id="pm-scope">
+              <label class="active" data-scope="any">
+                <input type="radio" name="pm-scope" value="any" checked>
+                <span class="rp-title" data-i18n="promos.scope.any">Any trip</span>
+              </label>
+              <label data-scope="provider">
+                <input type="radio" name="pm-scope" value="provider">
+                <span class="rp-title" data-i18n="promos.scope.provider">Provider</span>
+              </label>
+              <label data-scope="trip">
+                <input type="radio" name="pm-scope" value="trip">
+                <span class="rp-title" data-i18n="promos.scope.trip">Trip</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-row hidden" id="pm-provider-row">
+          <div class="field-block full">
+            <label data-i18n="promos.field.provider">Provider</label>
+            <select id="pm-provider"></select>
+          </div>
+        </div>
+        <div class="modal-row hidden" id="pm-trip-row">
+          <div class="field-block full">
+            <label data-i18n="promos.field.trip">Trip</label>
+            <select id="pm-trip"></select>
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="field-block full">
+            <label class="checkbox-inline">
+              <input type="checkbox" id="pm-active" checked>
+              <span data-i18n="promos.field.active">Active</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="cta ghost" id="promo-modal-cancel" data-i18n="action.cancel">Cancel</button>
+          <button class="cta alt" id="promo-modal-save" data-i18n="action.save">Save</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Notifications list (Task #5). Universal — any signed-in role.
          Routing keys it on body[data-screen='notifications']. -->
@@ -6807,6 +6974,43 @@ const I18N = {
     'settings.section.commissions': 'Commissions',
     'settings.section.account': 'Account',
     'settings.section.account.soon': 'Password reset and more coming soon.',
+    'settings.section.promos': 'Promos',
+    'promos.title': 'Promo codes',
+    'promos.lead': 'Discount codes customers or operators can apply at booking.',
+    'promos.add': 'Add promo',
+    'promos.empty': 'No promos yet.',
+    'promos.modal.title.add': 'Add promo',
+    'promos.modal.title.edit': 'Edit promo',
+    'promos.modal.sub': 'Create a code and set its scope + limits.',
+    'promos.field.code': 'Code',
+    'promos.field.kind': 'Discount',
+    'promos.field.value': 'Value',
+    'promos.field.max_redemptions': 'Max redemptions',
+    'promos.field.optional': 'optional',
+    'promos.field.scope': 'Scope',
+    'promos.field.provider': 'Provider',
+    'promos.field.trip': 'Trip',
+    'promos.field.active': 'Active',
+    'promos.kind.percentage': 'Percentage',
+    'promos.kind.flat': 'Flat (SDG)',
+    'promos.scope.any': 'Any trip',
+    'promos.scope.provider': 'Provider',
+    'promos.scope.trip': 'Trip',
+    'promos.state.active': 'Active',
+    'promos.state.inactive': 'Inactive',
+    'promos.saved': 'Promo saved.',
+    'promos.deleted': 'Promo deleted.',
+    'promos.delete_confirm': 'Delete this promo? Bookings that already used it keep their discount.',
+    'promos.err.code_required': 'Code is required.',
+    'promos.err.value_required': 'Value must be a positive number.',
+    'promo.apply': 'Apply',
+    'promo.placeholder': 'Promo code',
+    'promo.applied': 'Promo applied.',
+    'promo.total_discount': 'Discount',
+    'action.cancel': 'Cancel',
+    'action.save': 'Save',
+    'action.edit': 'Edit',
+    'action.delete': 'Delete',
     'settings.account.signed_in_as': 'Signed in as',
     'nav.settings': 'Settings',
     'commission.global.title': 'Global commission',
@@ -7076,6 +7280,43 @@ const I18N = {
     'settings.lang.lead': 'اختر لغة التطبيق. يطبق التغيير فوراً على كل التطبيق.',
     'settings.section.commissions': 'العمولات',
     'settings.section.account': 'الحساب',
+    'settings.section.promos': 'كوبونات الخصم',
+    'promos.title': 'أكواد الخصم',
+    'promos.lead': 'أكواد يستخدمها الركاب أو المشغلون عند الحجز.',
+    'promos.add': 'إضافة كوبون',
+    'promos.empty': 'لا يوجد كوبونات بعد.',
+    'promos.modal.title.add': 'إضافة كوبون',
+    'promos.modal.title.edit': 'تعديل كوبون',
+    'promos.modal.sub': 'أنشئ كوداً وحدد نطاقه وحدوده.',
+    'promos.field.code': 'الكود',
+    'promos.field.kind': 'نوع الخصم',
+    'promos.field.value': 'القيمة',
+    'promos.field.max_redemptions': 'الحد الأقصى للاستخدام',
+    'promos.field.optional': 'اختياري',
+    'promos.field.scope': 'النطاق',
+    'promos.field.provider': 'المشغل',
+    'promos.field.trip': 'الرحلة',
+    'promos.field.active': 'مفعّل',
+    'promos.kind.percentage': 'نسبة مئوية',
+    'promos.kind.flat': 'مبلغ ثابت (SDG)',
+    'promos.scope.any': 'أي رحلة',
+    'promos.scope.provider': 'مشغل محدد',
+    'promos.scope.trip': 'رحلة محددة',
+    'promos.state.active': 'مفعّل',
+    'promos.state.inactive': 'متوقّف',
+    'promos.saved': 'تم حفظ الكوبون.',
+    'promos.deleted': 'تم حذف الكوبون.',
+    'promos.delete_confirm': 'هل تريد حذف هذا الكوبون؟ الحجوزات التي استخدمته تحتفظ بخصمها.',
+    'promos.err.code_required': 'الكود مطلوب.',
+    'promos.err.value_required': 'القيمة يجب أن تكون رقماً موجباً.',
+    'promo.apply': 'تطبيق',
+    'promo.placeholder': 'كوبون الخصم',
+    'promo.applied': 'تم تطبيق الكوبون.',
+    'promo.total_discount': 'الخصم',
+    'action.cancel': 'إلغاء',
+    'action.save': 'حفظ',
+    'action.edit': 'تعديل',
+    'action.delete': 'حذف',
     'settings.section.account.soon': 'إعادة تعيين كلمة المرور والمزيد قريباً.',
     'settings.account.signed_in_as': 'مسجّل الدخول باسم',
     'nav.settings': 'الإعدادات',
@@ -8725,6 +8966,8 @@ async function doLock() {
     total_price: seats.length * STATE.activeTrip.price,
     passengers,
   };
+  const promoCode = ($('#promo-input')?.value || '').trim();
+  if (promoCode) body.promo_code = promoCode;
   const endpoint = STATE.bookingFlow === 'provider' ? '/bookings/walkin' : '/bookings/lock';
   await withLoading($('#lock-btn'), async () => {
     try {
@@ -8733,9 +8976,40 @@ async function doLock() {
       showBookingPanel(r);
       STATE.knownVersion = null;
       refreshAwaitingBadge();
-      toast(`Booking #${r.booking_id} locked`);
+      if (r.promo_code) {
+        applyPromoUiFromLock(r);
+        toast(`Booking #${r.booking_id} · ${t('promo.applied')}`);
+      } else {
+        toast(`Booking #${r.booking_id} locked`);
+      }
     } catch (e) { toast(e.message, true); }
   });
+}
+
+/* Reflect the server-decided promo state after a successful lock: show
+   the discount line + updated total. Called even when the user hadn't
+   typed anything so a rejected promo simply doesn't render. */
+function applyPromoUiFromLock(booking) {
+  const row = $('#promo-discount-row');
+  const code = $('#promo-discount-code');
+  const amount = $('#promo-discount-amount');
+  const total = $('#total-amount');
+  if (!row) return;
+  if (booking.promo_code && booking.promo_discount) {
+    row.classList.remove('hidden');
+    code.textContent = booking.promo_code;
+    amount.textContent = '−' + fmtMoney(booking.promo_discount);
+  }
+  if (total && booking.total_price != null) total.textContent = fmtMoney(booking.total_price);
+}
+
+/* Reset the promo UI between bookings — called from restartFlow so a
+   past code doesn't linger on the next selection. */
+function resetPromoUi() {
+  $('#promo-input') && ($('#promo-input').value = '');
+  $('#promo-status')?.classList.add('hidden');
+  $('#promo-discount-row')?.classList.add('hidden');
+  $('#promo-clear-btn')?.classList.add('hidden');
 }
 
 function showBookingPanel(b) {
@@ -8819,6 +9093,7 @@ function resetBookingState() {
   $('#booking-panel').classList.add('hidden');
   $('#lock-btn').disabled = true;
   clearInterval(STATE.countdownTimer);
+  if (typeof resetPromoUi === 'function') resetPromoUi();
 }
 function restartFlow() { resetBookingState(); STATE.knownVersion = null; refreshSelectionUI(); }
 
@@ -9235,12 +9510,137 @@ async function refreshAdminSettings() {
   // Account section shows the signed-in email for every role.
   const emailEl = $('#account-email');
   if (emailEl) emailEl.textContent = STATE.auth.user.email || '—';
-  // Commissions only fetched for admin.
+  // Commissions + Promos only fetched for admin.
   if (STATE.auth.user.role !== 'admin') return;
   try {
     const data = await api('/admin/commissions');
     renderGlobalCommission(data.global);
     renderOverrideList(data.overrides || []);
+  } catch (e) { toast(e.message, true); }
+  try {
+    const promos = await api('/admin/promos');
+    renderPromosList(promos);
+  } catch (e) { toast(e.message, true); }
+}
+
+// -------- Promos --------
+function renderPromosList(promos) {
+  const wrap = $('#promos-list');
+  const empty = $('#promos-empty');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (!promos.length) { empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  promos.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'commission-override-row promo-row';
+    const scopeBadge = p.trip_id
+      ? `${t('promos.scope.trip')} · ${escapeHtml(p.trip_label || `#${p.trip_id}`)}`
+      : (p.provider_id ? `${t('promos.scope.provider')} · ${escapeHtml(p.provider_name || `#${p.provider_id}`)}`
+                       : t('promos.scope.any'));
+    const valueStr = p.discount_kind === 'percentage'
+      ? `${p.discount_value}%`
+      : `SDG ${fmtMoney(p.discount_value)}`;
+    const capStr = p.max_redemptions
+      ? `${p.redemption_count}/${p.max_redemptions}`
+      : `${p.redemption_count}`;
+    const activeStr = p.active
+      ? `<span class="scope-badge" style="background:var(--p-ok,#17A66B);color:#fff;">${t('promos.state.active')}</span>`
+      : `<span class="scope-badge" style="background:#8a94a8;color:#fff;">${t('promos.state.inactive')}</span>`;
+    row.innerHTML = `
+      <span class="scope-badge">${escapeHtml(p.code)}</span>
+      <span class="label">${scopeBadge} · <b>${valueStr}</b> · ${capStr}</span>
+      ${activeStr}
+      <span class="actions">
+        <button data-action="edit" data-id="${p.id}">${t('action.edit')}</button>
+        <button data-action="delete" data-id="${p.id}">${t('action.delete')}</button>
+      </span>
+    `;
+    wrap.appendChild(row);
+  });
+}
+
+let _promoEditingId = null;
+async function openPromoModal(row) {
+  _promoEditingId = row?.id || null;
+  $('#promo-modal-title').textContent = t(row ? 'promos.modal.title.edit' : 'promos.modal.title.add');
+  $('#pm-code').value = row?.code || '';
+  $('#pm-code').disabled = !!row;  // codes are keys — don't rename in-place
+  selectPillById('#pm-kind', row?.discount_kind || 'percentage');
+  $('#pm-value').value = row?.discount_value ?? '';
+  $('#pm-max').value = row?.max_redemptions ?? '';
+  $('#pm-active').checked = row?.active !== false;
+  const scope = row?.trip_id ? 'trip' : (row?.provider_id ? 'provider' : 'any');
+  selectPillById('#pm-scope', scope);
+  await populatePromoProviderSelect(row?.provider_id);
+  await populatePromoTripSelect(row?.trip_id);
+  applyPromoConditionalRows();
+  $('#promo-modal').classList.add('show');
+}
+function closePromoModal() {
+  _promoEditingId = null;
+  $('#promo-modal').classList.remove('show');
+}
+async function populatePromoProviderSelect(selectedId) {
+  const sel = $('#pm-provider');
+  if (!sel) return;
+  try {
+    const providers = await api('/admin/providers?status=active');
+    sel.innerHTML = providers.map(p => `<option value="${p.id}">${escapeHtml(p.full_name)}</option>`).join('');
+    if (selectedId) sel.value = selectedId;
+  } catch (_) { sel.innerHTML = ''; }
+}
+async function populatePromoTripSelect(selectedId) {
+  const sel = $('#pm-trip');
+  if (!sel) return;
+  try {
+    const trips = await api('/admin/trips?time=all');
+    sel.innerHTML = trips.map(t2 => `<option value="${t2.trip_id}">Trip #${t2.trip_id} · ${escapeHtml(t2.origin)} → ${escapeHtml(t2.destination)}</option>`).join('');
+    if (selectedId) sel.value = selectedId;
+  } catch (_) { sel.innerHTML = ''; }
+}
+function applyPromoConditionalRows() {
+  const scope = $$('#pm-scope input').find(i => i.checked)?.value || 'any';
+  $('#pm-provider-row').classList.toggle('hidden', scope !== 'provider');
+  $('#pm-trip-row').classList.toggle('hidden', scope !== 'trip');
+}
+async function savePromo() {
+  const code = $('#pm-code').value.trim().toUpperCase();
+  const kind = $$('#pm-kind input').find(i => i.checked)?.value || 'percentage';
+  const value = parseFloat($('#pm-value').value);
+  const maxRaw = $('#pm-max').value.trim();
+  const scope = $$('#pm-scope input').find(i => i.checked)?.value || 'any';
+  const active = $('#pm-active').checked;
+  if (!code) return toast(t('promos.err.code_required'), true);
+  if (!isFinite(value) || value <= 0) return toast(t('promos.err.value_required'), true);
+  const payload = {
+    code,
+    discount_kind: kind,
+    discount_value: value,
+    max_redemptions: maxRaw ? parseInt(maxRaw, 10) : null,
+    provider_id: scope === 'provider' ? parseInt($('#pm-provider').value, 10) : null,
+    trip_id: scope === 'trip' ? parseInt($('#pm-trip').value, 10) : null,
+    active,
+  };
+  try {
+    if (_promoEditingId) {
+      const patch = { ...payload };
+      delete patch.code;  // immutable on edit
+      await api(`/admin/promos/${_promoEditingId}`, { method: 'PATCH', body: JSON.stringify(patch) });
+    } else {
+      await api('/admin/promos', { method: 'POST', body: JSON.stringify(payload) });
+    }
+    closePromoModal();
+    refreshAdminSettings();
+    toast(t('promos.saved'));
+  } catch (e) { toast(e.message, true); }
+}
+async function deletePromo(id) {
+  if (!confirm(t('promos.delete_confirm'))) return;
+  try {
+    await api(`/admin/promos/${id}`, { method: 'DELETE' });
+    refreshAdminSettings();
+    toast(t('promos.deleted'));
   } catch (e) { toast(e.message, true); }
 }
 
@@ -10001,6 +10401,38 @@ function wire() {
       } catch (err) { toast(err.message, true); }
     }
   });
+
+  // Promos — add button + list delegation + modal wiring
+  $('#promos-add-btn')?.addEventListener('click', () => openPromoModal(null));
+  $('#promos-list')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id, 10);
+    if (btn.dataset.action === 'edit') {
+      const promos = await api('/admin/promos');
+      const row = promos.find(p => p.id === id);
+      if (row) openPromoModal(row);
+    } else if (btn.dataset.action === 'delete') {
+      deletePromo(id);
+    }
+  });
+  $('#promo-modal-cancel')?.addEventListener('click', closePromoModal);
+  $('#promo-modal-save')?.addEventListener('click', savePromo);
+  $('#promo-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'promo-modal') closePromoModal();
+  });
+  // Pill toggles inside the modal (kind + scope)
+  $$('#pm-kind label').forEach(lbl => lbl.addEventListener('click', () => {
+    $$('#pm-kind label').forEach(l => l.classList.remove('active'));
+    lbl.classList.add('active');
+    const r = lbl.querySelector('input'); if (r) r.checked = true;
+  }));
+  $$('#pm-scope label').forEach(lbl => lbl.addEventListener('click', () => {
+    $$('#pm-scope label').forEach(l => l.classList.remove('active'));
+    lbl.classList.add('active');
+    const r = lbl.querySelector('input'); if (r) r.checked = true;
+    applyPromoConditionalRows();
+  }));
   $('#brand-home').addEventListener('click', () => {
     if (STATE.auth) {
       STATE.history = [];
@@ -10047,6 +10479,25 @@ function wire() {
   $('#add-trip-modal').addEventListener('click', e => { if (e.target.id === 'add-trip-modal') closeAddTrip(); });
 
   $('#lock-btn').addEventListener('click', doLock);
+  // Promo Apply just stashes the code — actual validation happens on Lock.
+  // A dedicated pre-validate endpoint could avoid the round-trip; skipped
+  // for MVP since the lock-failure message already tells the user why.
+  $('#promo-apply-btn')?.addEventListener('click', () => {
+    const inp = $('#promo-input');
+    const status = $('#promo-status');
+    if (!inp || !inp.value.trim()) return;
+    inp.value = inp.value.trim().toUpperCase();
+    status.textContent = t('promo.applied') + ' — ' + inp.value;
+    status.classList.remove('hidden', 'err');
+    $('#promo-clear-btn')?.classList.remove('hidden');
+  });
+  $('#promo-clear-btn')?.addEventListener('click', () => {
+    const inp = $('#promo-input');
+    if (inp) inp.value = '';
+    $('#promo-status')?.classList.add('hidden');
+    $('#promo-discount-row')?.classList.add('hidden');
+    $('#promo-clear-btn')?.classList.add('hidden');
+  });
   $('#billing-btn').addEventListener('click', doBilling);
   $('#cash-confirm-btn').addEventListener('click', doCashConfirm);
   $('#restart-flow-btn').addEventListener('click', restartFlow);
