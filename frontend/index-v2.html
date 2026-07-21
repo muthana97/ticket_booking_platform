@@ -6478,9 +6478,13 @@
                 <input type="radio" name="pm-scope" value="provider">
                 <span class="rp-title" data-i18n="promos.scope.provider">Provider</span>
               </label>
-              <label data-scope="trip">
-                <input type="radio" name="pm-scope" value="trip">
-                <span class="rp-title" data-i18n="promos.scope.trip">Trip</span>
+              <label data-scope="provider_route">
+                <input type="radio" name="pm-scope" value="provider_route">
+                <span class="rp-title" data-i18n="promos.scope.provider_route">Provider + Route</span>
+              </label>
+              <label data-scope="provider_trip">
+                <input type="radio" name="pm-scope" value="provider_trip">
+                <span class="rp-title" data-i18n="promos.scope.provider_trip">Provider + Trip</span>
               </label>
             </div>
           </div>
@@ -6491,10 +6495,28 @@
             <select id="pm-provider"></select>
           </div>
         </div>
+        <div class="modal-row hidden" id="pm-route-row">
+          <div class="field-block full">
+            <label data-i18n="promos.field.route">Route</label>
+            <select id="pm-route"></select>
+          </div>
+        </div>
         <div class="modal-row hidden" id="pm-trip-row">
           <div class="field-block full">
-            <label data-i18n="promos.field.trip">Trip</label>
-            <select id="pm-trip"></select>
+            <label><span data-i18n="promos.field.trip">Trip</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.trip_hint">type to filter — trip #, origin, destination</span>)</small></label>
+            <input type="text" id="pm-trip-input" list="pm-trip-list" autocomplete="off" placeholder="Trip #…" />
+            <datalist id="pm-trip-list"></datalist>
+            <input type="hidden" id="pm-trip" />
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="field-block">
+            <label><span data-i18n="promos.field.start_at">Start</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
+            <input type="datetime-local" id="pm-start" />
+          </div>
+          <div class="field-block">
+            <label><span data-i18n="promos.field.expires_at">Expires</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
+            <input type="datetime-local" id="pm-expires" />
           </div>
         </div>
         <div class="modal-row">
@@ -6995,14 +7017,25 @@ const I18N = {
     'promos.kind.flat': 'Flat (SDG)',
     'promos.scope.any': 'Any trip',
     'promos.scope.provider': 'Provider',
+    'promos.scope.provider_route': 'Provider + Route',
+    'promos.scope.provider_trip': 'Provider + Trip',
     'promos.scope.trip': 'Trip',
     'promos.state.active': 'Active',
     'promos.state.inactive': 'Inactive',
+    'promos.field.route': 'Route',
+    'promos.field.trip_hint': 'type to filter — trip #, origin, destination',
+    'promos.field.start_at': 'Start',
+    'promos.field.expires_at': 'Expires',
     'promos.saved': 'Promo saved.',
     'promos.deleted': 'Promo deleted.',
     'promos.delete_confirm': 'Delete this promo? Bookings that already used it keep their discount.',
     'promos.err.code_required': 'Code is required.',
     'promos.err.value_required': 'Value must be a positive number.',
+    'promos.err.provider_required': 'Pick a provider for this scope.',
+    'promos.err.route_required': 'Pick a route for this scope.',
+    'promos.err.trip_required': 'Pick a trip from the list for this scope.',
+    'promos.err.date_window': 'Expires must be after Start.',
+    'promos.err.no_routes': 'This provider has no routes yet.',
     'promo.apply': 'Apply',
     'promo.placeholder': 'Promo code',
     'promo.applied': 'Promo applied.',
@@ -7301,14 +7334,25 @@ const I18N = {
     'promos.kind.flat': 'مبلغ ثابت (SDG)',
     'promos.scope.any': 'أي رحلة',
     'promos.scope.provider': 'مشغل محدد',
+    'promos.scope.provider_route': 'مشغل + خط سير',
+    'promos.scope.provider_trip': 'مشغل + رحلة محددة',
     'promos.scope.trip': 'رحلة محددة',
     'promos.state.active': 'مفعّل',
     'promos.state.inactive': 'متوقّف',
+    'promos.field.route': 'خط السير',
+    'promos.field.trip_hint': 'اكتب للفلترة — رقم الرحلة أو الوجهات',
+    'promos.field.start_at': 'يبدأ في',
+    'promos.field.expires_at': 'ينتهي في',
     'promos.saved': 'تم حفظ الكوبون.',
     'promos.deleted': 'تم حذف الكوبون.',
     'promos.delete_confirm': 'هل تريد حذف هذا الكوبون؟ الحجوزات التي استخدمته تحتفظ بخصمها.',
     'promos.err.code_required': 'الكود مطلوب.',
     'promos.err.value_required': 'القيمة يجب أن تكون رقماً موجباً.',
+    'promos.err.provider_required': 'اختر مشغلاً لهذا النطاق.',
+    'promos.err.route_required': 'اختر خط السير لهذا النطاق.',
+    'promos.err.trip_required': 'اختر الرحلة من القائمة.',
+    'promos.err.date_window': 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية.',
+    'promos.err.no_routes': 'لا يوجد لهذا المشغل خطوط سير بعد.',
     'promo.apply': 'تطبيق',
     'promo.placeholder': 'كوبون الخصم',
     'promo.applied': 'تم تطبيق الكوبون.',
@@ -9534,22 +9578,40 @@ function renderPromosList(promos) {
   promos.forEach(p => {
     const row = document.createElement('div');
     row.className = 'commission-override-row promo-row';
-    const scopeBadge = p.trip_id
-      ? `${t('promos.scope.trip')} · ${escapeHtml(p.trip_label || `#${p.trip_id}`)}`
-      : (p.provider_id ? `${t('promos.scope.provider')} · ${escapeHtml(p.provider_name || `#${p.provider_id}`)}`
-                       : t('promos.scope.any'));
+
+    // Scope label: any / Provider · X / Provider · X · Route Y / Provider · X · Trip #Z
+    let scopeBadge;
+    if (p.trip_id) {
+      scopeBadge = `${t('promos.scope.provider_trip')} · ${escapeHtml(p.provider_name || `#${p.provider_id}`)} · ${escapeHtml(p.trip_label || `#${p.trip_id}`)}`;
+    } else if (p.route_id) {
+      scopeBadge = `${t('promos.scope.provider_route')} · ${escapeHtml(p.provider_name || `#${p.provider_id}`)} · ${escapeHtml(p.route_label || `#${p.route_id}`)}`;
+    } else if (p.provider_id) {
+      scopeBadge = `${t('promos.scope.provider')} · ${escapeHtml(p.provider_name || `#${p.provider_id}`)}`;
+    } else {
+      scopeBadge = t('promos.scope.any');
+    }
+
     const valueStr = p.discount_kind === 'percentage'
       ? `${p.discount_value}%`
       : `SDG ${fmtMoney(p.discount_value)}`;
     const capStr = p.max_redemptions
       ? `${p.redemption_count}/${p.max_redemptions}`
       : `${p.redemption_count}`;
+
+    // Date window — only shown when at least one bound is set.
+    let windowStr = '';
+    if (p.start_at || p.expires_at) {
+      const from = p.start_at ? fmtTime(p.start_at) : '—';
+      const to   = p.expires_at ? fmtTime(p.expires_at) : '—';
+      windowStr = ` · ${from} → ${to}`;
+    }
+
     const activeStr = p.active
       ? `<span class="scope-badge" style="background:var(--p-ok,#17A66B);color:#fff;">${t('promos.state.active')}</span>`
       : `<span class="scope-badge" style="background:#8a94a8;color:#fff;">${t('promos.state.inactive')}</span>`;
     row.innerHTML = `
       <span class="scope-badge">${escapeHtml(p.code)}</span>
-      <span class="label">${scopeBadge} · <b>${valueStr}</b> · ${capStr}</span>
+      <span class="label">${scopeBadge} · <b>${valueStr}</b> · ${capStr}${windowStr}</span>
       ${activeStr}
       <span class="actions">
         <button data-action="edit" data-id="${p.id}">${t('action.edit')}</button>
@@ -9561,6 +9623,8 @@ function renderPromosList(promos) {
 }
 
 let _promoEditingId = null;
+let _promoTripCache = [];  // cached [{trip_id, origin, destination, departure_time}] for the current provider
+
 async function openPromoModal(row) {
   _promoEditingId = row?.id || null;
   $('#promo-modal-title').textContent = t(row ? 'promos.modal.title.edit' : 'promos.modal.title.add');
@@ -9570,17 +9634,44 @@ async function openPromoModal(row) {
   $('#pm-value').value = row?.discount_value ?? '';
   $('#pm-max').value = row?.max_redemptions ?? '';
   $('#pm-active').checked = row?.active !== false;
-  const scope = row?.trip_id ? 'trip' : (row?.provider_id ? 'provider' : 'any');
+  $('#pm-start').value = row?.start_at ? _toLocalDateTimeInput(row.start_at) : '';
+  $('#pm-expires').value = row?.expires_at ? _toLocalDateTimeInput(row.expires_at) : '';
+
+  // Reconstruct scope from row shape.
+  let scope = 'any';
+  if (row?.trip_id) scope = 'provider_trip';
+  else if (row?.route_id) scope = 'provider_route';
+  else if (row?.provider_id) scope = 'provider';
   selectPillById('#pm-scope', scope);
+
   await populatePromoProviderSelect(row?.provider_id);
-  await populatePromoTripSelect(row?.trip_id);
+  // Populate route + trip conditionally on the current provider selection.
+  const pid = row?.provider_id || (parseInt($('#pm-provider').value, 10) || null);
+  await populatePromoRouteSelect(pid, row?.route_id);
+  await populatePromoTripPicker(pid, row?.trip_id);
   applyPromoConditionalRows();
   $('#promo-modal').classList.add('show');
 }
+function _toLocalDateTimeInput(iso) {
+  // Server returns ISO UTC; input[type=datetime-local] expects local
+  // "YYYY-MM-DDTHH:mm" without a Z.
+  try {
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch (_) { return ''; }
+}
+function _toIsoFromInput(local) {
+  // Convert local "YYYY-MM-DDTHH:mm" back to ISO string (implicit local TZ).
+  if (!local) return null;
+  return new Date(local).toISOString();
+}
+
 function closePromoModal() {
   _promoEditingId = null;
   $('#promo-modal').classList.remove('show');
 }
+
 async function populatePromoProviderSelect(selectedId) {
   const sel = $('#pm-provider');
   if (!sel) return;
@@ -9590,20 +9681,99 @@ async function populatePromoProviderSelect(selectedId) {
     if (selectedId) sel.value = selectedId;
   } catch (_) { sel.innerHTML = ''; }
 }
-async function populatePromoTripSelect(selectedId) {
-  const sel = $('#pm-trip');
+
+async function populatePromoRouteSelect(providerId, selectedId) {
+  // Routes are derived from that provider's trips — no dedicated /routes
+  // endpoint. Same trick as the commission-override modal.
+  const sel = $('#pm-route');
   if (!sel) return;
+  if (!providerId) { sel.innerHTML = ''; return; }
   try {
-    const trips = await api('/admin/trips?time=all');
-    sel.innerHTML = trips.map(t2 => `<option value="${t2.trip_id}">Trip #${t2.trip_id} · ${escapeHtml(t2.origin)} → ${escapeHtml(t2.destination)}</option>`).join('');
-    if (selectedId) sel.value = selectedId;
+    const trips = await api(`/admin/trips?provider_id=${providerId}&time=all`);
+    const seen = new Map();
+    trips.forEach(tr => {
+      if (tr.route_id) seen.set(tr.route_id, `${tr.origin} → ${tr.destination}`);
+    });
+    sel.innerHTML = [...seen.entries()].map(([id, label]) =>
+      `<option value="${id}" ${id === selectedId ? 'selected' : ''}>${escapeHtml(label)}</option>`
+    ).join('') || `<option value="" disabled>${t('promos.err.no_routes')}</option>`;
   } catch (_) { sel.innerHTML = ''; }
 }
+
+/* Typeable trip picker — cache the provider's trips + expose them via a
+   <datalist> so the browser handles filtering natively (a real typeahead
+   scales to hundreds without any custom widget). */
+async function populatePromoTripPicker(providerId, selectedId) {
+  const input = $('#pm-trip-input');
+  const list  = $('#pm-trip-list');
+  const hidden = $('#pm-trip');
+  if (!input || !list || !hidden) return;
+  if (!providerId) {
+    _promoTripCache = [];
+    list.innerHTML = '';
+    input.value = '';
+    hidden.value = '';
+    return;
+  }
+  try {
+    const trips = await api(`/admin/trips?provider_id=${providerId}&time=all`);
+    _promoTripCache = trips;
+    // datalist option text carries the human-readable label; the value is
+    // what appears in the input when picked, so we make it "#123 Origin → Dest"
+    // for both display + easy re-parse.
+    list.innerHTML = trips.map(tr => {
+      const label = `#${tr.trip_id} · ${tr.origin} → ${tr.destination} · ${fmtTime(tr.departure_time)}`;
+      return `<option value="${escapeHtml(label)}"></option>`;
+    }).join('');
+    if (selectedId) {
+      const t2 = trips.find(x => x.trip_id === selectedId);
+      if (t2) {
+        input.value = `#${t2.trip_id} · ${t2.origin} → ${t2.destination} · ${fmtTime(t2.departure_time)}`;
+        hidden.value = String(t2.trip_id);
+      }
+    } else {
+      input.value = '';
+      hidden.value = '';
+    }
+  } catch (_) { _promoTripCache = []; list.innerHTML = ''; }
+}
+function resolvePromoTripFromInput() {
+  // Parse "#123 · …" back into a trip_id. Fall back to a substring match on
+  // origin/destination if the user typed a fuzzy string instead of picking.
+  const raw = ($('#pm-trip-input')?.value || '').trim();
+  const hidden = $('#pm-trip');
+  if (!raw) { if (hidden) hidden.value = ''; return null; }
+  const idMatch = raw.match(/^#?(\d+)/);
+  if (idMatch) {
+    const id = parseInt(idMatch[1], 10);
+    if (_promoTripCache.some(tr => tr.trip_id === id)) {
+      if (hidden) hidden.value = String(id);
+      return id;
+    }
+  }
+  const low = raw.toLowerCase();
+  const hit = _promoTripCache.find(tr =>
+    (`#${tr.trip_id} · ${tr.origin} → ${tr.destination} · ${fmtTime(tr.departure_time)}`).toLowerCase() === low
+    || `${tr.origin} → ${tr.destination}`.toLowerCase().includes(low)
+  );
+  if (hit) {
+    if (hidden) hidden.value = String(hit.trip_id);
+    return hit.trip_id;
+  }
+  if (hidden) hidden.value = '';
+  return null;
+}
+
 function applyPromoConditionalRows() {
   const scope = $$('#pm-scope input').find(i => i.checked)?.value || 'any';
-  $('#pm-provider-row').classList.toggle('hidden', scope !== 'provider');
-  $('#pm-trip-row').classList.toggle('hidden', scope !== 'trip');
+  const needsProvider = (scope !== 'any');
+  const needsRoute    = (scope === 'provider_route');
+  const needsTrip     = (scope === 'provider_trip');
+  $('#pm-provider-row').classList.toggle('hidden', !needsProvider);
+  $('#pm-route-row').classList.toggle('hidden', !needsRoute);
+  $('#pm-trip-row').classList.toggle('hidden', !needsTrip);
 }
+
 async function savePromo() {
   const code = $('#pm-code').value.trim().toUpperCase();
   const kind = $$('#pm-kind input').find(i => i.checked)?.value || 'percentage';
@@ -9611,15 +9781,32 @@ async function savePromo() {
   const maxRaw = $('#pm-max').value.trim();
   const scope = $$('#pm-scope input').find(i => i.checked)?.value || 'any';
   const active = $('#pm-active').checked;
+  const startRaw = $('#pm-start').value;
+  const expiresRaw = $('#pm-expires').value;
   if (!code) return toast(t('promos.err.code_required'), true);
   if (!isFinite(value) || value <= 0) return toast(t('promos.err.value_required'), true);
+
+  const providerId = (scope !== 'any') ? parseInt($('#pm-provider').value, 10) : null;
+  const routeId    = (scope === 'provider_route') ? parseInt($('#pm-route').value, 10) : null;
+  const tripId     = (scope === 'provider_trip') ? resolvePromoTripFromInput() : null;
+  if (scope !== 'any' && !providerId)             return toast(t('promos.err.provider_required'), true);
+  if (scope === 'provider_route' && !routeId)     return toast(t('promos.err.route_required'), true);
+  if (scope === 'provider_trip' && !tripId)       return toast(t('promos.err.trip_required'), true);
+
+  const startIso = _toIsoFromInput(startRaw);
+  const endIso   = _toIsoFromInput(expiresRaw);
+  if (startIso && endIso && endIso <= startIso) return toast(t('promos.err.date_window'), true);
+
   const payload = {
     code,
     discount_kind: kind,
     discount_value: value,
     max_redemptions: maxRaw ? parseInt(maxRaw, 10) : null,
-    provider_id: scope === 'provider' ? parseInt($('#pm-provider').value, 10) : null,
-    trip_id: scope === 'trip' ? parseInt($('#pm-trip').value, 10) : null,
+    provider_id: providerId,
+    route_id: routeId,
+    trip_id: tripId,
+    start_at: startIso,
+    expires_at: endIso,
     active,
   };
   try {
@@ -10433,6 +10620,17 @@ function wire() {
     const r = lbl.querySelector('input'); if (r) r.checked = true;
     applyPromoConditionalRows();
   }));
+  // Provider change → refresh both dependent pickers so route + trip lists
+  // match the new provider's inventory.
+  $('#pm-provider')?.addEventListener('change', async () => {
+    const pid = parseInt($('#pm-provider').value, 10) || null;
+    await populatePromoRouteSelect(pid, null);
+    await populatePromoTripPicker(pid, null);
+  });
+  // Trip input: resolve on blur so a fuzzy typo shows a validation error
+  // at save time instead of silently sending null.
+  $('#pm-trip-input')?.addEventListener('change', resolvePromoTripFromInput);
+  $('#pm-trip-input')?.addEventListener('blur',   resolvePromoTripFromInput);
   $('#brand-home').addEventListener('click', () => {
     if (STATE.auth) {
       STATE.history = [];
