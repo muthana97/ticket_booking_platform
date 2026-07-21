@@ -295,6 +295,17 @@ def confirm_payment(
 
     if booking.status == "confirmed":
         raise HTTPException(status_code=400, detail="Booking is already confirmed")
+    if booking.status == "expired":
+        # The Reaper already released the seats + refunded the promo slot.
+        # Confirming here would resurrect a booking whose seats might now
+        # belong to someone else, and double-count the promo.
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "This booking expired before payment was confirmed. "
+                "Seats have been released; the customer must rebook."
+            ),
+        )
     if booking.status not in ("pending", "committed_pending"):
         raise HTTPException(
             status_code=400,

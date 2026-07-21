@@ -449,6 +449,28 @@ def test_reaper_releases_on_expiry(db, provider, customer_a):
 # 6. Confirm doesn't double-bump (invariant test)
 # ---------------------------------------------------------------------------
 
+def test_confirm_refuses_expired_booking(db, provider, customer_a):
+    """Once the Reaper marks a booking expired, admin can't resurrect it —
+    seats have been released and the promo slot has been refunded."""
+    trip = _make_trip(db, provider=provider)
+    db.add(PromoCode(code="LIBRE", discount_kind="percentage", discount_value=10.0))
+    db.commit()
+
+    lock_seats(db=db, trip_id=trip.id, seat_numbers=["1A"],
+               customer_id=customer_a.id, total_price=100.0,
+               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIBRE")
+
+    # Fast-forward: manually simulate the Reaper flipping status.
+    b = db.query(Booking).order_by(Booking.id.desc()).first()
+    b.status = "expired"
+    db.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        confirm_payment(db, booking_id=b.id, payment_method="billing_reference")
+    assert exc.value.status_code == 400
+    assert "expired" in exc.value.detail.lower()
+
+
 def test_confirm_does_not_increment_again(db, provider, customer_a):
     trip = _make_trip(db, provider=provider)
     db.add(PromoCode(code="LIBRE", discount_kind="percentage", discount_value=10.0))
