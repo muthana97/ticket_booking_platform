@@ -3026,17 +3026,22 @@
     color: var(--p-ink-faint);
   }
 
-  /* Promo input row (booking screen). Three-item flex row (input, Apply,
-     Cancel). Without min-width:0 on the input the flex engine refuses to
-     shrink it below its intrinsic content width, which stretched the whole
-     .book-grid wider than the viewport on Android (screen leaked right). */
+  /* Promo input row (booking screen). Wraps: input takes the whole row,
+     Apply + Cancel drop below. Previously we ran input + two buttons on
+     a single flex line; the intrinsic min-width of the input (padding +
+     placeholder) refused to shrink small enough on narrow phones,
+     pushing the whole .book-grid wider than the viewport (screen leaked
+     right on Android). Wrap avoids the min-width problem entirely. */
   .promo-input-row {
     display: flex; gap: 8px; align-items: center;
-    min-width: 0;
+    flex-wrap: wrap;
+    min-width: 0; max-width: 100%;
   }
   .promo-input-row input {
-    flex: 1 1 0;
+    flex: 1 1 100%;
     min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
     border: 1px solid var(--rule);
     padding: 8px 10px;
     font-family: 'JetBrains Mono', monospace;
@@ -3045,9 +3050,10 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
-  .promo-input-row .btn-inline { flex-shrink: 0; }
+  .promo-input-row .btn-inline { flex: 0 0 auto; }
   /* Clip anything that still tries to overflow so the panel never widens
      the outer .book-grid. Belt-and-braces guard for future additions. */
+  #promo-panel { min-width: 0; max-width: 100%; overflow: hidden; }
   #promo-panel .panel-body { min-width: 0; overflow: hidden; }
   body.pillow .promo-input-row input {
     background: var(--p-card-tint);
