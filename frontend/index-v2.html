@@ -3020,12 +3020,17 @@
     color: var(--p-ink-faint);
   }
 
-  /* Promo input row (booking screen) */
+  /* Promo input row (booking screen). Three-item flex row (input, Apply,
+     Cancel). Without min-width:0 on the input the flex engine refuses to
+     shrink it below its intrinsic content width, which stretched the whole
+     .book-grid wider than the viewport on Android (screen leaked right). */
   .promo-input-row {
     display: flex; gap: 8px; align-items: center;
+    min-width: 0;
   }
   .promo-input-row input {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     border: 1px solid var(--rule);
     padding: 8px 10px;
     font-family: 'JetBrains Mono', monospace;
@@ -3034,6 +3039,10 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
+  .promo-input-row .btn-inline { flex-shrink: 0; }
+  /* Clip anything that still tries to overflow so the panel never widens
+     the outer .book-grid. Belt-and-braces guard for future additions. */
+  #promo-panel .panel-body { min-width: 0; overflow: hidden; }
   body.pillow .promo-input-row input {
     background: var(--p-card-tint);
     border: 0;
