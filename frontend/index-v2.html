@@ -7850,6 +7850,11 @@ function paintChrome() {
   const ovCard   = $('#commission-overrides-card');
   const commSection = commCard?.closest('.settings-section');
   if (commSection) commSection.hidden = (auth?.user?.role !== 'admin');
+  // Promos section visibility — admin only. Customers + operators
+  // otherwise saw an empty Promos card since the /admin/promos fetch
+  // silently 403s for them.
+  const promosSection = $('#settings-promos-section');
+  if (promosSection) promosSection.hidden = (auth?.user?.role !== 'admin');
 
   // Hide the subhead on screens where the back button isn't useful (main
   // landing screens for each role + the auth flow). Only sub-screens that
