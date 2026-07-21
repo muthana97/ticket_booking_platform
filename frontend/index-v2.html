@@ -3070,6 +3070,13 @@
     color: var(--p-ok, #17A66B);
   }
   .promo-status.err { color: var(--p-danger, #D94A3E); }
+  .promo-hint {
+    margin-top: 8px;
+    font-family: var(--p-sans, 'Hanken Grotesk');
+    font-size: 11.5px;
+    color: var(--p-ink-mute, #5B6478);
+    line-height: 1.4;
+  }
 
   /* Total */
   body[data-screen="customer-book"].pillow .summary-row .k {
@@ -6088,7 +6095,7 @@
             <div class="panel-head"><span data-i18n="book.pax">Passenger Details</span></div>
             <div class="panel-body" id="pax-body"><div class="ff-mono" style="font-size: 11px; color: var(--ink-soft);" data-i18n="book.fillnames">Select seats to fill in passenger names.</div></div>
           </div>
-          <div class="panel">
+          <div class="panel" id="promo-panel">
             <div class="panel-head"><span data-i18n="book.promo">Promo</span></div>
             <div class="panel-body">
               <div class="promo-input-row">
@@ -6097,6 +6104,7 @@
                 <button id="promo-clear-btn" type="button" class="btn-inline ghost hidden" data-i18n="action.cancel">Cancel</button>
               </div>
               <div class="promo-status hidden" id="promo-status"></div>
+              <div class="promo-hint hidden" id="promo-hint" data-i18n="promo.hint.single_seat">Promo codes apply to single-seat bookings only — one per account.</div>
             </div>
           </div>
           <div class="panel">
@@ -7040,6 +7048,7 @@ const I18N = {
     'promo.placeholder': 'Promo code',
     'promo.applied': 'Promo applied.',
     'promo.total_discount': 'Discount',
+    'promo.hint.single_seat': 'Promo codes apply to single-seat bookings only — one per account.',
     'action.cancel': 'Cancel',
     'action.save': 'Save',
     'action.edit': 'Edit',
@@ -7357,6 +7366,7 @@ const I18N = {
     'promo.placeholder': 'كوبون الخصم',
     'promo.applied': 'تم تطبيق الكوبون.',
     'promo.total_discount': 'الخصم',
+    'promo.hint.single_seat': 'الكوبون يُطبَّق على مقعد واحد فقط — مرة واحدة لكل حساب.',
     'action.cancel': 'إلغاء',
     'action.save': 'حفظ',
     'action.edit': 'تعديل',
@@ -8876,6 +8886,27 @@ function refreshSelectionUI() {
   });
   const seatWord = STATE.selected.size === 1 ? t('book.seat') : t('book.seats');
   $('#select-count').textContent = STATE.selected.size + ' ' + seatWord.toUpperCase();
+
+  // Promo panel gating: only for consumer, single-seat bookings.
+  const panel = $('#promo-panel');
+  const inp = $('#promo-input');
+  const applyBtn = $('#promo-apply-btn');
+  const hint = $('#promo-hint');
+  if (panel) {
+    const isWalkin = STATE.bookingFlow === 'provider';
+    const overCap = STATE.selected.size > 1;
+    if (isWalkin) {
+      panel.classList.add('hidden');
+      if (typeof resetPromoUi === 'function') resetPromoUi();
+    } else {
+      panel.classList.remove('hidden');
+      const disabled = overCap;
+      if (inp) inp.disabled = disabled;
+      if (applyBtn) applyBtn.disabled = disabled;
+      if (hint) hint.classList.toggle('hidden', !disabled);
+      if (disabled && typeof resetPromoUi === 'function') resetPromoUi();
+    }
+  }
 
   const body = $('#pax-body'); body.innerHTML = '';
   if (STATE.selected.size === 0) {
