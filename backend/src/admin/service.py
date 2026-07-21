@@ -329,6 +329,12 @@ def confirm_payment(
     if _trip:
         snapshot_commission(db, booking, _trip)
 
+    # Bump promo redemption counter — happens here (not at lock time) so a
+    # booking that expires without confirming doesn't burn a redemption.
+    if booking.promo_id:
+        from ..promo import service as _promo_svc
+        _promo_svc.bump_redemption(db, promo_id=booking.promo_id)
+
     db.commit()
     db.refresh(booking)
 

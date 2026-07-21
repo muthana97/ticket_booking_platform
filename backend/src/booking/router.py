@@ -35,6 +35,7 @@ def reserve_seats(
         total_price=payload.total_price,
         passengers=payload.passengers,
         channel="consumer",
+        promo_code=payload.promo_code,
     )
 
     booking = result["booking"]
@@ -47,6 +48,8 @@ def reserve_seats(
         "expires_at": booking.expires_at,
         "seats": [s.seat_number for s in result["seats"]],
         "message": f"Seats locked for {current_user.email}.",
+        "promo_code": booking.promo_code,
+        "promo_discount": booking.promo_discount,
     }
 
 
@@ -82,6 +85,7 @@ def reserve_seats_walkin(
         total_price=payload.total_price,
         passengers=payload.passengers,
         channel="walkin",
+        promo_code=payload.promo_code,
     )
 
     booking = result["booking"]
@@ -94,6 +98,8 @@ def reserve_seats_walkin(
         "expires_at": booking.expires_at,
         "seats": [s.seat_number for s in result["seats"]],
         "message": f"Walk-in seats locked by {current_user.email}.",
+        "promo_code": booking.promo_code,
+        "promo_discount": booking.promo_discount,
     }
 
 

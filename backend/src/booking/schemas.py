@@ -19,6 +19,7 @@ class BookingLockRequest(BaseModel):
     seat_numbers: List[str]
     total_price: float
     passengers: List[PassengerInput] = Field(default_factory=list)
+    promo_code: Optional[str] = None
 
 
 class WalkInBookingRequest(BookingLockRequest):
@@ -43,6 +44,8 @@ class BookingResponse(BaseModel):
     expires_at: datetime
     seats: List[str]
     message: str
+    promo_code: Optional[str] = None
+    promo_discount: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -140,6 +143,8 @@ class TicketResponse(BaseModel):
     delivered_to: Optional[str] = None  # simulated email delivery target
     qr_payload: str          # text content the frontend encodes into a QR image (TKT-04)
     message: str
+    promo_code: Optional[str] = None
+    promo_discount: Optional[float] = None
 
     class Config:
         from_attributes = True

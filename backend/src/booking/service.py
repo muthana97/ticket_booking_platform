@@ -108,6 +108,7 @@ def lock_seats(
     total_price: float,
     passengers: list | None = None,
     channel: str = "consumer",
+    promo_code: str | None = None,
 ):
     """
     Atomically lock seats using `with_for_update` row-level locks, then create
@@ -115,7 +116,14 @@ def lock_seats(
 
     The Reaper background daemon (tasks.py) reads `expires_at` to release
     seats from any booking whose window lapses without billing intent.
+
+    Optional `promo_code` runs through promo.service.resolve_and_price and,
+    on success, snapshots the code + discount onto the booking so a later
+    admin edit / delete of the promo doesn't change what the customer paid.
     """
+    from ..inventory.models import Trip as _Trip
+    from ..promo import service as _promo_svc
+
     # 0. Validate passenger names before we take any locks (GEN-1) — no point
     #    locking seats we're about to reject.
     _validate_passenger_names(db, trip_id, passengers or [])
@@ -138,6 +146,20 @@ def lock_seats(
                 detail=f"Seat {seat.seat_number} is already taken",
             )
 
+    # 2.5. Resolve promo (if supplied) BEFORE we flip seat status — errors
+    #     here surface before any state change and don't strand held seats.
+    promo_row = None
+    promo_discount = 0.0
+    final_price = total_price
+    if promo_code:
+        trip = db.query(_Trip).filter(_Trip.id == trip_id).first()
+        if not trip:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        promo_row, promo_discount = _promo_svc.resolve_and_price(
+            db, code=promo_code, trip=trip, total_before=total_price,
+        )
+        final_price = round(total_price - promo_discount, 2)
+
     # 3. Flip seats → locked
     for seat in seats:
         seat.status = "locked"
@@ -148,12 +170,15 @@ def lock_seats(
         customer_id=customer_id,
         trip_id=trip_id,
         status="pending",
-        total_price=total_price,
+        total_price=final_price,
         channel=channel,
         payment_status="unpaid",
         created_at=now,
         expires_at=now + timedelta(minutes=10),
         seat_ids=[seat.id for seat in seats],
+        promo_code=(promo_row.code if promo_row else None),
+        promo_discount=(promo_discount if promo_row else None),
+        promo_id=(promo_row.id if promo_row else None),
     )
     db.add(new_booking)
     db.flush()  # Need new_booking.id for passenger FKs
@@ -299,6 +324,8 @@ def build_ticket_payload(db: Session, booking: Booking) -> dict:
             + (f"Sent to {delivered_to}. " if delivered_to else "")
             + f"Settle reference {booking.billing_reference} within 30 minutes."
         ),
+        "promo_code": booking.promo_code,
+        "promo_discount": booking.promo_discount,
     }
 
 
