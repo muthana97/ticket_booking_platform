@@ -13,7 +13,10 @@ class PromoBase(BaseModel):
     discount_value: float = Field(..., gt=0)
     max_redemptions: Optional[int] = Field(default=None, ge=1)
     provider_id: Optional[int] = None
+    route_id: Optional[int] = None
     trip_id: Optional[int] = None
+    start_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
     active: bool = True
 
     @field_validator("code")
@@ -31,6 +34,24 @@ class PromoBase(BaseModel):
             raise ValueError("Percentage discount cannot exceed 100%.")
         return v
 
+    @field_validator("expires_at")
+    @classmethod
+    def _end_after_start(cls, v, info):
+        start = info.data.get("start_at")
+        if v is not None and start is not None and v <= start:
+            raise ValueError("expires_at must be after start_at.")
+        return v
+
+    @field_validator("route_id", "trip_id")
+    @classmethod
+    def _scoped_needs_provider(cls, v, info):
+        # Route- or trip-scoped promos MUST specify a provider — trip / route
+        # id alone is ambiguous when combined with the provider filter at
+        # apply time.
+        if v is not None and not info.data.get("provider_id"):
+            raise ValueError("route_id / trip_id requires provider_id.")
+        return v
+
 
 class PromoCreate(PromoBase):
     pass
@@ -43,7 +64,10 @@ class PromoUpdate(BaseModel):
     discount_value: Optional[float] = Field(default=None, gt=0)
     max_redemptions: Optional[int] = Field(default=None, ge=0)  # 0 clears the cap
     provider_id: Optional[int] = None
+    route_id: Optional[int] = None
     trip_id: Optional[int] = None
+    start_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
     active: Optional[bool] = None
 
     @field_validator("code")
@@ -61,8 +85,12 @@ class PromoOut(BaseModel):
     redemption_count: int
     provider_id: Optional[int] = None
     provider_name: Optional[str] = None
+    route_id: Optional[int] = None
+    route_label: Optional[str] = None  # e.g. "Khartoum → Port Sudan"
     trip_id: Optional[int] = None
-    trip_label: Optional[str] = None  # e.g. "Trip #12 · Khartoum → Port Sudan"
+    trip_label: Optional[str] = None   # e.g. "Trip #12 · Khartoum → Port Sudan"
+    start_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
     active: bool
     created_at: datetime
 

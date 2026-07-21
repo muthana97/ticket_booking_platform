@@ -12,7 +12,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..auth.models import User
-from ..inventory.models import Trip
+from ..inventory.models import Route, Trip
 from . import models
 
 
@@ -25,6 +25,11 @@ def _decorate(db: Session, p: models.PromoCode) -> dict:
     if p.provider_id:
         u = db.query(User).filter(User.id == p.provider_id).first()
         provider_name = u.full_name if u else None
+    route_label = None
+    if p.route_id:
+        r = db.query(Route).filter(Route.id == p.route_id).first()
+        if r:
+            route_label = f"{r.origin} → {r.destination}"
     trip_label = None
     if p.trip_id:
         t = db.query(Trip).filter(Trip.id == p.trip_id).first()
@@ -41,8 +46,12 @@ def _decorate(db: Session, p: models.PromoCode) -> dict:
         "redemption_count": p.redemption_count,
         "provider_id": p.provider_id,
         "provider_name": provider_name,
+        "route_id": p.route_id,
+        "route_label": route_label,
         "trip_id": p.trip_id,
         "trip_label": trip_label,
+        "start_at": p.start_at,
+        "expires_at": p.expires_at,
         "active": p.active,
         "created_at": p.created_at,
     }
@@ -117,10 +126,17 @@ def resolve_and_price(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Promo code not found.")
     if not p.active:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "This promo is no longer active.")
+    now = datetime.utcnow()
+    if p.start_at is not None and now < p.start_at:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This promo isn't active yet.")
+    if p.expires_at is not None and now > p.expires_at:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This promo has expired.")
     if p.max_redemptions is not None and p.redemption_count >= p.max_redemptions:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "This promo has reached its redemption limit.")
     if p.provider_id is not None and trip.provider_id != p.provider_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "This promo isn't valid on this operator's trips.")
+    if p.route_id is not None and trip.route_id != p.route_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This promo isn't valid on this route.")
     if p.trip_id is not None and trip.id != p.trip_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "This promo isn't valid on this trip.")
 

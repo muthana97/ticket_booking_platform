@@ -28,8 +28,19 @@ class PromoCode(Base):
     # Optional caps + scope. NULL columns = no restriction.
     max_redemptions = Column(Integer, nullable=True)
     redemption_count = Column(Integer, nullable=False, default=0)
+
+    # Scope. When trip_id is set, provider_id is expected to match trip's
+    # provider (enforced in service.resolve_and_price and at admin-write
+    # time). Trip-only without provider_id would be ambiguous, so admin UI
+    # never mints it.
     provider_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    route_id = Column(Integer, ForeignKey("routes.id"), nullable=True, index=True)
     trip_id = Column(Integer, ForeignKey("trips.id"), nullable=True, index=True)
+
+    # Time window. Both nullable — a promo with no start_at is valid from the
+    # moment it's created; no expires_at means it never expires.
+    start_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
 
     active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

@@ -69,6 +69,10 @@ def _migrate_if_needed():
         )
         """,
         "CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes (code)",
+        # Date window + route scope, added after the initial promo_codes ship.
+        "ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS start_at TIMESTAMP",
+        "ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP",
+        "ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS route_id INTEGER REFERENCES routes(id)",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_code VARCHAR",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_discount DOUBLE PRECISION",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_id INTEGER REFERENCES promo_codes(id) ON DELETE SET NULL",
