@@ -803,6 +803,7 @@
   body[data-screen="register"]              #screen-register,
   body[data-screen="verify-email"]          #screen-verify-email,
   body[data-screen="forgot-password"]       #screen-forgot-password,
+  body[data-screen="reset-password"]        #screen-reset-password,
   body[data-screen="provider-pending"]      #screen-provider-pending,
   body[data-screen="customer-category"]     #screen-customer-category,
   body[data-screen="customer-coming-soon"]  #screen-customer-coming-soon,
@@ -5895,6 +5896,39 @@
       </div>
     </section>
 
+    <!-- Reset password -->
+    <section class="screen" id="screen-reset-password">
+      <div class="auth-stage">
+        <h1 data-i18n="auth.reset.title">Enter your new password.</h1>
+        <div class="lead"><span data-i18n="auth.reset.subtitle">Enter the 6-digit code we sent to</span> <b id="rp-email">—</b>.</div>
+        <div class="p-pillow">
+          <div class="p-field">
+            <label for="rp-otp" data-i18n="auth.reset.otp_placeholder">6-digit code</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">🔑</span>
+              <input type="text" id="rp-otp" inputmode="numeric" maxlength="6" class="otp-input" placeholder="••••••" style="direction: ltr;" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="rp-password" data-i18n="auth.reset.new_password">New password</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">🔒</span>
+              <input type="password" id="rp-password" autocomplete="new-password" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="rp-password-confirm" data-i18n="auth.reset.confirm_password">Confirm new password</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">🔒</span>
+              <input type="password" id="rp-password-confirm" autocomplete="new-password" />
+            </div>
+          </div>
+        </div>
+        <button class="cta p-cta" id="reset-btn" data-i18n="auth.reset.cta">Reset password →</button>
+        <button class="cta ghost" id="reset-resend-btn" style="margin-top: 10px;" data-i18n="auth.reset.resend">Resend code</button>
+      </div>
+    </section>
+
     <!-- Register -->
     <section class="screen" id="screen-register">
       <div class="auth-stage">
@@ -6892,6 +6926,17 @@ const I18N = {
     'auth.forgot.back': '<a href="#" id="goto-signin-from-forgot" class="text-link">← Back to sign in</a>',
     'toast.forgot.email_required': 'Enter your email first',
     'toast.forgot.sent': 'Check your email for a reset code',
+    // reset password
+    'auth.reset.title': 'Enter your new password.',
+    'auth.reset.subtitle': 'Enter the 6-digit code we sent to',
+    'auth.reset.otp_placeholder': '6-digit code',
+    'auth.reset.new_password': 'New password',
+    'auth.reset.confirm_password': 'Confirm new password',
+    'auth.reset.cta': 'Reset password →',
+    'auth.reset.resend': 'Resend code',
+    'toast.reset.mismatch': "Passwords don't match",
+    'toast.reset.success': "Password reset — you're signed in",
+    'toast.reset.invalid_code': 'Invalid or expired code',
     'toast.generic_error': 'Something went wrong',
     // register
     'register.title': 'Create an account.',
@@ -7224,6 +7269,17 @@ const I18N = {
     'auth.forgot.back': '<a href="#" id="goto-signin-from-forgot" class="text-link">→ العودة إلى تسجيل الدخول</a>',
     'toast.forgot.email_required': 'أدخل بريدك الإلكتروني أولاً',
     'toast.forgot.sent': 'تحقّق من بريدك للحصول على رمز الإعادة',
+    // reset password
+    'auth.reset.title': 'أدخل كلمة المرور الجديدة.',
+    'auth.reset.subtitle': 'أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى',
+    'auth.reset.otp_placeholder': 'رمز مكوّن من 6 أرقام',
+    'auth.reset.new_password': 'كلمة المرور الجديدة',
+    'auth.reset.confirm_password': 'تأكيد كلمة المرور الجديدة',
+    'auth.reset.cta': 'إعادة تعيين كلمة المرور ←',
+    'auth.reset.resend': 'إعادة إرسال الرمز',
+    'toast.reset.mismatch': 'كلمتا المرور غير متطابقتين',
+    'toast.reset.success': 'تم إعادة التعيين — لقد تم تسجيل دخولك',
+    'toast.reset.invalid_code': 'رمز غير صالح أو منتهي الصلاحية',
     'toast.generic_error': 'حدث خطأ ما',
     // register
     'register.title': 'إنشاء حساب.',
@@ -7802,7 +7858,7 @@ function escapeHtml(s) {
 // Screens that use the v2 pillow design language. body.classList.toggle('pillow', …)
 // happens in paintChrome so CSS can scope to `body.pillow` for shared tokens.
 const PILLOW_SCREENS = new Set([
-  'welcome', 'sign-in', 'forgot-password', 'register', 'customer-category', 'customer-coming-soon',
+  'welcome', 'sign-in', 'forgot-password', 'reset-password', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
   'admin-settings', 'notifications', 'provider-home', 'provider-book',
   'admin-home',
@@ -7813,6 +7869,7 @@ function goto(screen, opts = {}) {
   document.body.dataset.screen = screen;
   if (screen !== 'admin-home') stopAdminRefresh();
   if (screen === 'customer-search') { populateOperatorSelect(); setSearchDateFloor(); }
+  if (screen === 'reset-password') { $('#rp-email').textContent = STATE.pendingResetEmail || '—'; }
   paintChrome();
 }
 function back() {
@@ -10583,6 +10640,60 @@ function wire() {
   $('#goto-signin-from-forgot').addEventListener('click', (e) => {
     e.preventDefault();
     goto('sign-in');
+  });
+
+  // Reset password: confirm OTP + set new password
+  $('#reset-btn').addEventListener('click', async () => {
+    const email = STATE.pendingResetEmail;
+    const otp_code = ($('#rp-otp').value || '').trim();
+    const new_password = $('#rp-password').value || '';
+    const confirm = $('#rp-password-confirm').value || '';
+    if (!email) { goto('forgot-password'); return; }
+    if (new_password !== confirm) { toast(t('toast.reset.mismatch'), true); return; }
+    $('#reset-btn').disabled = true;
+    try {
+      const body = await api('/auth/password-reset/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ email, otp_code, new_password }),
+      });
+      // Same success pattern as verify-email (doVerify): stash auth, clear
+      // history, and let routeAfterAuth() do the role-based routing +
+      // per-role tab refresh (it also calls paintChrome() via goto()).
+      STATE.auth = { token: body.access_token, user: body.user };
+      tazStore.save(STATE.auth);
+      STATE.pendingResetEmail = null;
+      $('#rp-otp').value = '';
+      $('#rp-password').value = '';
+      $('#rp-password-confirm').value = '';
+      STATE.history = [];
+      routeAfterAuth();
+      toast(t('toast.reset.success'));
+    } catch (err) {
+      toast(err.message || t('toast.reset.invalid_code'), true);
+    } finally {
+      $('#reset-btn').disabled = false;
+    }
+  });
+
+  // Resend a reset code (reuses the existing /auth/password-reset/request endpoint).
+  $('#reset-resend-btn').addEventListener('click', async () => {
+    const email = STATE.pendingResetEmail;
+    if (!email) { goto('forgot-password'); return; }
+    $('#reset-resend-btn').disabled = true;
+    try {
+      await api('/auth/password-reset/request', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      toast(t('toast.forgot.sent'));
+    } catch (err) {
+      toast(err.message || t('toast.generic_error'), true);
+    } finally {
+      // Re-enable after 30s to mirror the backend cooldown (no shared
+      // countdown helper is currently wired to this button; armResendCooldown
+      // is scoped to the verify-email #resend-btn).
+      setTimeout(() => { $('#reset-resend-btn').disabled = false; }, 30_000);
+    }
   });
 
   $('#register-btn').addEventListener('click', doRegister);
