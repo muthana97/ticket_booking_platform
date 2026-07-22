@@ -2,7 +2,7 @@ import random
 from datetime import datetime, timedelta
 
 import httpx
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -240,7 +240,18 @@ def authenticate(db: Session, *, email: str, password: str) -> models.User:
     return user
 
 
-def _generate_password_reset_otp(db: Session, email: str) -> str:
+def _deliver_reset_otp(email: str, subject: str, html: str, text: str, code: str) -> None:
+    """Background-task target: send via Resend, fall back to console-log on
+    failure. Split out of _generate_password_reset_otp so the HTTP call can
+    be deferred with BackgroundTasks — see that function for why."""
+    sent = _send_email(to=email, subject=subject, html=html, text=text)
+    if not sent:
+        print(f"[EMAIL-RESET-CONSOLE] {email} → {code}")
+
+
+def _generate_password_reset_otp(
+    db: Session, email: str, *, bg: BackgroundTasks | None = None
+) -> str:
     # Same rate limit as verify-email OTPs — keyed on EmailOTP.email so a
     # spammer flipping between purposes still hits the shared cap.
     now = datetime.utcnow()
@@ -308,34 +319,46 @@ def _generate_password_reset_otp(db: Session, email: str) -> str:
   </table>
 </body></html>"""
 
-    sent = _send_email(to=email, subject=subject, html=html, text=text)
-    if not sent:
-        print(f"[EMAIL-RESET-CONSOLE] {email} → {code}")
+    if bg is not None:
+        bg.add_task(_deliver_reset_otp, email, subject, html, text, code)
+    else:
+        _deliver_reset_otp(email, subject, html, text, code)
     return code
 
 
-def request_password_reset(db: Session, *, email: str) -> None:
+def request_password_reset(
+    db: Session, *, email: str, bg: BackgroundTasks | None = None
+) -> None:
     """
     Silent about account existence: returns None whether or not the email
     maps to a verified user, so callers cannot branch on the outcome.
-    Emails are only sent when the account exists AND is email-verified.
-    Rate-limit exceptions from _generate_password_reset_otp (HTTP 429) are
-    NOT swallowed — they propagate so the caller can surface the retry hint.
+    Emails are only sent when the account exists AND is email-verified AND
+    not blocked. Rate-limit exceptions from _generate_password_reset_otp
+    (HTTP 429) are NOT swallowed — they propagate so the caller can surface
+    the retry hint.
+
+    When `bg` (a FastAPI BackgroundTasks) is supplied, the actual HTTP send
+    to Resend is deferred to run AFTER the response is returned — closing a
+    timing oracle where a known+verified email took ~100-500ms (live HTTP
+    call) but an unknown email returned in microseconds, letting a single
+    probe distinguish real accounts from unknown ones. The rate-limit check
+    and OTP-row insert (the only foreground-observable side effects) still
+    happen synchronously so a 429 still surfaces immediately.
     """
     user = db.query(models.User).filter(models.User.email == email.lower()).first()
-    if not user or not user.email_verified:
+    if not user or not user.email_verified or user.status == "blocked":
         return
-    _generate_password_reset_otp(db, user.email)
+    _generate_password_reset_otp(db, user.email, bg=bg)
 
 
 def confirm_password_reset(
     db: Session, *, email: str, otp_code: str, new_password: str
 ) -> models.User:
     user = db.query(models.User).filter(models.User.email == email.lower()).first()
-    # Deliberate: same error message whether the user or the OTP is bad —
-    # keeps account-existence hidden.
+    # Deliberate: same error message whether the user, status, or OTP is bad
+    # — keeps account-existence (and blocked-status) hidden.
     generic_fail = HTTPException(status_code=400, detail="Invalid or expired code")
-    if not user or not user.email_verified:
+    if not user or not user.email_verified or user.status == "blocked":
         raise generic_fail
 
     rec = (
@@ -352,7 +375,13 @@ def confirm_password_reset(
         raise generic_fail
 
     user.password_hash = utils.hash_password(new_password)
-    db.delete(rec)
+    # Invalidate ALL outstanding reset OTPs for this email, not just the one
+    # consumed — otherwise a "Resend code" duplicate stays live (replay
+    # window) until its own expires_at.
+    db.query(models.EmailOTP).filter(
+        models.EmailOTP.email == email.lower(),
+        models.EmailOTP.purpose == "reset",
+    ).delete()
     db.commit()
     db.refresh(user)
     return user

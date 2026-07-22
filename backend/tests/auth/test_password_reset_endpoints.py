@@ -68,6 +68,38 @@ def test_confirm_endpoint_rejects_short_password(client, db, monkeypatch):
     assert r.status_code == 422
 
 
+def test_request_endpoint_returns_before_send_completes(client, db, monkeypatch):
+    """Timing-oracle fix: the HTTP send must run as a BackgroundTask, not
+    inline before the response is built. We can't measure wall-clock timing
+    reliably in CI, so the functional proxy is: the endpoint still returns
+    the same generic 200 body, and _send_email is still invoked (via the
+    background task, which TestClient runs before handing control back) —
+    proving the send wasn't silently dropped, just deferred."""
+    calls = []
+
+    def _spy_send_email(**kw):
+        calls.append(kw)
+        return False
+
+    monkeypatch.setattr(service, "_send_email", _spy_send_email)
+    _seed_verified_user(db)
+
+    r = client.post("/auth/password-reset/request", json={"email": "bob@example.com"})
+    assert r.status_code == 200
+    assert r.json() == {"message": "If an account exists, a reset code has been sent."}
+    assert len(calls) == 1
+    assert calls[0]["to"] == "bob@example.com"
+
+    # Unknown email: response body/status identical, and _send_email is NOT
+    # called at all (no user → no OTP → nothing to send) — same shape as
+    # before, just confirming the background-task refactor didn't change
+    # the known/unknown branch behavior.
+    r2 = client.post("/auth/password-reset/request", json={"email": "ghost@example.com"})
+    assert r2.status_code == 200
+    assert r2.json() == {"message": "If an account exists, a reset code has been sent."}
+    assert len(calls) == 1
+
+
 def test_pre_reset_session_tokens_remain_valid(client, db, monkeypatch):
     """Documents current MVP behavior: existing JWTs are NOT invalidated on
     password reset. Tokens naturally expire after ACCESS_TOKEN_EXPIRE_MINUTES.

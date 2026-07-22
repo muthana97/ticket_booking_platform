@@ -130,3 +130,77 @@ def test_request_password_reset_hits_rate_limit(db, monkeypatch):
     with pytest.raises(HTTPException) as exc:
         service.request_password_reset(db, email="alice@example.com")
     assert exc.value.status_code == 429
+
+
+def test_confirm_password_reset_invalidates_all_stale_reset_otps(db, monkeypatch):
+    """If the user hit "Resend code", multiple reset OTPs can be alive at
+    once. Consuming one to complete a reset must invalidate the others too —
+    otherwise they're a live replay window until expires_at."""
+    monkeypatch.setattr(service, "_send_email", lambda **kw: False)
+    _make_verified_user(db)
+
+    # Insert two still-valid reset OTPs directly, simulating two back-to-back
+    # resend requests (bypasses the 30s cooldown, which isn't what's under test).
+    older = models.EmailOTP(
+        email="alice@example.com",
+        otp_code="111111",
+        purpose="reset",
+        expires_at=datetime.utcnow() + timedelta(minutes=10),
+    )
+    newer = models.EmailOTP(
+        email="alice@example.com",
+        otp_code="222222",
+        purpose="reset",
+        expires_at=datetime.utcnow() + timedelta(minutes=10),
+    )
+    db.add_all([older, newer])
+    db.commit()
+
+    user = service.confirm_password_reset(
+        db, email="alice@example.com", otp_code="222222", new_password="NewPass9#",
+    )
+    assert utils.verify_password("NewPass9#", user.password_hash)
+
+    remaining = db.query(models.EmailOTP).filter_by(email="alice@example.com", purpose="reset").all()
+    assert remaining == []
+
+    # The stale "111111" code must no longer work either.
+    with pytest.raises(HTTPException) as exc:
+        service.confirm_password_reset(
+            db, email="alice@example.com", otp_code="111111", new_password="AnotherPass9#",
+        )
+    assert exc.value.status_code == 400
+
+
+def test_request_password_reset_silent_when_user_blocked(db, monkeypatch):
+    monkeypatch.setattr(service, "_send_email", lambda **kw: False)
+    user = _make_verified_user(db)
+    user.status = "blocked"
+    db.commit()
+
+    service.request_password_reset(db, email="alice@example.com")
+    rows = db.query(models.EmailOTP).filter_by(purpose="reset").all()
+    assert rows == []
+
+
+def test_confirm_password_reset_rejects_blocked_user(db, monkeypatch):
+    monkeypatch.setattr(service, "_send_email", lambda **kw: False)
+    user = _make_verified_user(db)
+    # Mint a valid reset OTP directly (bypassing the blocked-user gate in
+    # request_password_reset, which isn't what's under test here).
+    rec = models.EmailOTP(
+        email="alice@example.com",
+        otp_code="654321",
+        purpose="reset",
+        expires_at=datetime.utcnow() + timedelta(minutes=10),
+    )
+    db.add(rec)
+    user.status = "blocked"
+    db.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        service.confirm_password_reset(
+            db, email="alice@example.com", otp_code="654321", new_password="NewPass9#",
+        )
+    assert exc.value.status_code == 400
+    assert exc.value.detail == "Invalid or expired code"

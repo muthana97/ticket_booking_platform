@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -81,15 +81,21 @@ def me(current_user=Depends(deps.get_current_user)):
 
 @router.post("/password-reset/request")
 def password_reset_request(
-    payload: schemas.PasswordResetRequestIn, db: Session = Depends(get_db)
+    payload: schemas.PasswordResetRequestIn,
+    bg: BackgroundTasks,
+    db: Session = Depends(get_db),
 ):
     """
     Silent endpoint: always returns the same generic message, regardless of
     whether the email is known or verified. Rate limit still applies and
     returns a real 429 (same behavior as /auth/resend-otp — the limit itself
     is public info and doesn't leak account existence).
+
+    The actual Resend HTTP call is deferred via BackgroundTasks so the
+    response timing doesn't distinguish known/verified emails (slow, real
+    HTTP call) from unknown ones (fast, no-op) — see service.request_password_reset.
     """
-    service.request_password_reset(db, email=payload.email)
+    service.request_password_reset(db, email=payload.email, bg=bg)
     return {"message": "If an account exists, a reset code has been sent."}
 
 
