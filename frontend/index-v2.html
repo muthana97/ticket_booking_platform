@@ -802,6 +802,7 @@
   body[data-screen="sign-in"]               #screen-sign-in,
   body[data-screen="register"]              #screen-register,
   body[data-screen="verify-email"]          #screen-verify-email,
+  body[data-screen="forgot-password"]       #screen-forgot-password,
   body[data-screen="provider-pending"]      #screen-provider-pending,
   body[data-screen="customer-category"]     #screen-customer-category,
   body[data-screen="customer-coming-soon"]  #screen-customer-coming-soon,
@@ -2149,6 +2150,7 @@
 
   /* Sign-in / register text-link (helper) */
   body[data-screen="sign-in"] .helper,
+  body[data-screen="forgot-password"] .helper,
   body[data-screen="register"] .helper {
     font-family: var(--p-sans);
     font-size: 13px;
@@ -2158,6 +2160,8 @@
   }
   body[data-screen="sign-in"] .helper .text-link,
   body[data-screen="sign-in"] .helper a,
+  body[data-screen="forgot-password"] .helper .text-link,
+  body[data-screen="forgot-password"] .helper a,
   body[data-screen="register"] .helper .text-link,
   body[data-screen="register"] .helper a {
     color: var(--p-ink);
@@ -5864,8 +5868,30 @@
             </div>
           </div>
         </div>
+        <div class="helper" style="margin-top: 10px; text-align: end;">
+          <a href="#" id="goto-forgot" class="text-link" data-i18n="auth.signin.forgot_link">Forgot password?</a>
+        </div>
         <button class="cta p-cta" id="sign-in-btn" data-i18n="action.continue">Continue →</button>
         <div class="helper" data-i18n="signin.helper" data-i18n-html="1">Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.</div>
+      </div>
+    </section>
+
+    <!-- Forgot password -->
+    <section class="screen" id="screen-forgot-password">
+      <div class="auth-stage">
+        <h1 data-i18n="auth.forgot.title">Reset your password.</h1>
+        <div class="lead" data-i18n="auth.forgot.subtitle">Enter your email and we'll send you a 6-digit reset code.</div>
+        <div class="p-pillow">
+          <div class="p-field">
+            <label for="fp-email" data-i18n="form.email">Email</label>
+            <div class="p-input">
+              <span class="lead-icon" aria-hidden="true">✉︎</span>
+              <input type="email" id="fp-email" autocomplete="email" data-i18n-placeholder="auth.forgot.email_placeholder" placeholder="you@example.com" />
+            </div>
+          </div>
+        </div>
+        <button class="cta p-cta" id="forgot-btn" data-i18n="auth.forgot.cta">Send reset code →</button>
+        <div class="helper" data-i18n="auth.forgot.back" data-i18n-html="1"><a href="#" id="goto-signin-from-forgot" class="text-link">← Back to sign in</a></div>
       </div>
     </section>
 
@@ -6857,6 +6883,16 @@ const I18N = {
     'signin.lead': "Email + password. We'll route you to the right place.",
     'signin.helper': 'Need an account? <a href="#" id="goto-register" class="text-link">Create one</a>.',
     'action.continue': 'Continue →',
+    // forgot password
+    'auth.signin.forgot_link': 'Forgot password?',
+    'auth.forgot.title': 'Reset your password.',
+    'auth.forgot.subtitle': "Enter your email and we'll send you a 6-digit reset code.",
+    'auth.forgot.email_placeholder': 'you@example.com',
+    'auth.forgot.cta': 'Send reset code →',
+    'auth.forgot.back': '<a href="#" id="goto-signin-from-forgot" class="text-link">← Back to sign in</a>',
+    'toast.forgot.email_required': 'Enter your email first',
+    'toast.forgot.sent': 'Check your email for a reset code',
+    'toast.generic_error': 'Something went wrong',
     // register
     'register.title': 'Create an account.',
     'register.lead': 'Role is set now and stays with the account. A different role means a different sign-up.',
@@ -7179,6 +7215,16 @@ const I18N = {
     'signin.lead': 'البريد وكلمة المرور. سنوجّهك إلى المكان المناسب.',
     'signin.helper': 'تحتاج إلى حساب؟ <a href="#" id="goto-register" class="text-link">أنشئ واحداً</a>.',
     'action.continue': '→ متابعة',
+    // forgot password
+    'auth.signin.forgot_link': 'نسيت كلمة المرور؟',
+    'auth.forgot.title': 'إعادة تعيين كلمة المرور.',
+    'auth.forgot.subtitle': 'أدخل بريدك الإلكتروني وسنرسل لك رمزاً مكوّناً من 6 أرقام.',
+    'auth.forgot.email_placeholder': 'أنت@مثال.com',
+    'auth.forgot.cta': 'إرسال رمز الإعادة →',
+    'auth.forgot.back': '<a href="#" id="goto-signin-from-forgot" class="text-link">→ العودة إلى تسجيل الدخول</a>',
+    'toast.forgot.email_required': 'أدخل بريدك الإلكتروني أولاً',
+    'toast.forgot.sent': 'تحقّق من بريدك للحصول على رمز الإعادة',
+    'toast.generic_error': 'حدث خطأ ما',
     // register
     'register.title': 'إنشاء حساب.',
     'register.lead': 'الدور يُحدّد الآن ويبقى مع الحساب. لتغيير الدور تحتاج إلى تسجيل حساب جديد.',
@@ -7646,6 +7692,7 @@ const STATE = {
   screen: 'welcome',
   auth: null,
   pendingRegister: null,
+  pendingResetEmail: null,
   bookingFlow: 'customer',
   activeTrip: null,
   selected: new Set(),
@@ -7755,7 +7802,7 @@ function escapeHtml(s) {
 // Screens that use the v2 pillow design language. body.classList.toggle('pillow', …)
 // happens in paintChrome so CSS can scope to `body.pillow` for shared tokens.
 const PILLOW_SCREENS = new Set([
-  'welcome', 'sign-in', 'register', 'customer-category', 'customer-coming-soon',
+  'welcome', 'sign-in', 'forgot-password', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
   'admin-settings', 'notifications', 'provider-home', 'provider-book',
   'admin-home',
@@ -10505,6 +10552,38 @@ function wire() {
   $('#si-email').addEventListener('keydown', e => { if (e.key === 'Enter') $('#si-password').focus(); });
   $('#si-password').addEventListener('keydown', e => { if (e.key === 'Enter') doSignIn(); });
   $('#goto-register').addEventListener('click', e => { e.preventDefault(); goto('register'); });
+
+  // "Forgot password?" link on sign-in → forgot-password screen
+  $('#goto-forgot').addEventListener('click', (e) => {
+    e.preventDefault();
+    goto('forgot-password');
+  });
+
+  // Forgot password: send reset code
+  $('#forgot-btn').addEventListener('click', async () => {
+    const email = ($('#fp-email').value || '').trim().toLowerCase();
+    if (!email) { toast(t('toast.forgot.email_required')); return; }
+    $('#forgot-btn').disabled = true;
+    try {
+      await api('/auth/password-reset/request', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      STATE.pendingResetEmail = email;
+      toast(t('toast.forgot.sent'));
+      goto('reset-password');
+    } catch (err) {
+      toast(err.message || t('toast.generic_error'));
+    } finally {
+      $('#forgot-btn').disabled = false;
+    }
+  });
+
+  // Back to sign-in from forgot-password
+  $('#goto-signin-from-forgot').addEventListener('click', (e) => {
+    e.preventDefault();
+    goto('sign-in');
+  });
 
   $('#register-btn').addEventListener('click', doRegister);
   $$('.role-pick label').forEach(l => l.addEventListener('click', () => {
