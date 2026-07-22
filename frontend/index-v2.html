@@ -6486,110 +6486,6 @@
       </div>
     </section>
 
-    <!-- Promo Modal (Create / Edit) -->
-    <div id="promo-modal" class="modal-bg" role="dialog" aria-modal="true">
-      <div class="modal-card">
-        <h3 id="promo-modal-title" data-i18n="promos.modal.title.add">Add promo</h3>
-        <div class="modal-sub" data-i18n="promos.modal.sub">Create a code and set its scope + limits.</div>
-        <div class="modal-row">
-          <div class="field-block full">
-            <label data-i18n="promos.field.code">Code</label>
-            <input type="text" id="pm-code" placeholder="SUMMER10" />
-          </div>
-        </div>
-        <div class="modal-row">
-          <div class="field-block full">
-            <label data-i18n="promos.field.kind">Discount</label>
-            <div class="role-pick" id="pm-kind">
-              <label class="active" data-kind="percentage">
-                <input type="radio" name="pm-kind" value="percentage" checked>
-                <span class="rp-title" data-i18n="promos.kind.percentage">Percentage</span>
-              </label>
-              <label data-kind="flat">
-                <input type="radio" name="pm-kind" value="flat">
-                <span class="rp-title" data-i18n="promos.kind.flat">Flat (SDG)</span>
-              </label>
-            </div>
-          </div>
-        </div>
-        <div class="modal-row">
-          <div class="field-block">
-            <label data-i18n="promos.field.value">Value</label>
-            <input type="number" id="pm-value" min="0.01" step="0.01" />
-          </div>
-          <div class="field-block">
-            <label><span data-i18n="promos.field.max_redemptions">Max redemptions</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
-            <input type="number" id="pm-max" min="1" step="1" />
-          </div>
-        </div>
-        <div class="modal-row">
-          <div class="field-block full">
-            <label data-i18n="promos.field.scope">Scope</label>
-            <div class="role-pick" id="pm-scope">
-              <label class="active" data-scope="any">
-                <input type="radio" name="pm-scope" value="any" checked>
-                <span class="rp-title" data-i18n="promos.scope.any">Any trip</span>
-              </label>
-              <label data-scope="provider">
-                <input type="radio" name="pm-scope" value="provider">
-                <span class="rp-title" data-i18n="promos.scope.provider">Provider</span>
-              </label>
-              <label data-scope="provider_route">
-                <input type="radio" name="pm-scope" value="provider_route">
-                <span class="rp-title" data-i18n="promos.scope.provider_route">Provider + Route</span>
-              </label>
-              <label data-scope="provider_trip">
-                <input type="radio" name="pm-scope" value="provider_trip">
-                <span class="rp-title" data-i18n="promos.scope.provider_trip">Provider + Trip</span>
-              </label>
-            </div>
-          </div>
-        </div>
-        <div class="modal-row hidden" id="pm-provider-row">
-          <div class="field-block full">
-            <label data-i18n="promos.field.provider">Provider</label>
-            <select id="pm-provider"></select>
-          </div>
-        </div>
-        <div class="modal-row hidden" id="pm-route-row">
-          <div class="field-block full">
-            <label data-i18n="promos.field.route">Route</label>
-            <select id="pm-route"></select>
-          </div>
-        </div>
-        <div class="modal-row hidden" id="pm-trip-row">
-          <div class="field-block full">
-            <label><span data-i18n="promos.field.trip">Trip</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.trip_hint">type to filter — trip #, origin, destination</span>)</small></label>
-            <input type="text" id="pm-trip-input" list="pm-trip-list" autocomplete="off" placeholder="Trip #…" />
-            <datalist id="pm-trip-list"></datalist>
-            <input type="hidden" id="pm-trip" />
-          </div>
-        </div>
-        <div class="modal-row">
-          <div class="field-block">
-            <label><span data-i18n="promos.field.start_at">Start</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
-            <input type="datetime-local" id="pm-start" />
-          </div>
-          <div class="field-block">
-            <label><span data-i18n="promos.field.expires_at">Expires</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
-            <input type="datetime-local" id="pm-expires" />
-          </div>
-        </div>
-        <div class="modal-row">
-          <div class="field-block full">
-            <label class="checkbox-inline">
-              <input type="checkbox" id="pm-active" checked>
-              <span data-i18n="promos.field.active">Active</span>
-            </label>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="cta ghost" id="promo-modal-cancel" data-i18n="action.cancel">Cancel</button>
-          <button class="cta alt" id="promo-modal-save" data-i18n="action.save">Save</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Notifications list (Task #5). Universal — any signed-in role.
          Routing keys it on body[data-screen='notifications']. -->
     <section class="screen" id="screen-notifications">
@@ -6604,6 +6500,112 @@
     </section>
 
   </main>
+</div>
+
+<!-- Promo Modal (Create / Edit) — placed as a sibling of <main> so the
+     native <select> dropdowns aren't constrained by main.canvas's
+     overflow-x: hidden containing block. -->
+<div id="promo-modal" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3 id="promo-modal-title" data-i18n="promos.modal.title.add">Add promo</h3>
+    <div class="modal-sub" data-i18n="promos.modal.sub">Create a code and set its scope + limits.</div>
+    <div class="modal-row">
+      <div class="field-block full">
+        <label data-i18n="promos.field.code">Code</label>
+        <input type="text" id="pm-code" placeholder="SUMMER10" />
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="field-block full">
+        <label data-i18n="promos.field.kind">Discount</label>
+        <div class="role-pick" id="pm-kind">
+          <label class="active" data-kind="percentage">
+            <input type="radio" name="pm-kind" value="percentage" checked>
+            <span class="rp-title" data-i18n="promos.kind.percentage">Percentage</span>
+          </label>
+          <label data-kind="flat">
+            <input type="radio" name="pm-kind" value="flat">
+            <span class="rp-title" data-i18n="promos.kind.flat">Flat (SDG)</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="field-block">
+        <label data-i18n="promos.field.value">Value</label>
+        <input type="number" id="pm-value" min="0.01" step="0.01" />
+      </div>
+      <div class="field-block">
+        <label><span data-i18n="promos.field.max_redemptions">Max redemptions</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
+        <input type="number" id="pm-max" min="1" step="1" />
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="field-block full">
+        <label data-i18n="promos.field.scope">Scope</label>
+        <div class="role-pick" id="pm-scope">
+          <label class="active" data-scope="any">
+            <input type="radio" name="pm-scope" value="any" checked>
+            <span class="rp-title" data-i18n="promos.scope.any">Any trip</span>
+          </label>
+          <label data-scope="provider">
+            <input type="radio" name="pm-scope" value="provider">
+            <span class="rp-title" data-i18n="promos.scope.provider">Provider</span>
+          </label>
+          <label data-scope="provider_route">
+            <input type="radio" name="pm-scope" value="provider_route">
+            <span class="rp-title" data-i18n="promos.scope.provider_route">Provider + Route</span>
+          </label>
+          <label data-scope="provider_trip">
+            <input type="radio" name="pm-scope" value="provider_trip">
+            <span class="rp-title" data-i18n="promos.scope.provider_trip">Provider + Trip</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-row hidden" id="pm-provider-row">
+      <div class="field-block full">
+        <label data-i18n="promos.field.provider">Provider</label>
+        <select id="pm-provider"></select>
+      </div>
+    </div>
+    <div class="modal-row hidden" id="pm-route-row">
+      <div class="field-block full">
+        <label data-i18n="promos.field.route">Route</label>
+        <select id="pm-route"></select>
+      </div>
+    </div>
+    <div class="modal-row hidden" id="pm-trip-row">
+      <div class="field-block full">
+        <label><span data-i18n="promos.field.trip">Trip</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.trip_hint">type to filter — trip #, origin, destination</span>)</small></label>
+        <input type="text" id="pm-trip-input" list="pm-trip-list" autocomplete="off" placeholder="Trip #…" />
+        <datalist id="pm-trip-list"></datalist>
+        <input type="hidden" id="pm-trip" />
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="field-block">
+        <label><span data-i18n="promos.field.start_at">Start</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
+        <input type="datetime-local" id="pm-start" />
+      </div>
+      <div class="field-block">
+        <label><span data-i18n="promos.field.expires_at">Expires</span> <small style="opacity:0.5;">(<span data-i18n="promos.field.optional">optional</span>)</small></label>
+        <input type="datetime-local" id="pm-expires" />
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="field-block full">
+        <label class="checkbox-inline">
+          <input type="checkbox" id="pm-active" checked>
+          <span data-i18n="promos.field.active">Active</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="cta ghost" id="promo-modal-cancel" data-i18n="action.cancel">Cancel</button>
+      <button class="cta alt" id="promo-modal-save" data-i18n="action.save">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- Add Trip Modal -->
