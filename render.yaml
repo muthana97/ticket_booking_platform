@@ -13,7 +13,7 @@
 #
 # Free tier caveats:
 #   • web service sleeps after 15 min of inactivity (~30s cold-start on wake)
-#   • outbound SMTP blocked
+#   • outbound SMTP blocked (moot — email now via Resend HTTPS)
 #
 # When stakeholders sign off, change web `plan: free` → `plan: starter`
 # ($7/mo) and the sleep disappears. See claude.md for upgrade notes.
@@ -49,17 +49,11 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-      # SMTP — set these manually in the Render dashboard; sync:false keeps
-      # them out of source control.
-      - key: SMTP_HOST
+      # Resend HTTP API — set these manually in the Render dashboard.
+      # sync:false keeps the key + sender out of source control.
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: SMTP_FROM
+      - key: RESEND_FROM
         sync: false
 
 databases:

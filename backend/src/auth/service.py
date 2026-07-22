@@ -116,7 +116,7 @@ def _generate_email_otp(db: Session, email: str) -> str:
 
     sent = _send_email(to=email, subject=subject, html=html, text=text)
     if not sent:
-        # Fallback when SMTP isn't configured (or fails) — keeps local dev working.
+        # Fallback when Resend isn't configured (or fails) — keeps local dev working.
         print(f"[EMAIL-OTP-CONSOLE] {email} → {code}")
     return code
 
