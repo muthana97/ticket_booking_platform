@@ -271,7 +271,7 @@ def _generate_password_reset_otp(db: Session, email: str) -> str:
     if recent >= 3:
         raise HTTPException(
             status_code=429,
-            detail="Too many verification requests. Try again in an hour.",
+            detail="Too many code requests. Try again in an hour.",
         )
 
     code = f"{random.randint(100000, 999999)}"
@@ -316,9 +316,11 @@ def _generate_password_reset_otp(db: Session, email: str) -> str:
 
 def request_password_reset(db: Session, *, email: str) -> None:
     """
-    Silent by design: always returns None. Callers must NOT branch on the
-    outcome (leaks account existence). Emails are only sent when the account
-    exists AND is email-verified.
+    Silent about account existence: returns None whether or not the email
+    maps to a verified user, so callers cannot branch on the outcome.
+    Emails are only sent when the account exists AND is email-verified.
+    Rate-limit exceptions from _generate_password_reset_otp (HTTP 429) are
+    NOT swallowed — they propagate so the caller can surface the retry hint.
     """
     user = db.query(models.User).filter(models.User.email == email.lower()).first()
     if not user or not user.email_verified:
