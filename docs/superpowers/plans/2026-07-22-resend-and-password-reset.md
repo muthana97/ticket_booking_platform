@@ -1210,12 +1210,13 @@ EOF
 
 ---
 
-## Task 6: Docs — CLAUDE.md updates
+## Task 6: Docs + deploy-config cleanup
 
 **Files:**
 - Modify: `CLAUDE.md`
+- Modify: `render.yaml`
 
-**Interfaces:** None — pure docs.
+**Interfaces:** None — pure docs + deploy declarations.
 
 - [ ] **Step 1: Update the Known Limitations table**
 
@@ -1258,25 +1259,72 @@ At the TOP of the `## 🐛 Recent fixes (most recent first)` list (immediately a
 - **Email transport swap smtplib → Resend HTTP API + password reset (2026-07-22)**: (1) `_send_email()` in `backend/src/auth/service.py` rewritten to POST Resend's `/emails` endpoint via `httpx` — unblocks OTP delivery on Render's free tier (outbound SMTP was blocked; every OTP had been falling through to the `[EMAIL-OTP-CONSOLE]` log since launch). Config swap: five `SMTP_*` env vars → two `RESEND_API_KEY` + `RESEND_FROM`. Same seam, same console fallback when key is unset — local dev unaffected. 5 new transport tests via `unittest.mock.patch("src.auth.service.httpx.post")`. (2) Password reset flow: extends the existing `EmailOTP` table by adding `"reset"` as a second valid `purpose` value (no schema migration). Two new endpoints — `POST /auth/password-reset/request` (silent — always 200 with generic message, never leaks account existence; rate limit still 429s) and `POST /auth/password-reset/confirm` (returns `TokenResponse`, auto-signing the user in on success). Two new v2/pillow frontend screens on `redesign/pillow` — `screen-forgot-password` (email input + amber "Send reset code" CTA + link on sign-in) and `screen-reset-password` (6-digit code + new password + confirm, client-side mismatch check). 19 new backend tests (110 total). 18 new EN + AR i18n keys. Spec: `docs/superpowers/specs/2026-07-22-resend-and-password-reset-design.md`, plan: `docs/superpowers/plans/2026-07-22-resend-and-password-reset.md`.
 ```
 
-- [ ] **Step 5: Verify no `SMTP_` references remain**
+- [ ] **Step 5: Clean up `render.yaml` env-var block**
+
+In `render.yaml`, find the SMTP block (~lines 52-63):
+```yaml
+      # SMTP — set these manually in the Render dashboard; sync:false keeps
+      # them out of source control.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+```
+
+Replace with:
+```yaml
+      # Resend HTTP API — set these manually in the Render dashboard.
+      # sync:false keeps the key + sender out of source control.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
+```
+
+Also update the `# outbound SMTP blocked` comment near the top of `render.yaml` (~line 16). Find and replace `outbound SMTP blocked` with `outbound SMTP blocked (moot — email now via Resend HTTPS)` so the note reflects that we've routed around the limitation.
+
+- [ ] **Step 6: Fix the stale SMTP comment in `_generate_email_otp`**
+
+`backend/src/auth/service.py` has a stale comment on the console-fallback branch — after Task 1 the transport is Resend, not SMTP. Find:
+```python
+        # Fallback when SMTP isn't configured (or fails) — keeps local dev working.
+```
+Replace with:
+```python
+        # Fallback when Resend isn't configured (or fails) — keeps local dev working.
+```
+
+- [ ] **Step 7: Verify no `SMTP_` references remain**
 
 Run:
 ```bash
-grep -n "SMTP_" CLAUDE.md
+grep -rn "SMTP_\|smtplib\|SMTP " CLAUDE.md render.yaml backend/src/ backend/tests/
 ```
 Expected: No matches. If any remain, evaluate case-by-case and remove or update.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add CLAUDE.md
+git add CLAUDE.md render.yaml backend/src/auth/service.py
 git commit -m "$(cat <<'EOF'
-docs(claude.md): document Resend swap + password reset
+docs+deploy: document Resend swap + drop stale SMTP config
 
-Updates Known Limitations (SMTP row -> Resend domain-verification row),
-Deploy from scratch env vars (SMTP_* -> RESEND_*), removes the stale
-"SMTP unblocks on Render Starter" upgrade bullet, and adds a Recent
-Fixes entry describing the full change.
+CLAUDE.md: Known Limitations (SMTP row -> Resend domain-verification
+row), Deploy from scratch env vars (SMTP_* -> RESEND_*), removes the
+stale "SMTP unblocks on Render Starter" upgrade bullet, and adds a
+Recent Fixes entry describing the full change.
+
+render.yaml: replaces the five SMTP_* env-var declarations with
+RESEND_API_KEY + RESEND_FROM (both sync:false).
+
+service.py: fixes a stale "SMTP isn't configured" comment on the
+console-fallback branch.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
