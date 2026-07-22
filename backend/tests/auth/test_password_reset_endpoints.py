@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from src.auth import service, models, utils
 
 
