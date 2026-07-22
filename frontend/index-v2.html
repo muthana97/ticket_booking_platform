@@ -6542,25 +6542,13 @@
     </div>
     <div class="modal-row">
       <div class="field-block full">
-        <label data-i18n="promos.field.scope">Scope</label>
-        <div class="role-pick" id="pm-scope">
-          <label class="active" data-scope="any">
-            <input type="radio" name="pm-scope" value="any" checked>
-            <span class="rp-title" data-i18n="promos.scope.any">Any trip</span>
-          </label>
-          <label data-scope="provider">
-            <input type="radio" name="pm-scope" value="provider">
-            <span class="rp-title" data-i18n="promos.scope.provider">Provider</span>
-          </label>
-          <label data-scope="provider_route">
-            <input type="radio" name="pm-scope" value="provider_route">
-            <span class="rp-title" data-i18n="promos.scope.provider_route">Provider + Route</span>
-          </label>
-          <label data-scope="provider_trip">
-            <input type="radio" name="pm-scope" value="provider_trip">
-            <span class="rp-title" data-i18n="promos.scope.provider_trip">Provider + Trip</span>
-          </label>
-        </div>
+        <label for="pm-scope" data-i18n="promos.field.scope">Scope</label>
+        <select id="pm-scope">
+          <option value="any" data-i18n="promos.scope.any">Any trip</option>
+          <option value="provider" data-i18n="promos.scope.provider">Provider</option>
+          <option value="provider_route" data-i18n="promos.scope.provider_route">Provider + Route</option>
+          <option value="provider_trip" data-i18n="promos.scope.provider_trip">Provider + Trip</option>
+        </select>
       </div>
     </div>
     <div class="modal-row hidden" id="pm-provider-row">
@@ -9743,7 +9731,7 @@ async function openPromoModal(row) {
   if (row?.trip_id) scope = 'provider_trip';
   else if (row?.route_id) scope = 'provider_route';
   else if (row?.provider_id) scope = 'provider';
-  selectPillById('#pm-scope', scope);
+  $('#pm-scope').value = scope;
 
   await populatePromoProviderSelect(row?.provider_id);
   // Populate route + trip conditionally on the current provider selection.
@@ -9866,7 +9854,7 @@ function resolvePromoTripFromInput() {
 }
 
 function applyPromoConditionalRows() {
-  const scope = $$('#pm-scope input').find(i => i.checked)?.value || 'any';
+  const scope = $('#pm-scope')?.value || 'any';
   const needsProvider = (scope !== 'any');
   const needsRoute    = (scope === 'provider_route');
   const needsTrip     = (scope === 'provider_trip');
@@ -9880,7 +9868,7 @@ async function savePromo() {
   const kind = $$('#pm-kind input').find(i => i.checked)?.value || 'percentage';
   const value = parseFloat($('#pm-value').value);
   const maxRaw = $('#pm-max').value.trim();
-  const scope = $$('#pm-scope input').find(i => i.checked)?.value || 'any';
+  const scope = $('#pm-scope')?.value || 'any';
   const active = $('#pm-active').checked;
   const startRaw = $('#pm-start').value;
   const expiresRaw = $('#pm-expires').value;
@@ -10716,12 +10704,8 @@ function wire() {
     lbl.classList.add('active');
     const r = lbl.querySelector('input'); if (r) r.checked = true;
   }));
-  $$('#pm-scope label').forEach(lbl => lbl.addEventListener('click', () => {
-    $$('#pm-scope label').forEach(l => l.classList.remove('active'));
-    lbl.classList.add('active');
-    const r = lbl.querySelector('input'); if (r) r.checked = true;
-    applyPromoConditionalRows();
-  }));
+  // Scope is a native <select>; refresh conditional rows on change.
+  $('#pm-scope')?.addEventListener('change', applyPromoConditionalRows);
   // Provider change → refresh both dependent pickers so route + trip lists
   // match the new provider's inventory.
   $('#pm-provider')?.addEventListener('change', async () => {
