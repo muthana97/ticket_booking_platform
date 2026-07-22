@@ -9,10 +9,13 @@ class Booking(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, index=True)
-    trip_id = Column(Integer, ForeignKey("trips.id"))
+    # trip_id + status get indexes because they're filtered on the hot
+    # Reaper query, admin/provider bookings lists, and the per-user
+    # promo cap check.
+    trip_id = Column(Integer, ForeignKey("trips.id"), index=True)
 
     # Lifecycle: pending → committed_pending → confirmed | expired
-    status = Column(String, default="pending")
+    status = Column(String, default="pending", index=True)
     total_price = Column(Float)
 
     # Channel: "consumer" (JWT customer) or "walkin" (provider-created at counter)

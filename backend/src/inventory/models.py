@@ -43,9 +43,12 @@ class Seat(Base):
     __tablename__ = "seats"
 
     id = Column(Integer, primary_key=True, index=True)
-    trip_id = Column(Integer, ForeignKey("trips.id"))
+    # trip_id is indexed because every seat query filters on it — the
+    # long-poll snapshot, lock_seats, Reaper release, manifest, and
+    # the seat map render.
+    trip_id = Column(Integer, ForeignKey("trips.id"), index=True)
     seat_number = Column(String, nullable=False) # e.g., "14A"
     # status: available, locked, booked
     status = Column(String, default="available")
-    
+
     trip = relationship("Trip", back_populates="seats")

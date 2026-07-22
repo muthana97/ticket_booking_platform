@@ -76,6 +76,17 @@ def _migrate_if_needed():
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_code VARCHAR",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_discount DOUBLE PRECISION",
         "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS promo_id INTEGER REFERENCES promo_codes(id) ON DELETE SET NULL",
+        # Hot-column indexes (2026-07-22). Postgres doesn't auto-index
+        # foreign key columns, and every seats/stream poll + every
+        # lock_seats transaction filters by seats.trip_id — an unindexed
+        # column that would degrade to a sequential scan at scale. Same
+        # story for bookings columns hit by the Reaper (status), the
+        # per-user promo cap (customer_id + promo_id), and the manifest
+        # + provider bookings joins (trip_id). Cheap to add early.
+        "CREATE INDEX IF NOT EXISTS idx_seats_trip_id ON seats (trip_id)",
+        "CREATE INDEX IF NOT EXISTS idx_bookings_trip_id ON bookings (trip_id)",
+        "CREATE INDEX IF NOT EXISTS idx_bookings_customer_id ON bookings (customer_id)",
+        "CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings (status)",
     ]
     # The original FK above lacks ON DELETE SET NULL — drop + re-add so admins
     # can remove a rule even after it's been snapshotted onto a booking. The
