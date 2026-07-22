@@ -10562,7 +10562,7 @@ function wire() {
   // Forgot password: send reset code
   $('#forgot-btn').addEventListener('click', async () => {
     const email = ($('#fp-email').value || '').trim().toLowerCase();
-    if (!email) { toast(t('toast.forgot.email_required')); return; }
+    if (!email) { toast(t('toast.forgot.email_required'), true); return; }
     $('#forgot-btn').disabled = true;
     try {
       await api('/auth/password-reset/request', {
@@ -10573,7 +10573,7 @@ function wire() {
       toast(t('toast.forgot.sent'));
       goto('reset-password');
     } catch (err) {
-      toast(err.message || t('toast.generic_error'));
+      toast(err.message || t('toast.generic_error'), true);
     } finally {
       $('#forgot-btn').disabled = false;
     }

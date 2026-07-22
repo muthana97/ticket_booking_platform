@@ -1096,7 +1096,7 @@ Grep for `verify-btn` in `frontend/index-v2.html` to find the verify-email succe
       const new_password = $('#rp-password').value || '';
       const confirm = $('#rp-password-confirm').value || '';
       if (!email) { goto('forgot-password'); return; }
-      if (new_password !== confirm) { toast(t('toast.reset.mismatch')); return; }
+      if (new_password !== confirm) { toast(t('toast.reset.mismatch'), true); return; }
       $('#reset-btn').disabled = true;
       try {
         const body = await api('/auth/password-reset/confirm', {
@@ -1122,7 +1122,7 @@ Grep for `verify-btn` in `frontend/index-v2.html` to find the verify-email succe
         else if (role === 'provider') goto('provider-pending');
         else goto('customer-category');
       } catch (err) {
-        toast(err.message || t('toast.reset.invalid_code') || 'Invalid or expired code');
+        toast(err.message || t('toast.reset.invalid_code') || 'Invalid or expired code', true);
       } finally {
         $('#reset-btn').disabled = false;
       }
@@ -1140,7 +1140,7 @@ Grep for `verify-btn` in `frontend/index-v2.html` to find the verify-email succe
         });
         toast(t('toast.forgot.sent'));
       } catch (err) {
-        toast(err.message || 'Please wait before requesting another code');
+        toast(err.message || 'Please wait before requesting another code', true);
       } finally {
         // Re-enable after 30s to mirror the backend cooldown. If a shared
         // countdown helper already exists (grep for the verify-email resend
