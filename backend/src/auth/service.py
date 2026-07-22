@@ -238,3 +238,119 @@ def authenticate(db: Session, *, email: str, password: str) -> models.User:
     if user.status == "blocked":
         raise HTTPException(status_code=403, detail="Account blocked. Contact an administrator.")
     return user
+
+
+def _generate_password_reset_otp(db: Session, email: str) -> str:
+    # Same rate limit as verify-email OTPs — keyed on EmailOTP.email so a
+    # spammer flipping between purposes still hits the shared cap.
+    now = datetime.utcnow()
+    last = (
+        db.query(models.EmailOTP)
+        .filter(models.EmailOTP.email == email.lower())
+        .order_by(models.EmailOTP.id.desc())
+        .first()
+    )
+    if last is not None:
+        elapsed = (now - last.created_at).total_seconds()
+        if elapsed < 30:
+            wait = int(30 - elapsed) + 1
+            raise HTTPException(
+                status_code=429,
+                detail=f"Please wait {wait} seconds before requesting another code.",
+            )
+
+    hour_ago = now - timedelta(hours=1)
+    recent = (
+        db.query(models.EmailOTP)
+        .filter(
+            models.EmailOTP.email == email.lower(),
+            models.EmailOTP.created_at > hour_ago,
+        )
+        .count()
+    )
+    if recent >= 3:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many verification requests. Try again in an hour.",
+        )
+
+    code = f"{random.randint(100000, 999999)}"
+    rec = models.EmailOTP(
+        email=email,
+        otp_code=code,
+        purpose="reset",
+        expires_at=datetime.utcnow() + timedelta(minutes=settings.OTP_EXPIRY_MINUTES),
+    )
+    db.add(rec)
+    db.commit()
+
+    subject = "Reset your Tazkirati password"
+    text = (
+        "You (or someone using your email) requested a password reset for your "
+        "Tazkirati account.\n\n"
+        f"Your 6-digit reset code is: {code}\n"
+        f"It expires in {settings.OTP_EXPIRY_MINUTES} minutes.\n\n"
+        "If you didn't request this, ignore this email — your password won't change."
+    )
+    html = f"""\
+<!doctype html>
+<html><body style="font-family: -apple-system, system-ui, sans-serif; background: #F2EAD3; padding: 32px;">
+  <table style="max-width: 480px; margin: 0 auto; background: #FBF6E7; border: 1.5px solid #2D261B;">
+    <tr><td style="padding: 28px 32px 14px;">
+      <div style="font-family: Georgia, serif; font-weight: 900; font-size: 32px; color: #1A1814; letter-spacing: -0.02em;">Tazkirati.</div>
+      <div style="font-family: monospace; font-size: 10px; letter-spacing: 0.2em; color: #3D362A; text-transform: uppercase; margin-top: 4px;">Password Reset</div>
+    </td></tr>
+    <tr><td style="padding: 0 32px 28px;">
+      <p style="font-size: 15px; color: #1A1814; margin: 18px 0;">Enter this code to set a new password:</p>
+      <div style="font-family: monospace; font-weight: 600; font-size: 40px; letter-spacing: 0.4em; padding: 18px; background: #F2EAD3; border: 2px solid #0F2A47; color: #0F2A47; text-align: center;">{code}</div>
+      <p style="font-size: 12px; color: #3D362A; margin-top: 16px;">Valid for {settings.OTP_EXPIRY_MINUTES} minutes. If you didn't request this, ignore this email — your password won't change.</p>
+    </td></tr>
+  </table>
+</body></html>"""
+
+    sent = _send_email(to=email, subject=subject, html=html, text=text)
+    if not sent:
+        print(f"[EMAIL-RESET-CONSOLE] {email} → {code}")
+    return code
+
+
+def request_password_reset(db: Session, *, email: str) -> None:
+    """
+    Silent by design: always returns None. Callers must NOT branch on the
+    outcome (leaks account existence). Emails are only sent when the account
+    exists AND is email-verified.
+    """
+    user = db.query(models.User).filter(models.User.email == email.lower()).first()
+    if not user or not user.email_verified:
+        return
+    _generate_password_reset_otp(db, user.email)
+
+
+def confirm_password_reset(
+    db: Session, *, email: str, otp_code: str, new_password: str
+) -> models.User:
+    user = db.query(models.User).filter(models.User.email == email.lower()).first()
+    # Deliberate: same error message whether the user or the OTP is bad —
+    # keeps account-existence hidden.
+    generic_fail = HTTPException(status_code=400, detail="Invalid or expired code")
+    if not user or not user.email_verified:
+        raise generic_fail
+
+    rec = (
+        db.query(models.EmailOTP)
+        .filter(
+            models.EmailOTP.email == email.lower(),
+            models.EmailOTP.otp_code == otp_code,
+            models.EmailOTP.purpose == "reset",
+        )
+        .order_by(models.EmailOTP.id.desc())
+        .first()
+    )
+    if not rec or rec.expires_at < datetime.utcnow():
+        raise generic_fail
+
+    user.password_hash = utils.hash_password(new_password)
+    db.delete(rec)
+    db.commit()
+    db.refresh(user)
+    return user
