@@ -44,12 +44,12 @@ class Settings(BaseSettings):
     # so the iOS + Android wrappers can hit the API.
     CORS_ALLOWED_ORIGINS: str = "*"
 
-    # ----- SMTP (optional — if unset we fall back to console-logged OTPs) -----
-    SMTP_HOST: Optional[str] = None
-    SMTP_PORT: int = 587
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    SMTP_FROM: Optional[str] = None
+    # ----- Resend (HTTP email API — https://resend.com/docs) -----
+    # If unset (or the sender domain isn't verified in Resend), _send_email
+    # returns False and OTPs fall back to the [EMAIL-OTP-CONSOLE] server log.
+    # This keeps local dev workable without a live API key.
+    RESEND_API_KEY: Optional[str] = None
+    RESEND_FROM: Optional[str] = None  # e.g. "Tazkirati <noreply@yourdomain.com>"
 
     model_config = SettingsConfigDict(env_file=env_path, extra="ignore")
 

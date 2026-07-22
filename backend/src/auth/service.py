@@ -1,9 +1,7 @@
 import random
-import smtplib
 from datetime import datetime, timedelta
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
+import httpx
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -11,30 +9,40 @@ from ..config import settings
 from . import models, utils
 
 
+RESEND_URL = "https://api.resend.com/emails"
+
+
 def _send_email(to: str, subject: str, html: str, text: str) -> bool:
     """
-    Deliver an email via SMTP if credentials are configured. Returns True on
-    success. On failure (or no config) we silently fall back to a console log
-    of the OTP — the demo still works locally that way.
+    Deliver an email via Resend's HTTP API. Returns True on 2xx. On failure
+    (or missing config) returns False; callers fall back to the console-log
+    OTP path, keeping local dev workable without a live key.
     """
-    if not (settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD):
+    if not (settings.RESEND_API_KEY and settings.RESEND_FROM):
         return False
     try:
-        msg = MIMEMultipart("alternative")
-        msg["From"] = settings.SMTP_FROM or settings.SMTP_USER
-        msg["To"] = to
-        msg["Subject"] = subject
-        msg.attach(MIMEText(text, "plain"))
-        msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as s:
-            s.starttls()
-            # Gmail App Passwords are tolerant of spaces, but strip just in case.
-            s.login(settings.SMTP_USER, settings.SMTP_PASSWORD.replace(" ", ""))
-            s.send_message(msg)
-        print(f"[EMAIL] sent to {to} subject={subject!r}")
-        return True
+        r = httpx.post(
+            RESEND_URL,
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": settings.RESEND_FROM,
+                "to": [to],
+                "subject": subject,
+                "html": html,
+                "text": text,
+            },
+            timeout=15,
+        )
+        if 200 <= r.status_code < 300:
+            print(f"[EMAIL] sent to {to} subject={subject!r} resend_id={r.json().get('id')}")
+            return True
+        print(f"[EMAIL] Resend rejected: HTTP {r.status_code} body={r.text[:400]}")
+        return False
     except Exception as e:
-        print(f"[EMAIL] SMTP delivery failed: {e!r}")
+        print(f"[EMAIL] Resend delivery failed: {e!r}")
         return False
 
 
