@@ -226,7 +226,8 @@ def provider_confirm_walkin(
     # transition is identical; only the payment_method differs.
     from ..admin.service import confirm_payment
     booking, delivered_to = confirm_payment(
-        db, booking_id=booking_id, payment_method="cash"
+        db, booking_id=booking_id, payment_method="cash",
+        actor_user_id=current_user.id,
     )
 
     return {

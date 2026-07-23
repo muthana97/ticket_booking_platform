@@ -46,7 +46,7 @@ def test_delete_override_after_snapshot_keeps_amount_nulls_pointer(db, provider_
     db.add(b)
     db.commit()
     db.refresh(b)
-    confirm_payment(db, booking_id=b.id)
+    confirm_payment(db, booking_id=b.id, actor_user_id=provider_user.id)
     db.refresh(b)
     assert b.commission_amount == 200.0
     assert b.commission_rule_id == rule.id

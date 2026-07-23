@@ -55,16 +55,24 @@ def list_providers(
 
 
 @router.post("/providers/{provider_id}/approve", response_model=schemas.ProviderSummary)
-def approve_provider(provider_id: int, db: Session = Depends(get_db)):
+def approve_provider(
+    provider_id: int, db: Session = Depends(get_db), admin=Depends(require_admin),
+):
     """Move a provider from `pending` (or `blocked`) into `active`."""
-    user = service.set_provider_status(db, provider_id=provider_id, new_status="active")
+    user = service.set_provider_status(
+        db, provider_id=provider_id, new_status="active", actor_user_id=admin.id,
+    )
     return service._decorate_provider(db, user)
 
 
 @router.post("/providers/{provider_id}/block", response_model=schemas.ProviderSummary)
-def block_provider(provider_id: int, db: Session = Depends(get_db)):
+def block_provider(
+    provider_id: int, db: Session = Depends(get_db), admin=Depends(require_admin),
+):
     """Block a provider — they can still authenticate but cannot manage trips."""
-    user = service.set_provider_status(db, provider_id=provider_id, new_status="blocked")
+    user = service.set_provider_status(
+        db, provider_id=provider_id, new_status="blocked", actor_user_id=admin.id,
+    )
     return service._decorate_provider(db, user)
 
 
@@ -76,6 +84,7 @@ def update_provider_capabilities(
     provider_id: int,
     payload: schemas.ProviderCapabilitiesUpdate,
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ):
     """Toggle any subset of {can_add_trips, can_edit_trips, can_delete_trips}
     on a provider. Omitted fields stay as-is."""
@@ -85,6 +94,7 @@ def update_provider_capabilities(
         can_add_trips=payload.can_add_trips,
         can_edit_trips=payload.can_edit_trips,
         can_delete_trips=payload.can_delete_trips,
+        actor_user_id=admin.id,
     )
     return service._decorate_provider(db, user)
 
@@ -220,11 +230,15 @@ def list_pending_payments(db: Session = Depends(get_db)):
 
 
 @router.post("/payments/{booking_id}/confirm", response_model=schemas.ConfirmPaymentResponse)
-def confirm_payment(booking_id: int, db: Session = Depends(get_db)):
+def confirm_payment(
+    booking_id: int, db: Session = Depends(get_db), admin=Depends(require_admin),
+):
     """Move booking from `committed_pending` → `confirmed`, lock seats as
     `booked` permanently, and (in the demo) print a delivery line for the
     confirmation email."""
-    booking, delivered_to = service.confirm_payment(db, booking_id=booking_id)
+    booking, delivered_to = service.confirm_payment(
+        db, booking_id=booking_id, actor_user_id=admin.id,
+    )
     return {
         "booking_id": booking.id,
         "status": booking.status,

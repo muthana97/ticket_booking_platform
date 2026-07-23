@@ -39,7 +39,7 @@ def test_provider_bookings_expose_commission_and_net(client, db, provider_user):
     db.add(b)
     db.commit()
     db.refresh(b)
-    confirm_payment(db, booking_id=b.id)
+    confirm_payment(db, booking_id=b.id, actor_user_id=provider_user.id)
 
     r = client.post(
         "/auth/login",

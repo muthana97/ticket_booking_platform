@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from ..audit import service as audit_svc
 from ..auth import models as auth_models
 from ..booking.models import Booking
 from ..inventory.models import Route, Seat, Trip
@@ -71,6 +72,7 @@ def update_provider_capabilities(
     can_add_trips: Optional[bool] = None,
     can_edit_trips: Optional[bool] = None,
     can_delete_trips: Optional[bool] = None,
+    actor_user_id: int,
 ) -> auth_models.User:
     """Partial patch on a provider's three trip-management flags. Any field
     left None on the request stays as-is on the row (partial update)."""
@@ -104,6 +106,21 @@ def update_provider_capabilities(
                 type="provider_capability_changed",
                 payload={"capability": key, "value": bool(value)},
             )
+        for key, value in changed.items():
+            audit_svc.record_event(
+                db,
+                actor_user_id=actor_user_id,
+                provider_id=user.id,
+                event_type="capability_changed",
+                target_type="capability",
+                target_id=None,
+                summary=(
+                    f"Capability {key} {'enabled' if value else 'disabled'} "
+                    f"for {user.full_name}"
+                ),
+                metadata={"capability": key, "to": bool(value)},
+            )
+        db.commit()
     print(
         f"[ADMIN] provider {user.email} capabilities "
         f"add={user.can_add_trips} edit={user.can_edit_trips} delete={user.can_delete_trips}"
@@ -111,7 +128,9 @@ def update_provider_capabilities(
     return user
 
 
-def set_provider_status(db: Session, *, provider_id: int, new_status: str) -> auth_models.User:
+def set_provider_status(
+    db: Session, *, provider_id: int, new_status: str, actor_user_id: int,
+) -> auth_models.User:
     if new_status not in ("pending", "active", "blocked"):
         raise HTTPException(status_code=400, detail="Invalid status")
     user = (
@@ -121,9 +140,33 @@ def set_provider_status(db: Session, *, provider_id: int, new_status: str) -> au
     )
     if not user:
         raise HTTPException(status_code=404, detail="Provider not found")
+    previous_status = user.status
     user.status = new_status
     db.commit()
     db.refresh(user)
+
+    # Determine event_type: pending → active = approved; blocked → active =
+    # unblocked; any → blocked = blocked. Kept as 3 distinct event types so
+    # the UI can pick different icons.
+    prior_status_map = {"pending": "provider_approved", "blocked": "provider_unblocked"}
+    if new_status == "active":
+        event_type = prior_status_map.get(previous_status, "provider_approved")
+    elif new_status == "blocked":
+        event_type = "provider_blocked"
+    else:
+        event_type = "provider_status_changed"
+
+    audit_svc.record_event(
+        db,
+        actor_user_id=actor_user_id,
+        provider_id=user.id,
+        event_type=event_type,
+        target_type="provider",
+        target_id=user.id,
+        summary=f"Provider {user.full_name} → {new_status}",
+        metadata={"from": previous_status, "to": new_status},
+    )
+    db.commit()
     print(f"[ADMIN] provider {user.email} → {new_status}")
     return user
 
@@ -277,6 +320,7 @@ def confirm_payment(
     *,
     booking_id: int,
     payment_method: str = "admin_confirmed",
+    actor_user_id: int,
 ) -> tuple[Booking, Optional[str]]:
     """
     Admin manually confirms that payment has cleared. Transitions:
@@ -353,5 +397,20 @@ def confirm_payment(
     delivered_to = customer.email if customer else None
     if delivered_to:
         print(f"[EMAIL] ticket confirmation #{booking.id} → {delivered_to}")
+
+    audit_svc.record_event(
+        db,
+        actor_user_id=actor_user_id,
+        provider_id=_trip.provider_id if _trip else None,
+        event_type="payment_confirmed",
+        target_type="booking",
+        target_id=booking.id,
+        summary=(
+            f"Payment confirmed for booking {booking.billing_reference} "
+            f"(SDG {float(booking.total_price):.0f})"
+        ),
+        metadata={"amount": float(booking.total_price)},
+    )
+    db.commit()
 
     return booking, delivered_to

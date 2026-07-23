@@ -50,7 +50,7 @@ def test_consumer_confirm_snapshots_commission(db, trip_with_seats):
     db.add(CommissionRule(scope="global", rate_kind="percentage", rate_value=8.0))
     db.commit()
     b = _committed_booking(db, trip, seats, total=2000.0)
-    confirm_payment(db, booking_id=b.id)
+    confirm_payment(db, booking_id=b.id, actor_user_id=trip.provider_id)
     db.refresh(b)
     assert b.status == "confirmed"
     assert b.commission_amount == 160.0
@@ -63,7 +63,7 @@ def test_walkin_confirm_zero_commission_even_with_rule(db, trip_with_seats):
     db.add(CommissionRule(scope="global", rate_kind="percentage", rate_value=10.0))
     db.commit()
     b = _committed_booking(db, trip, seats, channel="walkin", total=2000.0)
-    confirm_payment(db, booking_id=b.id, payment_method="cash")
+    confirm_payment(db, booking_id=b.id, payment_method="cash", actor_user_id=trip.provider_id)
     db.refresh(b)
     assert b.status == "confirmed"
     assert b.commission_amount == 0.0
@@ -75,6 +75,6 @@ def test_walkin_confirm_zero_commission_even_with_rule(db, trip_with_seats):
 def test_confirm_without_rules_zero(db, trip_with_seats):
     trip, seats = trip_with_seats
     b = _committed_booking(db, trip, seats)
-    confirm_payment(db, booking_id=b.id)
+    confirm_payment(db, booking_id=b.id, actor_user_id=trip.provider_id)
     db.refresh(b)
     assert b.commission_amount == 0.0

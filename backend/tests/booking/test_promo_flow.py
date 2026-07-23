@@ -467,7 +467,10 @@ def test_confirm_refuses_expired_booking(db, provider, customer_a):
     db.commit()
 
     with pytest.raises(HTTPException) as exc:
-        confirm_payment(db, booking_id=b.id, payment_method="billing_reference")
+        confirm_payment(
+            db, booking_id=b.id, payment_method="billing_reference",
+            actor_user_id=provider.id,
+        )
     assert exc.value.status_code == 400
     assert "expired" in exc.value.detail.lower()
 
@@ -489,6 +492,9 @@ def test_confirm_does_not_increment_again(db, provider, customer_a):
     b.bill_generated_at = datetime.utcnow()
     db.commit()
 
-    confirm_payment(db, booking_id=b.id, payment_method="billing_reference")
+    confirm_payment(
+        db, booking_id=b.id, payment_method="billing_reference",
+        actor_user_id=provider.id,
+    )
     p_after = db.query(PromoCode).filter(PromoCode.code == "LIBRE").first().redemption_count
     assert p_after == p_before  # no double-bump
