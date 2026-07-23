@@ -814,6 +814,7 @@
   body[data-screen="provider-home"]         #screen-provider-home,
   body[data-screen="provider-book"]         #screen-customer-book,
   body[data-screen="admin-home"]            #screen-admin-home,
+  body[data-screen="admin-provider-detail"] #screen-admin-provider-detail,
   body[data-screen="admin-settings"]        #screen-admin-settings,
   body[data-screen="notifications"]         #screen-notifications { display: block; }
   @keyframes fadeIn {
@@ -4563,6 +4564,197 @@
     box-shadow: 0 10px 20px -10px rgba(217,74,62,0.6);
   }
 
+  /* ── Admin: single-provider detail page ─────────────────────────────── */
+  body[data-screen="admin-provider-detail"].pillow .admin-detail-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .admin-detail-header {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .ghost-back {
+    appearance: none; align-self: flex-start;
+    background: rgba(255,255,255,0.6);
+    border: 0; border-radius: 999px;
+    padding: 8px 16px;
+    font-family: var(--p-sans); font-weight: 700; font-size: 12.5px;
+    color: var(--p-ink-mute);
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: transform 120ms ease, color 180ms ease;
+  }
+  body[data-screen="admin-provider-detail"].pillow .ghost-back:hover {
+    color: var(--p-ink);
+    transform: translateY(-1px);
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-name-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-name {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    color: var(--p-ink);
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-sub {
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--p-ink-mute);
+  }
+  body[data-screen="admin-provider-detail"].pillow .admin-detail-panel {
+    margin-bottom: 16px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .admin-detail-panel h3 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    color: var(--p-ink);
+    margin: 0 0 12px;
+    padding-left: 12px;
+    position: relative;
+  }
+  body[data-screen="admin-provider-detail"].pillow .admin-detail-panel h3::before {
+    content: '';
+    position: absolute; left: 0; top: 2px; bottom: 2px;
+    width: 4px;
+    border-radius: 4px;
+    background: var(--p-accent);
+  }
+  /* Capability toggles — same sliding-switch treatment as the old inline
+     admin-row toggles, just re-scoped to the detail page's permissions panel. */
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body .caps {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    font-family: var(--p-sans);
+    font-size: 12px;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body .cap-label {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    margin-right: 4px;
+    flex-basis: 100%;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap {
+    position: relative;
+    display: inline-flex; align-items: center;
+    gap: 10px;
+    padding: 4px 10px 4px 4px;
+    background: transparent;
+    color: var(--p-ink);
+    border-radius: 999px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: none;
+    transition: color 180ms ease;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap input {
+    display: none;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap::before {
+    content: '';
+    width: 34px; height: 20px;
+    border-radius: 999px;
+    background: rgba(50,80,140,0.22);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08) inset;
+    transition: background 180ms ease, box-shadow 180ms ease;
+    flex-shrink: 0;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    margin-top: -8px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.28), 0 0 0 0.5px rgba(0,0,0,0.05);
+    transition: transform 220ms cubic-bezier(.4,1.6,.4,1);
+    transform: translateX(0);
+    pointer-events: none;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap:has(input:checked)::before {
+    background: var(--p-accent);
+    box-shadow: 0 4px 10px -4px var(--p-accent-shadow) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap:has(input:checked)::after {
+    transform: translateX(14px);
+  }
+  html[dir="rtl"] body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap::after {
+    left: auto;
+    right: 6px;
+  }
+  html[dir="rtl"] body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body label.cap:has(input:checked)::after {
+    transform: translateX(-14px);
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-actions {
+    display: flex; gap: 8px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-actions .btn-inline {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-actions .btn-inline:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-actions .btn-inline.success {
+    background: var(--p-ok);
+    color: white;
+    box-shadow: 0 8px 18px -8px rgba(23,166,107,0.5), 0 1px 0 rgba(255,255,255,0.2) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-actions .btn-inline.success:hover {
+    background: var(--p-ok);
+    filter: brightness(1.05);
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-actions .btn-inline.danger {
+    background: rgba(217, 74, 62, 0.12);
+    color: var(--p-danger);
+    box-shadow: 0 0 0 1px rgba(217,74,62,0.22) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow .ad-actions .btn-inline.danger:hover {
+    background: var(--p-danger);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px -10px rgba(217,74,62,0.6);
+  }
+  /* Chevron affordance on the now-clickable provider rows (admin-home) */
+  body[data-screen="admin-home"].pillow .admin-row.admin-row-clickable .chevron-right {
+    color: var(--p-ink-mute);
+    font-size: 18px;
+    font-weight: 700;
+  }
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row.admin-row-clickable .chevron-right {
+    display: inline-block;
+    transform: scaleX(-1);
+  }
+
   /* ── Reports tab ────────────────────────────────────────────────────── */
   body[data-screen="admin-home"].pillow .report-section {
     margin: 24px 0;
@@ -6449,6 +6641,34 @@
       </div>
     </section>
 
+    <!-- Admin: single-provider detail page -->
+    <section class="screen" id="screen-admin-provider-detail">
+      <div class="admin-detail-wrap">
+        <div class="admin-detail-header">
+          <button class="ghost-back" id="admin-detail-back">← <span data-i18n="admin.provider.detail.back">Back to providers</span></button>
+          <div id="admin-detail-heading"><!-- populated by renderProviderDetail --></div>
+        </div>
+
+        <!-- Panel: permissions -->
+        <section class="p-pillow admin-detail-panel" id="admin-detail-permissions">
+          <h3 data-i18n="admin.provider.detail.permissions">Access &amp; permissions</h3>
+          <div id="admin-detail-permissions-body"><!-- populated --></div>
+        </section>
+
+        <!-- Panel: activity log (filled in by Task 8) -->
+        <section class="p-pillow admin-detail-panel" id="admin-detail-log">
+          <h3 data-i18n="admin.provider.detail.log">Activity log</h3>
+          <div id="admin-detail-log-body"><!-- populated by Task 8 --></div>
+        </section>
+
+        <!-- Panel: reports (filled in by Task 9) -->
+        <section class="p-pillow admin-detail-panel" id="admin-detail-reports">
+          <h3 data-i18n="admin.provider.detail.reports">Reports</h3>
+          <div id="admin-detail-reports-body"><!-- populated by Task 9 --></div>
+        </section>
+      </div>
+    </section>
+
     <!-- Settings hub (universal — all signed-in roles).
          The screen id remains 'admin-settings' for legacy reasons; routing
          keys it on body[data-screen='admin-settings']. -->
@@ -7089,6 +7309,12 @@ const I18N = {
     'admin.caps.enabled': 'Permission enabled', 'admin.caps.disabled': 'Permission disabled',
     'admin.action.markpaid': 'Mark Paid',
     'admin.row.joined': 'joined', 'admin.row.trips': 'trip(s)',
+    'admin.provider.detail.back': 'Back to providers',
+    'admin.provider.detail.title': 'Provider detail',
+    'admin.provider.detail.permissions': 'Access & permissions',
+    'admin.provider.detail.log': 'Activity log',
+    'admin.provider.detail.reports': 'Reports',
+    'admin.provider.detail.not_found': 'Provider not found',
     // status filter
     'status.filter.confirmed': 'Confirmed only', 'status.filter.committed_pending': 'Awaiting Payment',
     'status.filter.pending': 'Pending lock', 'status.filter.expired': 'Expired',
@@ -7432,6 +7658,12 @@ const I18N = {
     'admin.caps.enabled': 'تم تفعيل الصلاحية', 'admin.caps.disabled': 'تم إلغاء الصلاحية',
     'admin.action.markpaid': 'تأكيد الدفع',
     'admin.row.joined': 'انضمّ في', 'admin.row.trips': 'رحلة',
+    'admin.provider.detail.back': 'العودة إلى المشغلين',
+    'admin.provider.detail.title': 'تفاصيل المشغل',
+    'admin.provider.detail.permissions': 'الوصول والصلاحيات',
+    'admin.provider.detail.log': 'سجل النشاط',
+    'admin.provider.detail.reports': 'التقارير',
+    'admin.provider.detail.not_found': 'المشغل غير موجود',
     // status filter
     'status.filter.confirmed': 'مؤكدة فقط', 'status.filter.committed_pending': 'بانتظار الدفع',
     'status.filter.pending': 'حجز مؤقت', 'status.filter.expired': 'منتهية',
@@ -7768,6 +8000,8 @@ const STATE = {
   awaitingCount: 0,        // count of pending+committed_pending bookings (nav badge)
   resendCooldownSecs: 0,   // OTP resend cooldown
   resendTimer: null,
+  viewingProviderId: null,  // admin provider-detail: which provider is being viewed
+  viewingProvider: null,    // admin provider-detail: cached provider row
 };
 
 /* ---------- DOM utils ---------- */
@@ -7861,7 +8095,7 @@ const PILLOW_SCREENS = new Set([
   'welcome', 'sign-in', 'forgot-password', 'reset-password', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
   'admin-settings', 'notifications', 'provider-home', 'provider-book',
-  'admin-home',
+  'admin-home', 'admin-provider-detail',
 ]);
 function goto(screen, opts = {}) {
   if (!opts.replaceHistory && STATE.screen !== screen) STATE.history.push(STATE.screen);
@@ -7870,6 +8104,7 @@ function goto(screen, opts = {}) {
   if (screen !== 'admin-home') stopAdminRefresh();
   if (screen === 'customer-search') { populateOperatorSelect(); setSearchDateFloor(); }
   if (screen === 'reset-password') { $('#rp-email').textContent = STATE.pendingResetEmail || '—'; }
+  if (screen === 'admin-provider-detail') { renderProviderDetail(); }
   paintChrome();
 }
 function back() {
@@ -7968,6 +8203,7 @@ function paintChrome() {
     'welcome','sign-in','register','verify-email','provider-pending',
     'customer-category',
     'customer-search','customer-my-tickets','provider-home','admin-home',
+    'admin-provider-detail',
   ].includes(STATE.screen);
   subhead.hidden = noSubHead;
   $('#back-btn').style.visibility = STATE.history.length > 0 ? 'visible' : 'hidden';
@@ -10176,34 +10412,22 @@ async function renderAdminProviders() {
   if (!providers.length) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
   empty.classList.add('hidden'); list.classList.remove('hidden');
   providers.forEach(p => {
-    const row = document.createElement('div'); row.className = 'admin-row';
-    // Capability toggles only make sense for active providers — a pending
-    // or blocked account can't create/edit/delete anything regardless.
-    const capsBlock = p.status === 'active' ? `
-      <div class="caps">
-        <span class="cap-label">${t('admin.caps.label')}</span>
-        <label class="cap"><input type="checkbox" data-cap="can_add_trips"    ${p.can_add_trips    ? 'checked' : ''}> ${t('admin.caps.add')}</label>
-        <label class="cap"><input type="checkbox" data-cap="can_edit_trips"   ${p.can_edit_trips   ? 'checked' : ''}> ${t('admin.caps.edit')}</label>
-        <label class="cap"><input type="checkbox" data-cap="can_delete_trips" ${p.can_delete_trips ? 'checked' : ''}> ${t('admin.caps.delete')}</label>
-      </div>` : '';
+    const row = document.createElement('div');
+    row.className = 'admin-row admin-row-clickable';
+    row.style.cursor = 'pointer';
     row.innerHTML = `
       <div class="main">
         <div><span class="status-pill ${p.status}">${tStatus(p.status)}</span><span class="name">${escapeHtml(p.full_name)}</span></div>
         <div class="sub">${escapeHtml(p.email)} · ${escapeHtml(p.phone_number || '—')} · ${t('admin.row.joined')} ${fmtTime(p.created_at)} · <b>${p.trip_count}</b> ${t('admin.row.trips')}</div>
-        ${capsBlock}
       </div>
       <div class="actions">
-        ${ p.status === 'active'
-            ? `<button class="btn-inline danger" data-action="block">${t('admin.action.block')}</button>`
-            : `<button class="btn-inline success" data-action="approve">${t('admin.action.approve')}</button>` }
+        <span class="chevron-right" aria-hidden="true">→</span>
       </div>
     `;
-    const approve = row.querySelector('[data-action="approve"]');
-    const block = row.querySelector('[data-action="block"]');
-    approve?.addEventListener('click', () => adminProviderAction(p.id, 'approve'));
-    block?.addEventListener('click',   () => adminProviderAction(p.id, 'block'));
-    row.querySelectorAll('.caps input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', () => setProviderCapability(p.id, cb.dataset.cap, cb.checked, cb));
+    row.addEventListener('click', () => {
+      STATE.viewingProviderId = p.id;
+      STATE.viewingProvider = p;
+      goto('admin-provider-detail');
     });
     list.appendChild(row);
   });
@@ -10228,6 +10452,68 @@ async function setProviderCapability(providerId, key, value, checkbox) {
     if (checkbox) checkbox.checked = !value;
     toast(e.message, true);
   }
+}
+
+async function renderProviderDetail() {
+  const pid = STATE.viewingProviderId;
+  if (!pid) { goto('admin-home'); return; }
+
+  // Re-fetch so status/capability changes elsewhere are reflected on entry.
+  try {
+    const providers = await api('/admin/providers');
+    const p = providers.find(x => x.id === pid);
+    if (!p) { toast(t('admin.provider.detail.not_found'), true); goto('admin-home'); return; }
+    STATE.viewingProvider = p;
+  } catch (e) { toast(e.message, true); return; }
+
+  renderProviderDetailHeader();
+  renderProviderDetailPermissions();
+  // Task 8:
+  if (typeof renderProviderAuditLog === 'function') renderProviderAuditLog(true /*reset*/);
+  // Task 9:
+  if (typeof renderProviderReports === 'function') renderProviderReports();
+}
+
+function renderProviderDetailHeader() {
+  const p = STATE.viewingProvider;
+  $('#admin-detail-heading').innerHTML = `
+    <div class="ad-name-row">
+      <span class="status-pill ${p.status}">${tStatus(p.status)}</span>
+      <span class="ad-name">${escapeHtml(p.full_name)}</span>
+    </div>
+    <div class="ad-sub">${escapeHtml(p.email)} · ${escapeHtml(p.phone_number || '—')}</div>
+  `;
+}
+
+function renderProviderDetailPermissions() {
+  const p = STATE.viewingProvider;
+  const body = $('#admin-detail-permissions-body');
+  const capsBlock = p.status === 'active' ? `
+    <div class="caps">
+      <span class="cap-label">${t('admin.caps.label')}</span>
+      <label class="cap"><input type="checkbox" data-cap="can_add_trips"    ${p.can_add_trips    ? 'checked' : ''}> ${t('admin.caps.add')}</label>
+      <label class="cap"><input type="checkbox" data-cap="can_edit_trips"   ${p.can_edit_trips   ? 'checked' : ''}> ${t('admin.caps.edit')}</label>
+      <label class="cap"><input type="checkbox" data-cap="can_delete_trips" ${p.can_delete_trips ? 'checked' : ''}> ${t('admin.caps.delete')}</label>
+    </div>` : '';
+  body.innerHTML = `
+    ${capsBlock}
+    <div class="ad-actions">
+      ${ p.status === 'active'
+          ? `<button class="btn-inline danger" data-action="block">${t('admin.action.block')}</button>`
+          : `<button class="btn-inline success" data-action="approve">${t('admin.action.approve')}</button>` }
+    </div>
+  `;
+  body.querySelector('[data-action="approve"]')?.addEventListener('click', async () => {
+    await adminProviderAction(p.id, 'approve');
+    renderProviderDetail();  // refetch + re-render
+  });
+  body.querySelector('[data-action="block"]')?.addEventListener('click', async () => {
+    await adminProviderAction(p.id, 'block');
+    renderProviderDetail();
+  });
+  body.querySelectorAll('.caps input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => setProviderCapability(p.id, cb.dataset.cap, cb.checked, cb));
+  });
 }
 
 async function renderAdminTrips(opts = {}) {
@@ -10917,6 +11203,7 @@ function wire() {
     if (STATE.screen === 'customer-book' || STATE.screen === 'provider-book') stopStreamLoop();
     back();
   });
+  $('#admin-detail-back').addEventListener('click', () => back());
 
   $('#search-btn').addEventListener('click', doSearch);
   $('#search-swap')?.addEventListener('click', () => {
