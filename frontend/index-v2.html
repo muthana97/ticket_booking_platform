@@ -4461,7 +4461,12 @@
     position: relative;
     display: inline-flex; align-items: center;
     gap: 10px;
-    padding: 4px 10px 4px 4px;
+    /* Logical padding so track (flex item on inline-start side) always
+       gets the small 4px buffer, and text always gets the large 10px
+       buffer — matches in both LTR and RTL. Physical padding
+       (4px 10px 4px 4px) would leave the RTL knob 4px past the track. */
+    padding-block: 4px;
+    padding-inline: 4px 10px;
     background: transparent;
     color: var(--p-ink);
     border-radius: 999px;
@@ -4507,19 +4512,21 @@
   body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after {
     transform: translateX(14px);
   }
-  /* RTL: the knob is absolutely positioned with `left: 6px` which is
-     physical-left, not logical-start. In Arabic the track flips visually
-     to the right, so the knob was landing on the wrong end (over the
-     label text). Pin to inset-inline-start instead and mirror the slide. */
-  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap::after,
-  html[dir="rtl"] body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body .caps label.cap::after {
+  /* RTL: the knob is absolutely positioned with `left: 6px` (physical),
+     not logical-start. In Arabic the flex track flips to the right, so
+     pin the knob to physical-right instead and mirror the slide. Works
+     in tandem with the logical `padding-inline: 4px 10px` above so the
+     6px offset lands 2px inside the track's inline-start edge. */
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap::after {
     left: auto;
     right: 6px;
   }
-  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after,
-  html[dir="rtl"] body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body .caps label.cap:has(input:checked)::after {
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after {
     transform: translateX(-14px);
   }
+  /* The detail-page .caps rule with matching selectors lives further
+     down in the Task 7 CSS block (grep "admin-detail-permissions-body
+     label.cap::after") — no duplicate here. */
 
   /* Row action buttons */
   body[data-screen="admin-home"].pillow .admin-row .actions {
@@ -4653,7 +4660,10 @@
     position: relative;
     display: inline-flex; align-items: center;
     gap: 10px;
-    padding: 4px 10px 4px 4px;
+    /* Logical padding (start/end) so RTL flips buffer sides correctly —
+       see the admin-home rule for the full rationale. */
+    padding-block: 4px;
+    padding-inline: 4px 10px;
     background: transparent;
     color: var(--p-ink);
     border-radius: 999px;
