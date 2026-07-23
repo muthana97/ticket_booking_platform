@@ -10790,7 +10790,7 @@ async function renderProviderAuditLog(reset = false) {
     STATE.auditLog = { items: [], nextBefore: null, filters: STATE.auditLog?.filters || { q: '', event_type: '', from: '', to: '' } };
     body.innerHTML = `
       <div class="filter-strip audit-filter-strip">
-        <input type="text" id="al-q" value="${escapeHtml(STATE.auditLog.filters.q)}" placeholder="${t('admin.provider.log.filter.keyword_ph')}">
+        <div class="fld"><span class="lbl">${t('admin.provider.log.filter.keyword')}</span><input type="text" id="al-q" value="${escapeHtml(STATE.auditLog.filters.q)}" placeholder="${t('admin.provider.log.filter.keyword_ph')}"></div>
         <div class="fld"><span class="lbl">${t('admin.provider.log.filter.event_type')}</span>
           <select id="al-event-type">
             <option value="">${t('admin.provider.log.filter.event_type_all')}</option>
