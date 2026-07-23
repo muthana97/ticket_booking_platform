@@ -7826,6 +7826,7 @@ const I18N = {
     'admin.reports.operational.title': 'Operational',
     'admin.reports.operational.bookings': 'Total bookings',
     'admin.reports.operational.passengers': 'Total passengers',
+    'admin.reports.operational.bymonth': 'Operational by month',
     'admin.reports.col.month': 'Month',
     'admin.reports.col.provider': 'Provider',
     'admin.reports.col.commission': 'Commission (SDG)',
@@ -8196,6 +8197,7 @@ const I18N = {
     'admin.reports.operational.title': 'العملي',
     'admin.reports.operational.bookings': 'إجمالي الحجوزات',
     'admin.reports.operational.passengers': 'إجمالي الركاب',
+    'admin.reports.operational.bymonth': 'التشغيلي حسب الشهر',
     'admin.reports.col.month': 'الشهر',
     'admin.reports.col.provider': 'المشغّل',
     'admin.reports.col.commission': 'العمولة (جنيه)',
@@ -11347,7 +11349,7 @@ function renderReportTables(data, target) {
     </div>
     <div class="report-panel">
       <div class="report-panel-head">
-        <h4 data-i18n="admin.reports.financial.bymonth">${t('admin.reports.financial.bymonth')}</h4>
+        <h4 data-i18n="admin.reports.operational.bymonth">${t('admin.reports.operational.bymonth')}</h4>
         <button class="btn-inline" id="ap-rep-export-op" data-i18n="admin.reports.export.csv">${t('admin.reports.export.csv')}</button>
       </div>
       <table class="report-table">${opRows}</table>
