@@ -5245,17 +5245,45 @@
   }
 
   /* Per-provider row drilldown link (Task 9) — routes to the admin
-     provider-detail page's Reports panel. */
+     provider-detail page's Reports panel. Icon-only (via .rd-arrow) so
+     the extra column stays narrow and doesn't push the table past its
+     pillow container. */
   body[data-screen="admin-home"].pillow .report-drill {
-    font-family: var(--p-sans);
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 999px;
     color: var(--p-ink-mute);
     text-decoration: none;
-    white-space: nowrap;
-    transition: color 150ms ease;
+    transition: color 150ms ease, background 150ms ease;
   }
   body[data-screen="admin-home"].pillow .report-drill:hover {
     color: var(--p-accent-on, #1A1000);
+    background: rgba(0,0,0,0.05);
+  }
+  body[data-screen="admin-home"].pillow .report-drill .rd-arrow {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1;
+  }
+  /* Flip the chevron in Arabic RTL so it points at the destination. */
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .report-drill .rd-arrow {
+    transform: scaleX(-1);
+  }
+  /* Anchor the drilldown column to the right edge and constrain its
+     width so the table doesn't grow past the pillow container. */
+  body[data-screen="admin-home"].pillow .report-table td:last-child,
+  body[data-screen="admin-home"].pillow .report-table th:last-child {
+    text-align: end;
+    width: 40px;
+    white-space: nowrap;
+  }
+  /* Safety net: if a narrow viewport ever squeezes the table beyond the
+     panel, scroll horizontally rather than clipping the drilldown cell. */
+  body[data-screen="admin-home"].pillow .report-panel {
+    overflow-x: auto;
   }
 
   /* Reports filter strip — uses <label> wrappers with inline <span> +
@@ -11255,11 +11283,15 @@ function drawReports(data) {
   $('#rep-empty').classList.toggle('hidden', !allEmpty);
 }
 
-// A per-provider breakdown row's trailing "View ->" cell. Wrapped in
+// A per-provider breakdown row's trailing drilldown cell. Wrapped in
 // { html } so reportTableRows() knows to skip HTML-escaping just this
 // cell (every other cell still goes through escapeHtml as plain text).
+// Renders as an icon-only chevron so the extra column doesn't push the
+// table past its pillow container; the translated label goes on the
+// title/aria-label for hover + screen readers.
 function reportDrillCell(providerId) {
-  return { html: `<a href="#" class="report-drill" data-provider-id="${providerId}">${escapeHtml(t('admin.reports.drilldown_link'))} →</a>` };
+  const label = escapeHtml(t('admin.reports.drilldown_link'));
+  return { html: `<a href="#" class="report-drill" data-provider-id="${providerId}" title="${label}" aria-label="${label}"><span class="rd-arrow" aria-hidden="true">→</span></a>` };
 }
 
 // Wire click handlers on .report-drill links freshly inserted under `scopeSel`.
