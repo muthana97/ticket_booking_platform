@@ -149,3 +149,37 @@ def test_rolled_back_update_leaves_no_audit_row(client, db):
     assert r2.status_code == 400
 
     assert db.query(audit_models.AuditEvent).filter_by(event_type="trip_edited").count() == 0
+
+
+def test_departure_time_edit_serializes_datetime_metadata(client, db):
+    """Regression guard for the .isoformat() fix in _format_trip_edit_summary /
+    update_trip metadata: raw datetime is NOT JSON-serializable, so a broken
+    isoformat guard would silently drop the audit row (record_event swallows
+    all exceptions). Assert the departure_time-only edit produces exactly one
+    trip_edited row with ISO-string before/after values."""
+    prov = _seed_provider(db)
+    h = _login_as(client, prov.email, "pw")
+    r = client.post("/trips", json=_create_trip_body(), headers=h)
+    trip_id = r.json()["trips"][0]["trip_id"] if "trips" in r.json() else r.json()[0]["trip_id"]
+    db.query(audit_models.AuditEvent).delete(); db.commit()
+
+    new_dep = (datetime.utcnow() + timedelta(days=5)).replace(microsecond=0).isoformat()
+    r2 = client.patch(f"/trips/{trip_id}", json={"departure_time": new_dep}, headers=h)
+    assert r2.status_code == 200, r2.text
+
+    edits = db.query(audit_models.AuditEvent).filter_by(event_type="trip_edited").all()
+    assert len(edits) == 1, (
+        "audit row was silently dropped — the isoformat guard on datetime "
+        "metadata regressed, and record_event's swallow-exception masked it."
+    )
+    md = edits[0].metadata_
+    assert md and "before" in md and "after" in md
+    assert isinstance(md["before"].get("departure_time"), str), (
+        f"before.departure_time should be an ISO string, got {type(md['before'].get('departure_time'))!r}"
+    )
+    assert isinstance(md["after"].get("departure_time"), str), (
+        f"after.departure_time should be an ISO string, got {type(md['after'].get('departure_time'))!r}"
+    )
+    # Sanity: values parse back to datetimes.
+    datetime.fromisoformat(md["before"]["departure_time"])
+    datetime.fromisoformat(md["after"]["departure_time"])
