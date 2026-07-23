@@ -120,6 +120,7 @@ def test_existing_booking_price_not_retroactive(client, db, provider_auth, trip)
         customer_id=1, total_price=8,
         passengers=[SimpleNamespace(full_name="Mohamed Ali", phone_number=None,
                                     national_id=None, seat_number="1A")],
+        actor_user_id=1,
     )
     # Provider bumps price to 30 — should NOT touch the locked booking
     r = client.patch(f"/trips/{trip.id}", headers=provider_auth, json={"price": 30})

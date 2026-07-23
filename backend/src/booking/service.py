@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from .models import Booking, Passenger
 from ..auth.models import User
 from ..inventory.models import Seat, Trip, Route
+from ..audit import service as audit_svc
 
 
 # ---------------------------------------------------------------------------
@@ -109,6 +110,8 @@ def lock_seats(
     passengers: list | None = None,
     channel: str = "consumer",
     promo_code: str | None = None,
+    *,
+    actor_user_id: int,
 ):
     """
     Atomically lock seats using `with_for_update` row-level locks, then create
@@ -252,6 +255,39 @@ def lock_seats(
                 )
             )
 
+    # Audit emit (Task 4) — distinguish consumer checkout from provider
+    # walk-in by channel. `trip`/`route` may not have been loaded above if no
+    # promo_code was supplied, so look them up fresh here.
+    _trip_row = db.query(Trip).filter(Trip.id == trip_id).first()
+    _route_row = (
+        db.query(Route).filter(Route.id == _trip_row.route_id).first()
+        if _trip_row else None
+    )
+    actor = db.query(User).filter(User.id == actor_user_id).first()
+    actor_label = actor.full_name if actor else f"user #{actor_user_id}"
+    seat_count = len(seats)
+    if channel == "walkin":
+        summary = f"{actor_label} (provider) walk-in booked {seat_count} seat(s) on trip #{trip_id}"
+    else:
+        summary = f"{actor_label} booked {seat_count} seat(s) on trip #{trip_id}"
+    if _route_row:
+        summary += f" ({_route_row.origin} → {_route_row.destination})"
+    audit_svc.record_event(
+        db,
+        actor_user_id=actor_user_id,
+        provider_id=_trip_row.provider_id if _trip_row else None,
+        event_type=("walkin_booked" if channel == "walkin" else "consumer_booked"),
+        target_type="booking",
+        target_id=new_booking.id,
+        summary=summary,
+        metadata={
+            "trip_id": trip_id,
+            "seat_numbers": seat_numbers,
+            "channel": channel,
+            "total_price": float(final_price),
+        },
+    )
+
     db.commit()
     db.refresh(new_booking)
     return {"booking": new_booking, "seats": seats}
@@ -262,7 +298,13 @@ def lock_seats(
 # Path A (direct payment settlement) is deferred to V2 per CLAUDE.md.
 # ---------------------------------------------------------------------------
 
-def create_billing_intent(db: Session, booking_id: int, customer_id: int | None = None):
+def create_billing_intent(
+    db: Session,
+    booking_id: int,
+    customer_id: int | None = None,
+    *,
+    actor_user_id: int,
+):
     """
     Transition booking 'pending' → 'committed_pending', mint a billing reference,
     extend the hold window to 30 minutes, and return a rich Ticket payload.
@@ -294,6 +336,23 @@ def create_billing_intent(db: Session, booking_id: int, customer_id: int | None 
     booking.billing_reference = _generate_billing_reference()
     booking.bill_generated_at = now
     booking.expires_at = now + timedelta(minutes=30)
+
+    _trip_row = db.query(Trip).filter(Trip.id == booking.trip_id).first()
+    audit_svc.record_event(
+        db,
+        actor_user_id=actor_user_id,
+        provider_id=_trip_row.provider_id if _trip_row else None,
+        event_type="billing_ref_generated",
+        target_type="booking",
+        target_id=booking.id,
+        summary=(
+            f"Billing ref {booking.billing_reference} generated for booking #{booking.id}"
+        ),
+        metadata={
+            "billing_reference": booking.billing_reference,
+            "total_price": float(booking.total_price),
+        },
+    )
 
     db.commit()
     db.refresh(booking)

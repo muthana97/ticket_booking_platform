@@ -65,6 +65,7 @@ def test_single_word_name_rejected(db, seeded_trip):
             db, trip_id=seeded_trip, seat_numbers=["1A"],
             customer_id=1, total_price=8,
             passengers=[_pax("Mohamed", "1A")],
+            actor_user_id=1,
         )
     assert exc.value.status_code == 400
     assert "at least two names" in exc.value.detail
@@ -79,6 +80,7 @@ def test_duplicate_in_same_booking_rejected(db, seeded_trip):
                 _pax("Mohamed Ali", "1A"),
                 _pax("MOHAMED ALI", "1B"),  # case + whitespace shouldn't help
             ],
+            actor_user_id=1,
         )
     assert exc.value.status_code == 400
     assert "1A" in exc.value.detail and "1B" in exc.value.detail
@@ -91,6 +93,7 @@ def test_duplicate_against_existing_booking_rejected(db, seeded_trip):
         db, trip_id=seeded_trip, seat_numbers=["1A"],
         customer_id=1, total_price=8,
         passengers=[_pax("Mohamed Ali", "1A")],
+        actor_user_id=1,
     )
     # Second booking on same trip with the same name is blocked.
     with pytest.raises(HTTPException) as exc:
@@ -98,6 +101,7 @@ def test_duplicate_against_existing_booking_rejected(db, seeded_trip):
             db, trip_id=seeded_trip, seat_numbers=["1B"],
             customer_id=2, total_price=8,
             passengers=[_pax("mohamed  ali", "1B")],
+            actor_user_id=1,
         )
     assert exc.value.status_code == 400
     assert "already booked on this trip" in exc.value.detail
@@ -109,6 +113,7 @@ def test_expired_booking_frees_the_name(db, seeded_trip):
         db, trip_id=seeded_trip, seat_numbers=["1A"],
         customer_id=1, total_price=8,
         passengers=[_pax("Mohamed Ali", "1A")],
+        actor_user_id=1,
     )
     r1["booking"].status = "expired"
     db.commit()
@@ -117,6 +122,7 @@ def test_expired_booking_frees_the_name(db, seeded_trip):
         db, trip_id=seeded_trip, seat_numbers=["1B"],
         customer_id=2, total_price=8,
         passengers=[_pax("Mohamed Ali", "1B")],
+        actor_user_id=1,
     )
     assert True  # no exception is the success signal
 
@@ -129,6 +135,7 @@ def test_distinct_two_word_names_pass(db, seeded_trip):
             _pax("Mohamed Ali", "1A"),
             _pax("Fatima Hassan", "1B"),
         ],
+        actor_user_id=1,
     )
     assert r["booking"].status == "pending"
     assert len(r["seats"]) == 2
@@ -140,5 +147,6 @@ def test_phone_and_id_are_optional(db, seeded_trip):
         db, trip_id=seeded_trip, seat_numbers=["1A"],
         customer_id=1, total_price=8,
         passengers=[_pax("Mohamed Ali", "1A")],  # phone=None, nid=None
+        actor_user_id=1,
     )
     assert r["booking"].status == "pending"

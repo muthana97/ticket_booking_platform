@@ -398,16 +398,27 @@ def confirm_payment(
     if delivered_to:
         print(f"[EMAIL] ticket confirmation #{booking.id} → {delivered_to}")
 
+    # Task 4: this call site is SHARED between the admin manual-confirm
+    # endpoint (/admin/payments/{id}/confirm) and the provider walk-in cash
+    # confirm endpoint (/bookings/{id}/provider-confirm) — do NOT split into
+    # a parallel emit. Branch the single emit by payment_method instead so
+    # each caller gets the right event_type without double-counting.
+    is_cash = payment_method == "cash"
     audit_svc.record_event(
         db,
         actor_user_id=actor_user_id,
         provider_id=_trip.provider_id if _trip else None,
-        event_type="payment_confirmed",
+        event_type=("cash_confirmed" if is_cash else "payment_confirmed"),
         target_type="booking",
         target_id=booking.id,
         summary=(
-            f"Payment confirmed for booking {booking.billing_reference} "
-            f"(SDG {float(booking.total_price):.0f})"
+            (
+                f"Cash payment confirmed for booking {booking.billing_reference} "
+                f"(SDG {float(booking.total_price):.0f})"
+            ) if is_cash else (
+                f"Payment confirmed for booking {booking.billing_reference} "
+                f"(SDG {float(booking.total_price):.0f})"
+            )
         ),
         metadata={"amount": float(booking.total_price)},
     )

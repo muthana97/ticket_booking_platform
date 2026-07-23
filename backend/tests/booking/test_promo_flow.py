@@ -173,6 +173,7 @@ def test_apply_promo_discounts_total(db, provider, customer_a):
         customer_id=customer_a.id, total_price=100.0,
         passengers=[_pax("Ada Lovelace", "1A")],
         promo_code="libre",
+        actor_user_id=customer_a.id,
     )
     b = result["booking"]
     assert b.promo_code == "LIBRE"
@@ -193,6 +194,7 @@ def test_flat_discount_clamped_to_total(db, provider, customer_a):
         customer_id=customer_a.id, total_price=50.0,
         passengers=[_pax("Grace Hopper", "1A")],
         promo_code="BIG",
+        actor_user_id=customer_a.id,
     )
     b = result["booking"]
     assert b.promo_discount == 50.0
@@ -215,6 +217,7 @@ def test_walkin_rejects_promo(db, provider, customer_a):
             passengers=[_pax("Walk In", "1A")],
             channel="walkin",
             promo_code="LIBRE",
+            actor_user_id=provider.id,
         )
     assert exc.value.status_code == 400
     assert "customer" in exc.value.detail.lower()
@@ -231,6 +234,7 @@ def test_multi_seat_rejects_promo(db, provider, customer_a):
             customer_id=customer_a.id, total_price=200.0,
             passengers=[_pax("Ada A Lovelace", "1A"), _pax("Grace B Hopper", "1B")],
             promo_code="LIBRE",
+            actor_user_id=customer_a.id,
         )
     assert exc.value.status_code == 400
     assert "single-seat" in exc.value.detail.lower()
@@ -246,6 +250,7 @@ def test_second_use_by_same_customer_rejected(db, provider, customer_a):
         customer_id=customer_a.id, total_price=100.0,
         passengers=[_pax("Ada Lovelace", "1A")],
         promo_code="LIBRE",
+        actor_user_id=customer_a.id,
     )
     with pytest.raises(HTTPException) as exc:
         lock_seats(
@@ -253,6 +258,7 @@ def test_second_use_by_same_customer_rejected(db, provider, customer_a):
             customer_id=customer_a.id, total_price=100.0,
             passengers=[_pax("Grace Hopper", "1B")],
             promo_code="LIBRE",
+            actor_user_id=customer_a.id,
         )
     assert exc.value.status_code == 400
     # Copy simplified to "expired" from the customer's POV (2026-07-21).
@@ -269,12 +275,14 @@ def test_different_customer_can_use_same_promo(db, provider, customer_a, custome
         customer_id=customer_a.id, total_price=100.0,
         passengers=[_pax("Ada Lovelace", "1A")],
         promo_code="LIBRE",
+        actor_user_id=customer_a.id,
     )
     r = lock_seats(
         db=db, trip_id=trip.id, seat_numbers=["1B"],
         customer_id=customer_b.id, total_price=100.0,
         passengers=[_pax("Grace Hopper", "1B")],
         promo_code="LIBRE",
+        actor_user_id=customer_b.id,
     )
     assert r["booking"].promo_code == "LIBRE"
     p = db.query(PromoCode).filter(PromoCode.code == "LIBRE").first()
@@ -293,6 +301,7 @@ def test_unknown_code_404(db, provider, customer_a):
             customer_id=customer_a.id, total_price=100.0,
             passengers=[_pax("Ada Lovelace", "1A")],
             promo_code="GHOST",
+            actor_user_id=customer_a.id,
         )
     assert exc.value.status_code == 404
 
@@ -307,6 +316,7 @@ def test_inactive_promo_rejected(db, provider, customer_a):
             customer_id=customer_a.id, total_price=100.0,
             passengers=[_pax("Ada Lovelace", "1A")],
             promo_code="LIBRE",
+            actor_user_id=customer_a.id,
         )
     assert exc.value.status_code == 400
     assert "no longer active" in exc.value.detail.lower()
@@ -325,6 +335,7 @@ def test_not_yet_active(db, provider, customer_a):
             customer_id=customer_a.id, total_price=100.0,
             passengers=[_pax("Ada Lovelace", "1A")],
             promo_code="FUTURE",
+            actor_user_id=customer_a.id,
         )
     assert "active yet" in exc.value.detail.lower()
 
@@ -342,6 +353,7 @@ def test_expired_window(db, provider, customer_a):
             customer_id=customer_a.id, total_price=100.0,
             passengers=[_pax("Ada Lovelace", "1A")],
             promo_code="OLD",
+            actor_user_id=customer_a.id,
         )
     assert "expired" in exc.value.detail.lower()
 
@@ -359,6 +371,7 @@ def test_wrong_provider_scope(db, provider, other_provider, customer_a):
             customer_id=customer_a.id, total_price=100.0,
             passengers=[_pax("Ada Lovelace", "1A")],
             promo_code="OTHER",
+            actor_user_id=customer_a.id,
         )
     assert "operator" in exc.value.detail.lower()
 
@@ -379,6 +392,7 @@ def test_wrong_route_scope(db, provider, customer_a):
             customer_id=customer_a.id, total_price=100.0,
             passengers=[_pax("Ada Lovelace", "1A")],
             promo_code="ROUTE",
+            actor_user_id=customer_a.id,
         )
     assert "route" in exc.value.detail.lower()
 
@@ -398,15 +412,18 @@ def test_cap_hit_then_reject(db, provider, customer_a, customer_b):
 
     lock_seats(db=db, trip_id=trip.id, seat_numbers=["1A"],
                customer_id=customer_a.id, total_price=100.0,
-               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIMITED")
+               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIMITED",
+               actor_user_id=customer_a.id)
     lock_seats(db=db, trip_id=trip.id, seat_numbers=["1B"],
                customer_id=customer_b.id, total_price=100.0,
-               passengers=[_pax("Grace Hopper", "1B")], promo_code="LIMITED")
+               passengers=[_pax("Grace Hopper", "1B")], promo_code="LIMITED",
+               actor_user_id=customer_b.id)
 
     with pytest.raises(HTTPException) as exc:
         lock_seats(db=db, trip_id=trip.id, seat_numbers=["1C"],
                    customer_id=cust_c.id, total_price=100.0,
-                   passengers=[_pax("Katherine Johnson", "1C")], promo_code="LIMITED")
+                   passengers=[_pax("Katherine Johnson", "1C")], promo_code="LIMITED",
+                   actor_user_id=cust_c.id)
     assert "redemption limit" in exc.value.detail.lower()
 
 
@@ -421,7 +438,8 @@ def test_reaper_releases_on_expiry(db, provider, customer_a):
 
     lock_seats(db=db, trip_id=trip.id, seat_numbers=["1A"],
                customer_id=customer_a.id, total_price=100.0,
-               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIMITED")
+               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIMITED",
+               actor_user_id=customer_a.id)
     p = db.query(PromoCode).filter(PromoCode.code == "LIMITED").first()
     assert p.redemption_count == 1
 
@@ -459,7 +477,8 @@ def test_confirm_refuses_expired_booking(db, provider, customer_a):
 
     lock_seats(db=db, trip_id=trip.id, seat_numbers=["1A"],
                customer_id=customer_a.id, total_price=100.0,
-               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIBRE")
+               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIBRE",
+               actor_user_id=customer_a.id)
 
     # Fast-forward: manually simulate the Reaper flipping status.
     b = db.query(Booking).order_by(Booking.id.desc()).first()
@@ -482,7 +501,8 @@ def test_confirm_does_not_increment_again(db, provider, customer_a):
 
     lock_seats(db=db, trip_id=trip.id, seat_numbers=["1A"],
                customer_id=customer_a.id, total_price=100.0,
-               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIBRE")
+               passengers=[_pax("Ada Lovelace", "1A")], promo_code="LIBRE",
+               actor_user_id=customer_a.id)
     b = db.query(Booking).order_by(Booking.id.desc()).first()
     p_before = db.query(PromoCode).filter(PromoCode.code == "LIBRE").first().redemption_count
 

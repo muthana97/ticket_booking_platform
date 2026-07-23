@@ -125,6 +125,7 @@ def test_provider_time_edit_notifies_passenger(
         db, trip_id=trip_with_seats.id, seat_numbers=["1A"],
         customer_id=customer.id, total_price=8,
         passengers=[_pax("Mohamed Ali", "1A")], channel="consumer",
+        actor_user_id=customer.id,
     )
     new_time = (datetime.utcnow() + timedelta(days=10)).replace(microsecond=0)
     r = client.patch(
@@ -152,6 +153,7 @@ def test_price_edit_does_not_notify_passengers(
         db, trip_id=trip_with_seats.id, seat_numbers=["1A"],
         customer_id=customer.id, total_price=8,
         passengers=[_pax("Mohamed Ali", "1A")], channel="consumer",
+        actor_user_id=customer.id,
     )
     r = client.patch(f"/trips/{trip_with_seats.id}", headers=provider_auth, json={"price": 20})
     assert r.status_code == 200

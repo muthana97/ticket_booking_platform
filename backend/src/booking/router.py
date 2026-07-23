@@ -36,6 +36,7 @@ def reserve_seats(
         passengers=payload.passengers,
         channel="consumer",
         promo_code=payload.promo_code,
+        actor_user_id=current_user.id,
     )
 
     booking = result["booking"]
@@ -86,6 +87,7 @@ def reserve_seats_walkin(
         passengers=payload.passengers,
         channel="walkin",
         promo_code=payload.promo_code,
+        actor_user_id=current_user.id,
     )
 
     booking = result["booking"]
@@ -121,6 +123,7 @@ def commit_billing_intent(
         db=db,
         booking_id=payload.booking_id,
         customer_id=current_user.id,
+        actor_user_id=current_user.id,
     )
     return service.build_ticket_payload(db=db, booking=booking)
 
