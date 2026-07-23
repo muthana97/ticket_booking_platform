@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from . import models
 from ..auth.models import User
 from ..booking.models import Booking
+from ..audit import service as audit_svc
 
 
 # Recurring trip safety cap — refuse to create more than this many in one shot.
@@ -122,6 +123,7 @@ def create_trip(
     departure_time: datetime,
     price: float,
     provider_id: int,
+    actor_user_id: int,
 ) -> models.Trip:
     """
     Create a Route (reused if it already exists), a Bus with the validated
@@ -171,6 +173,27 @@ def create_trip(
 
     for name in generate_seat_names(total_seats):
         db.add(models.Seat(trip_id=trip.id, seat_number=name, status="available"))
+
+    audit_svc.record_event(
+        db,
+        actor_user_id=actor_user_id,
+        provider_id=provider_id,
+        event_type="trip_created",
+        target_type="trip",
+        target_id=trip.id,
+        summary=(
+            f"{route.origin} → {route.destination} · "
+            f"{trip.departure_time.strftime('%Y-%m-%d %H:%M')} · "
+            f"{total_seats}-seater · SDG {price:.0f}"
+        ),
+        metadata={
+            "origin": route.origin,
+            "destination": route.destination,
+            "departure_time": trip.departure_time.isoformat(),
+            "price": float(price),
+            "total_seats": total_seats,
+        },
+    )
 
     db.commit()
     db.refresh(trip)
@@ -247,12 +270,29 @@ def expand_repeat_pattern(
     return departures
 
 
+def _format_trip_edit_summary(db: Session, actor_user_id: int, trip_id: int, delta: dict) -> str:
+    from ..auth import models as auth_models
+    actor = db.query(auth_models.User).filter_by(id=actor_user_id).first()
+    actor_label = f"{actor.full_name} ({actor.role})" if actor else f"user #{actor_user_id}"
+    parts = []
+    if "price" in delta:
+        parts.append(f"price {delta['price']['from']:.0f}→{delta['price']['to']:.0f}")
+    if "departure_time" in delta:
+        parts.append(
+            f"departure {delta['departure_time']['from'].strftime('%m-%d %H:%M')}"
+            f"→{delta['departure_time']['to'].strftime('%m-%d %H:%M')}"
+        )
+    change_text = ", ".join(parts)
+    return f"{actor_label} edited trip #{trip_id}: {change_text}"
+
+
 def update_trip(
     db: Session,
     *,
     trip_id: int,
     price: float | None = None,
     departure_time: "datetime | None" = None,
+    actor_user_id: int,
 ) -> tuple[models.Trip, dict]:
     """Partial update of a trip's price and/or departure time.
 
@@ -298,12 +338,31 @@ def update_trip(
             trip.departure_time = new_dep
 
     if delta:
+        audit_svc.record_event(
+            db,
+            actor_user_id=actor_user_id,
+            provider_id=trip.provider_id,
+            event_type="trip_edited",
+            target_type="trip",
+            target_id=trip.id,
+            summary=_format_trip_edit_summary(db, actor_user_id, trip.id, delta),
+            metadata={
+                "before": {
+                    k: (v["from"].isoformat() if hasattr(v["from"], "isoformat") else v["from"])
+                    for k, v in delta.items()
+                },
+                "after": {
+                    k: (v["to"].isoformat() if hasattr(v["to"], "isoformat") else v["to"])
+                    for k, v in delta.items()
+                },
+            },
+        )
         db.commit()
         db.refresh(trip)
     return trip, delta
 
 
-def delete_trip(db: Session, *, trip_id: int) -> None:
+def delete_trip(db: Session, *, trip_id: int, actor_user_id: int) -> None:
     """
     Remove a trip. Refuses if any confirmed booking exists for the trip;
     pending / committed_pending holds are allowed (the Reaper would clear
@@ -324,6 +383,16 @@ def delete_trip(db: Session, *, trip_id: int) -> None:
             detail=f"Cannot delete: {confirmed_count} confirmed booking(s) on this trip",
         )
 
+    # Snapshot trip data BEFORE any deletes — record_event() flushes the
+    # pending deletes to the DB, which expires/removes the ORM instance, so
+    # any attribute access on `trip` after that point is unsafe.
+    route = trip.route
+    snapshot_origin = route.origin if route else None
+    snapshot_destination = route.destination if route else None
+    snapshot_departure_time = trip.departure_time
+    snapshot_price = trip.price
+    snapshot_provider_id = trip.provider_id
+
     held_bookings = (
         db.query(Booking)
         .filter(Booking.trip_id == trip_id)
@@ -343,5 +412,28 @@ def delete_trip(db: Session, *, trip_id: int) -> None:
         bus = db.query(models.Bus).filter(models.Bus.id == bus_id).first()
         if bus is not None:
             db.delete(bus)
+
+    from ..auth import models as auth_models
+    actor = db.query(auth_models.User).filter_by(id=actor_user_id).first()
+    actor_label = f"{actor.full_name} ({actor.role})" if actor else f"user #{actor_user_id}"
+    audit_svc.record_event(
+        db,
+        actor_user_id=actor_user_id,
+        provider_id=snapshot_provider_id,
+        event_type="trip_deleted",
+        target_type="trip",
+        target_id=trip_id,
+        summary=(
+            f"{actor_label} deleted trip #{trip_id} "
+            f"({snapshot_origin} → {snapshot_destination}, "
+            f"{snapshot_departure_time.strftime('%Y-%m-%d %H:%M')})"
+        ),
+        metadata={
+            "origin": snapshot_origin,
+            "destination": snapshot_destination,
+            "departure_time": snapshot_departure_time.isoformat(),
+            "price": float(snapshot_price),
+        },
+    )
 
     db.commit()

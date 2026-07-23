@@ -221,6 +221,7 @@ def create_trip(
             departure_time=dep,
             price=payload.price,
             provider_id=provider.id,
+            actor_user_id=provider.id,
         )
         created.append({
             "trip_id": trip.id,
@@ -318,6 +319,7 @@ def update_trip(
     trip, delta = service.update_trip(
         db=db, trip_id=trip_id,
         price=payload.price, departure_time=payload.departure_time,
+        actor_user_id=provider.id,
     )
     _fanout_trip_edit(db, trip=trip, delta=delta, actor="provider", actor_id=provider.id)
     return service.decorate_trip_row(db, trip)
@@ -348,7 +350,7 @@ def delete_trip(
             detail="You can only delete trips you own.",
         )
     _fanout_trip_delete(db, trip=trip, actor="provider")
-    service.delete_trip(db=db, trip_id=trip_id)
+    service.delete_trip(db=db, trip_id=trip_id, actor_user_id=provider.id)
     return None
 
 
