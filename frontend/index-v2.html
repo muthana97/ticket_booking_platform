@@ -5008,6 +5008,10 @@
       0 10px 24px -14px var(--p-shadow-drop),
       0 1px 3px var(--p-shadow-tight),
       0 1px 0 var(--p-hi-line) inset;
+    /* Safety: if the table's fixed columns overflow (e.g. many months in
+       the by-month table on a narrow viewport), scroll horizontally rather
+       than clipping the last column. */
+    overflow-x: auto;
   }
   body[data-screen="admin-provider-detail"].pillow .report-panel-head {
     display: flex; align-items: center; justify-content: space-between;
@@ -7864,6 +7868,7 @@ const I18N = {
     'admin.reports.col.walkin': 'Walk-in',
     'admin.reports.export.csv': 'Export CSV',
     'admin.reports.empty': 'No activity in the selected range.',
+    'admin.reports.detail.empty': 'No activity for this provider in the last 6 months.',
     'admin.reports.drilldown_link': 'View',
   },
   ar: {
@@ -8235,6 +8240,7 @@ const I18N = {
     'admin.reports.col.walkin': 'حجز عند المنفذ',
     'admin.reports.export.csv': 'تصدير CSV',
     'admin.reports.empty': 'لا نشاط في الفترة المختارة.',
+    'admin.reports.detail.empty': 'لا نشاط لهذا المشغل خلال الأشهر الستة الماضية.',
     'admin.reports.drilldown_link': 'عرض',
   },
 };
@@ -11387,7 +11393,7 @@ function renderReportTables(data, target) {
       <table class="report-table">${opRows}</table>
     </div>
 
-    <div class="empty-state ${allEmpty ? '' : 'hidden'}" data-i18n="admin.reports.empty">${t('admin.reports.empty')}</div>
+    <div class="empty-state ${allEmpty ? '' : 'hidden'}" data-i18n="admin.reports.detail.empty">${t('admin.reports.detail.empty')}</div>
   `;
 
   const period = data.period || {};
