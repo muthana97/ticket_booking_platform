@@ -4744,6 +4744,213 @@
     transform: translateY(-1px);
     box-shadow: 0 10px 20px -10px rgba(217,74,62,0.6);
   }
+
+  /* Activity-log panel (Task 8) — filter strip reuses the same pillow-chip
+     treatment as the provider/admin-home filter strips (inline "Label:"
+     chips), rows follow the notifications-row pillow-surface pattern. */
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    background: transparent; padding: 0; margin-bottom: 14px; border: 0;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip input[type="text"],
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip > select {
+    background: var(--p-card);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-family: var(--p-sans);
+    font-weight: 500;
+    font-size: 13.5px;
+    box-shadow:
+      0 6px 16px -12px var(--p-shadow-drop),
+      0 1px 0 var(--p-hi-line) inset,
+      0 1px 2px var(--p-shadow-tight);
+    outline: 0;
+    min-width: 180px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip input[type="text"] {
+    flex: 1 1 220px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip input[type="text"]:focus,
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip > select:focus {
+    box-shadow: 0 6px 16px -8px var(--p-shadow-drop), 0 0 0 2px var(--p-accent) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip input::placeholder {
+    color: var(--p-ink-faint);
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip .fld {
+    display: inline-flex; flex-direction: row; align-items: center;
+    gap: 0;
+    background: var(--p-card);
+    border: 0;
+    border-radius: 999px;
+    padding: 0 6px 0 16px;
+    box-shadow:
+      0 6px 16px -12px var(--p-shadow-drop),
+      0 1px 0 var(--p-hi-line) inset,
+      0 1px 2px var(--p-shadow-tight);
+    min-width: 160px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip .fld > .lbl {
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--p-ink-mute);
+    margin: 0 8px 0 0;
+    white-space: nowrap;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip .fld > .lbl::after {
+    content: ':';
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip .fld > select,
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip .fld > input {
+    background: transparent;
+    color: var(--p-ink);
+    border: 0;
+    padding: 10px 8px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13.5px;
+    outline: 0;
+    box-shadow: none;
+    flex: 1;
+    min-width: 0;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip .fld > input[type="date"]:invalid {
+    color: var(--p-ink-faint);
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip .fld > input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.55;
+    filter: invert(28%);
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip #al-apply {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+    background: var(--p-accent);
+    color: var(--p-accent-on, #1A1000);
+    box-shadow: 0 8px 18px -8px rgba(244,168,29,0.55), 0 1px 0 rgba(255,255,255,0.3) inset;
+    transition: transform 120ms ease;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-filter-strip #al-apply:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Rows */
+  body[data-screen="admin-provider-detail"].pillow .audit-log-rows {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 12px;
+    align-items: center;
+    background: var(--p-card);
+    border: 0;
+    border-radius: 18px;
+    padding: 12px 16px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    font-family: var(--p-sans);
+    transition: transform 180ms ease, box-shadow 220ms ease;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 14px 30px -14px var(--p-shadow-drop),
+      0 2px 4px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row .ae-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    background: var(--p-card-tint);
+    color: var(--p-ink);
+    font-size: 16px;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 1px 2px var(--p-shadow-tight);
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row .ae-body {
+    min-width: 0;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row .ae-summary {
+    font-weight: 700;
+    font-size: 13.5px;
+    letter-spacing: -0.005em;
+    color: var(--p-ink);
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row .ae-meta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-weight: 500;
+    font-size: 11.5px;
+    color: var(--p-ink-mute);
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row .ae-actor .role-tag {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(50,80,140,0.10);
+    color: var(--p-ink-mute);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  html[dir="rtl"] body[data-screen="admin-provider-detail"].pillow .audit-row .ae-actor .role-tag {
+    margin-left: 0; margin-right: 4px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .audit-row .ae-time {
+    color: var(--p-ink-faint);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Empty state + Load more */
+  body[data-screen="admin-provider-detail"].pillow .audit-empty {
+    background: var(--p-card);
+    border-radius: 20px;
+    padding: 36px 20px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    text-align: center;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--p-ink-mute);
+  }
+  body[data-screen="admin-provider-detail"].pillow #al-loadmore-wrap .btn-inline {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: transform 120ms ease, background 180ms ease;
+  }
+  body[data-screen="admin-provider-detail"].pillow #al-loadmore-wrap .btn-inline:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
+  }
+
   /* Chevron affordance on the now-clickable provider rows (admin-home) */
   body[data-screen="admin-home"].pillow .admin-row.admin-row-clickable .chevron-right {
     color: var(--p-ink-mute);
@@ -7315,6 +7522,27 @@ const I18N = {
     'admin.provider.detail.log': 'Activity log',
     'admin.provider.detail.reports': 'Reports',
     'admin.provider.detail.not_found': 'Provider not found',
+    'admin.provider.log.filter.keyword': 'Keyword',
+    'admin.provider.log.filter.keyword_ph': 'Search summary…',
+    'admin.provider.log.filter.event_type': 'Event',
+    'admin.provider.log.filter.event_type_all': 'All events',
+    'admin.provider.log.filter.date_from': 'From',
+    'admin.provider.log.filter.date_to': 'To',
+    'admin.provider.log.filter.apply': 'Apply',
+    'admin.provider.log.empty': "No activity yet. Log tracking started 2026-07-23; earlier actions aren't recorded.",
+    'admin.provider.log.load_more': 'Load more',
+    'admin.provider.log.event.trip_created': 'Trip created',
+    'admin.provider.log.event.trip_edited': 'Trip edited',
+    'admin.provider.log.event.trip_deleted': 'Trip deleted',
+    'admin.provider.log.event.walkin_booked': 'Walk-in booked',
+    'admin.provider.log.event.consumer_booked': 'Consumer booked',
+    'admin.provider.log.event.billing_ref_generated': 'Billing ref generated',
+    'admin.provider.log.event.cash_confirmed': 'Cash confirmed',
+    'admin.provider.log.event.payment_confirmed': 'Payment confirmed',
+    'admin.provider.log.event.provider_approved': 'Provider approved',
+    'admin.provider.log.event.provider_blocked': 'Provider blocked',
+    'admin.provider.log.event.provider_unblocked': 'Provider unblocked',
+    'admin.provider.log.event.capability_changed': 'Capability changed',
     // status filter
     'status.filter.confirmed': 'Confirmed only', 'status.filter.committed_pending': 'Awaiting Payment',
     'status.filter.pending': 'Pending lock', 'status.filter.expired': 'Expired',
@@ -7664,6 +7892,27 @@ const I18N = {
     'admin.provider.detail.log': 'سجل النشاط',
     'admin.provider.detail.reports': 'التقارير',
     'admin.provider.detail.not_found': 'المشغل غير موجود',
+    'admin.provider.log.filter.keyword': 'كلمة مفتاحية',
+    'admin.provider.log.filter.keyword_ph': 'بحث في الملخص…',
+    'admin.provider.log.filter.event_type': 'الحدث',
+    'admin.provider.log.filter.event_type_all': 'كل الأحداث',
+    'admin.provider.log.filter.date_from': 'من',
+    'admin.provider.log.filter.date_to': 'إلى',
+    'admin.provider.log.filter.apply': 'تطبيق',
+    'admin.provider.log.empty': 'لا يوجد نشاط بعد. بدأ تتبّع السجل في 2026-07-23؛ الإجراءات السابقة غير مسجّلة.',
+    'admin.provider.log.load_more': 'تحميل المزيد',
+    'admin.provider.log.event.trip_created': 'تم إنشاء رحلة',
+    'admin.provider.log.event.trip_edited': 'تم تعديل رحلة',
+    'admin.provider.log.event.trip_deleted': 'تم حذف رحلة',
+    'admin.provider.log.event.walkin_booked': 'حجز مباشر',
+    'admin.provider.log.event.consumer_booked': 'حجز عميل',
+    'admin.provider.log.event.billing_ref_generated': 'تم إصدار رقم فاتورة',
+    'admin.provider.log.event.cash_confirmed': 'تأكيد نقدي',
+    'admin.provider.log.event.payment_confirmed': 'تأكيد الدفع',
+    'admin.provider.log.event.provider_approved': 'تم اعتماد المشغل',
+    'admin.provider.log.event.provider_blocked': 'تم حظر المشغل',
+    'admin.provider.log.event.provider_unblocked': 'تم رفع الحظر',
+    'admin.provider.log.event.capability_changed': 'تغيير الصلاحيات',
     // status filter
     'status.filter.confirmed': 'مؤكدة فقط', 'status.filter.committed_pending': 'بانتظار الدفع',
     'status.filter.pending': 'حجز مؤقت', 'status.filter.expired': 'منتهية',
@@ -8002,6 +8251,7 @@ const STATE = {
   resendTimer: null,
   viewingProviderId: null,  // admin provider-detail: which provider is being viewed
   viewingProvider: null,    // admin provider-detail: cached provider row
+  auditLog: { items: [], nextBefore: null, filters: { q: '', event_type: '', from: '', to: '' } },  // admin provider-detail: activity log panel
 };
 
 /* ---------- DOM utils ---------- */
@@ -10514,6 +10764,111 @@ function renderProviderDetailPermissions() {
   body.querySelectorAll('.caps input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', () => setProviderCapability(p.id, cb.dataset.cap, cb.checked, cb));
   });
+}
+
+/* ---------- Admin provider-detail: activity log (Task 8) ---------- */
+const AUDIT_EVENT_TYPES = [
+  'trip_created', 'trip_edited', 'trip_deleted',
+  'walkin_booked', 'consumer_booked', 'billing_ref_generated', 'cash_confirmed',
+  'payment_confirmed',
+  'provider_approved', 'provider_blocked', 'provider_unblocked',
+  'capability_changed',
+];
+const AUDIT_ICONS = {
+  trip_created: '＋', trip_edited: '✎', trip_deleted: '✕',
+  walkin_booked: '🚶', consumer_booked: '🎫', billing_ref_generated: '§',
+  cash_confirmed: '$', payment_confirmed: '✓',
+  provider_approved: '✓', provider_blocked: '⛔', provider_unblocked: '↺',
+  capability_changed: '⚙',
+};
+
+async function renderProviderAuditLog(reset = false) {
+  const pid = STATE.viewingProviderId;
+  if (!pid) return;
+  const body = $('#admin-detail-log-body');
+  if (reset) {
+    STATE.auditLog = { items: [], nextBefore: null, filters: STATE.auditLog?.filters || { q: '', event_type: '', from: '', to: '' } };
+    body.innerHTML = `
+      <div class="filter-strip audit-filter-strip">
+        <input type="text" id="al-q" value="${escapeHtml(STATE.auditLog.filters.q)}" placeholder="${t('admin.provider.log.filter.keyword_ph')}">
+        <div class="fld"><span class="lbl">${t('admin.provider.log.filter.event_type')}</span>
+          <select id="al-event-type">
+            <option value="">${t('admin.provider.log.filter.event_type_all')}</option>
+            ${AUDIT_EVENT_TYPES.map(et => `<option value="${et}" ${STATE.auditLog.filters.event_type === et ? 'selected' : ''}>${t('admin.provider.log.event.' + et)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fld"><span class="lbl">${t('admin.provider.log.filter.date_from')}</span><input type="date" id="al-from" value="${STATE.auditLog.filters.from}"></div>
+        <div class="fld"><span class="lbl">${t('admin.provider.log.filter.date_to')}</span><input type="date" id="al-to" value="${STATE.auditLog.filters.to}"></div>
+        <button class="btn-inline" id="al-apply">${t('admin.provider.log.filter.apply')}</button>
+      </div>
+      <div id="al-rows" class="audit-log-rows"></div>
+      <div id="al-empty" class="audit-empty hidden">${t('admin.provider.log.empty')}</div>
+      <div id="al-loadmore-wrap" class="hidden" style="text-align:center; margin-top:12px;">
+        <button class="btn-inline" id="al-loadmore">${t('admin.provider.log.load_more')}</button>
+      </div>
+    `;
+    // 280ms debounced keyword input — matches the other filter strips
+    // (renderAdminTrips / renderAdminBookings) in this file.
+    let kwTimer = null;
+    $('#al-q').addEventListener('input', () => {
+      clearTimeout(kwTimer);
+      kwTimer = setTimeout(() => { STATE.auditLog.filters.q = $('#al-q').value; renderProviderAuditLog(true); }, 280);
+    });
+    $('#al-event-type').addEventListener('change', () => { STATE.auditLog.filters.event_type = $('#al-event-type').value; renderProviderAuditLog(true); });
+    $('#al-from').addEventListener('change', () => { STATE.auditLog.filters.from = $('#al-from').value; renderProviderAuditLog(true); });
+    $('#al-to').addEventListener('change', () => { STATE.auditLog.filters.to = $('#al-to').value; renderProviderAuditLog(true); });
+    $('#al-apply').addEventListener('click', () => renderProviderAuditLog(true));
+    $('#al-loadmore').addEventListener('click', () => loadMoreAuditLog());
+  }
+  await fetchAndAppendAuditLog(reset);
+}
+
+async function fetchAndAppendAuditLog(reset) {
+  const pid = STATE.viewingProviderId;
+  const f = STATE.auditLog.filters;
+  const params = new URLSearchParams();
+  if (f.q) params.set('q', f.q);
+  if (f.event_type) params.set('event_type', f.event_type);
+  if (f.from) params.set('from', f.from);
+  if (f.to) params.set('to', f.to);
+  if (!reset && STATE.auditLog.nextBefore) params.set('before_id', STATE.auditLog.nextBefore);
+  params.set('limit', '100');
+  try {
+    const data = await api(`/admin/providers/${pid}/log?${params}`);
+    if (reset) STATE.auditLog.items = [];
+    STATE.auditLog.items.push(...data.items);
+    STATE.auditLog.nextBefore = data.next_before_id;
+    renderAuditLogRows();
+  } catch (e) { toast(e.message, true); }
+}
+
+function loadMoreAuditLog() { fetchAndAppendAuditLog(false); }
+
+function renderAuditLogRows() {
+  const rows = $('#al-rows');
+  const empty = $('#al-empty');
+  const loadMoreWrap = $('#al-loadmore-wrap');
+  if (!rows || !empty || !loadMoreWrap) return;  // panel not mounted (screen navigated away)
+  if (!STATE.auditLog.items.length) {
+    rows.innerHTML = '';
+    empty.classList.remove('hidden');
+    loadMoreWrap.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  rows.innerHTML = STATE.auditLog.items.map(item => `
+    <div class="audit-row event-${item.event_type}">
+      <div class="ae-icon">${AUDIT_ICONS[item.event_type] || '•'}</div>
+      <div class="ae-body">
+        <div class="ae-summary">${escapeHtml(item.summary)}</div>
+        <div class="ae-meta">
+          <span class="ae-actor">${escapeHtml(item.actor?.full_name || '—')} <span class="role-tag">${escapeHtml(item.actor?.role || '')}</span></span>
+          <span class="ae-time">${_relTime(item.created_at)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  loadMoreWrap.classList.toggle('hidden', !STATE.auditLog.nextBefore);
 }
 
 async function renderAdminTrips(opts = {}) {
