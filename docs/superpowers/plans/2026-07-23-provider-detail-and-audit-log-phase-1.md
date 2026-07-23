@@ -1031,22 +1031,26 @@ EOF
 
 ---
 
-## Task 4: Emit sites in `booking/service.py` (lock_seats / mint_billing / provider_confirm)
+## Task 4: Emit sites in `booking/service.py` (lock_seats / mint_billing) + branch `payment_confirmed`→`cash_confirmed` inside `admin.service.confirm_payment`
 
 **Files:**
 - Modify: `backend/src/booking/service.py`
 - Modify: `backend/src/booking/router.py`
+- Modify: `backend/src/admin/service.py` (branch existing emit — see Step 5)
 - Create: `backend/tests/audit/test_booking_emit_sites.py`
 
 **Interfaces consumed:** `audit.service.record_event`.
 
-Same treatment: add `actor_user_id: int` keyword-only param to each service function, thread from router, emit inside the function BEFORE `db.commit()`.
+**IMPORTANT SCOPE CLARIFICATION from Task 3 review**: `booking.service.provider_confirm` does NOT exist as a separate function. `POST /bookings/{id}/provider-confirm` shares `admin.service.confirm_payment` (the same function the admin's `POST /admin/payments/{id}/confirm` calls). Task 3 already added a `payment_confirmed` emit to that shared function; Task 4's job is to BRANCH that emit on `payment_method` so provider walk-in cash confirms become `cash_confirmed` while admin manual confirms stay `payment_confirmed`. Do NOT add a parallel emit or double-count.
+
+Same treatment for the two functions this task actually owns: add `actor_user_id: int` keyword-only param to `lock_seats` and `mint_billing_intent`, thread from `booking/router.py`, emit inside each function BEFORE `db.commit()`.
 
 Event types:
-- `lock_seats` with `channel="consumer"` → `consumer_booked`
-- `lock_seats` with `channel="walkin"` → `walkin_booked`
-- `mint_billing_intent` → `billing_ref_generated`
-- `provider_confirm` → `cash_confirmed`
+- `lock_seats` with `channel="consumer"` → `consumer_booked` (from `POST /bookings/lock`)
+- `lock_seats` with `channel="walkin"` → `walkin_booked` (from `POST /bookings/walkin`)
+- `mint_billing_intent` → `billing_ref_generated` (from `POST /bookings/intent/billing`)
+- `admin.service.confirm_payment` with `payment_method="cash"` → `cash_confirmed` (branch the existing emit — see Step 5)
+- `admin.service.confirm_payment` with any other `payment_method` → stays `payment_confirmed` (admin manual confirm path, unchanged from Task 3)
 
 `provider_id` for all of these is the trip's `provider_id` (look up via the trip in scope).
 
@@ -1058,11 +1062,29 @@ Summary format examples:
 
 - [ ] **Step 1: Write failing tests** — 4 tests, one per event type. Follow the pattern from Task 2's inventory tests (login as consumer / provider, POST the endpoint, assert audit row).
 
+For `cash_confirmed`: hit `POST /bookings/{id}/provider-confirm` on a walk-in booking and assert the audit row has `event_type="cash_confirmed"` (NOT `payment_confirmed`). One of Task 3's tests (`test_payment_confirm_emits_payment_confirmed`) already exercises the admin `/admin/payments/{id}/confirm` path — you don't need to duplicate that; you're adding the walk-in test that proves the branch works.
+
 - [ ] **Step 2: Run tests to confirm they fail**
 
-- [ ] **Step 3: Modify `booking/service.py`** — add `actor_user_id: int` keyword param to `lock_seats`, `mint_billing_intent`, `provider_confirm`; emit inside each just before the transaction commit.
+- [ ] **Step 3: Modify `booking/service.py`** — add `actor_user_id: int` keyword param to `lock_seats` and `mint_billing_intent`; emit inside each just before the transaction commit.
 
-- [ ] **Step 4: Update `booking/router.py`** — pass `actor_user_id=current_user.id` from each endpoint.
+- [ ] **Step 4: Update `booking/router.py`** — pass `actor_user_id=current_user.id` from `POST /bookings/lock`, `POST /bookings/walkin`, `POST /bookings/intent/billing`. Do NOT change `POST /bookings/{id}/provider-confirm` — Task 3 already wired it correctly, and Step 5 handles the event_type branching inside the shared service function.
+
+- [ ] **Step 5: Branch the existing `payment_confirmed` emit inside `admin.service.confirm_payment`**
+
+Locate the `record_event(...)` call added by Task 3 inside `admin.service.confirm_payment` (~line 285 per Task 3's review). Currently emits unconditionally with `event_type="payment_confirmed"`. Branch by `payment_method`:
+
+```python
+        event_type="cash_confirmed" if payment_method == "cash" else "payment_confirmed",
+```
+
+Also update the summary string in that same emit to match the event type:
+- `payment_method="cash"` → summary like `"Cash payment confirmed for booking {billing_reference} (SDG {total_price:.0f})"`
+- else → summary like `"Payment confirmed for booking {billing_reference} (SDG {total_price:.0f})"`
+
+Update Task 3's `test_payment_confirm_emits_payment_confirmed` if it now needs to distinguish — Task 3's test uses `payment_method="admin_confirmed"` (the default) so the assertion `event_type="payment_confirmed"` should still hold. Verify no regression.
+
+Do NOT remove or refactor the code comment Task 3 may have added warning about this branch.
 
 - [ ] **Step 5: Investigate Reaper booking-expiration coverage**
 
@@ -1079,20 +1101,25 @@ Document the outcome (hooked / gap noted) in the commit message and in Task 11's
 
 - [ ] **Step 6: Run booking emit tests + full suite**
 
-Expected: 4 (or 5 if booking_expired hooked) new tests pass; suite green. Suite: 155 → 159 or 160.
+Expected: 4 (or 5 if booking_expired hooked) new tests pass; suite green. Suite: 157 → 161 or 162.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 cd /Users/muthana/Documents/Projects/tazkirati/ticket_booking_platform
-git add backend/src/booking/ backend/tests/audit/test_booking_emit_sites.py
+git add backend/src/booking/ backend/src/admin/service.py backend/tests/audit/test_booking_emit_sites.py
 git commit -m "$(cat <<'EOF'
-feat(audit): emit consumer_booked / walkin_booked / billing_ref / cash_confirmed
+feat(audit): emit consumer_booked / walkin_booked / billing_ref + branch cash_confirmed
 
-Threads actor_user_id through booking.service.lock_seats,
-mint_billing_intent, and provider_confirm. lock_seats distinguishes
-event_type by channel ('consumer' → consumer_booked, 'walkin' →
-walkin_booked).
+Threads actor_user_id through booking.service.lock_seats and
+mint_billing_intent. lock_seats distinguishes event_type by channel
+('consumer' → consumer_booked, 'walkin' → walkin_booked).
+
+Branches admin.service.confirm_payment's existing emit (from Task 3):
+payment_method='cash' → 'cash_confirmed' (provider walk-in confirms),
+anything else → 'payment_confirmed' (admin manual confirms, unchanged).
+The shared function is called by both /admin/payments/{id}/confirm and
+/bookings/{id}/provider-confirm — one call site, two event types.
 
 [If Reaper booking-expire hooked:] Also emits booking_expired from the
 service-layer expire function the Reaper calls; if the logic was inline
