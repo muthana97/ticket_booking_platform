@@ -4951,6 +4951,140 @@
     transform: translateY(-1px);
   }
 
+  /* Reports panel (Task 9) — headline tiles + tables, same visual
+     language as the admin-home Reports tab (re-scoped to this screen). */
+  body[data-screen="admin-provider-detail"].pillow .report-headline {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+    display: flex; align-items: baseline; gap: 14px;
+    flex-wrap: wrap;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow .report-headline-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .report-headline-grid > div {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 4px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .kv-label {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .kv-value {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    color: var(--p-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-screen="admin-provider-detail"].pillow .report-panel {
+    background: var(--p-card);
+    border: 0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+  }
+  body[data-screen="admin-provider-detail"].pillow .report-panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  body[data-screen="admin-provider-detail"].pillow .report-panel-head h4 {
+    font-family: var(--p-sans);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+    color: var(--p-ink);
+    margin: 0;
+  }
+  body[data-screen="admin-provider-detail"].pillow .report-panel-head .btn-inline {
+    appearance: none;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 11.5px;
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: background 180ms ease, transform 120ms ease;
+  }
+  body[data-screen="admin-provider-detail"].pillow .report-panel-head .btn-inline:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .report-table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--p-sans);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .report-table th {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-ink-mute);
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(50,80,140,0.16);
+    text-align: left;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .report-table td {
+    padding: 10px 12px;
+    border-bottom: 1px dashed rgba(50,80,140,0.10);
+    color: var(--p-ink);
+    font-weight: 500;
+    text-align: left;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .report-table tr:nth-child(even) td {
+    background: transparent;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .report-table tr:last-child td {
+    border-bottom: 0;
+  }
+  body[data-screen="admin-provider-detail"].pillow #admin-detail-reports-body .empty-state {
+    background: var(--p-card);
+    border-radius: 20px;
+    padding: 28px 20px;
+    box-shadow:
+      0 10px 24px -14px var(--p-shadow-drop),
+      0 1px 3px var(--p-shadow-tight),
+      0 1px 0 var(--p-hi-line) inset;
+    text-align: center;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--p-ink-mute);
+  }
+
   /* Chevron affordance on the now-clickable provider rows (admin-home) */
   body[data-screen="admin-home"].pillow .admin-row.admin-row-clickable .chevron-right {
     color: var(--p-ink-mute);
@@ -5108,6 +5242,20 @@
   }
   body[data-screen="admin-home"].pillow .report-table tr:last-child td {
     border-bottom: 0;
+  }
+
+  /* Per-provider row drilldown link (Task 9) — routes to the admin
+     provider-detail page's Reports panel. */
+  body[data-screen="admin-home"].pillow .report-drill {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    color: var(--p-ink-mute);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 150ms ease;
+  }
+  body[data-screen="admin-home"].pillow .report-drill:hover {
+    color: var(--p-accent-on, #1A1000);
   }
 
   /* Reports filter strip — uses <label> wrappers with inline <span> +
@@ -7687,6 +7835,7 @@ const I18N = {
     'admin.reports.col.walkin': 'Walk-in',
     'admin.reports.export.csv': 'Export CSV',
     'admin.reports.empty': 'No activity in the selected range.',
+    'admin.reports.drilldown_link': 'View',
   },
   ar: {
     // top bar / nav
@@ -8056,6 +8205,7 @@ const I18N = {
     'admin.reports.col.walkin': 'حجز عند المنفذ',
     'admin.reports.export.csv': 'تصدير CSV',
     'admin.reports.empty': 'لا نشاط في الفترة المختارة.',
+    'admin.reports.drilldown_link': 'عرض',
   },
 };
 let LANG = localStorage.getItem('taz.lang') || 'en';
@@ -8251,6 +8401,7 @@ const STATE = {
   resendTimer: null,
   viewingProviderId: null,  // admin provider-detail: which provider is being viewed
   viewingProvider: null,    // admin provider-detail: cached provider row
+  viewingProviderScrollTo: null,  // admin provider-detail: panel to scroll into view after render (e.g. 'reports')
   auditLog: { items: [], nextBefore: null, filters: { q: '', event_type: '', from: '', to: '' } },  // admin provider-detail: activity log panel
 };
 
@@ -10721,7 +10872,14 @@ async function renderProviderDetail() {
   // Task 8:
   if (typeof renderProviderAuditLog === 'function') renderProviderAuditLog(true /*reset*/);
   // Task 9:
-  if (typeof renderProviderReports === 'function') renderProviderReports();
+  if (typeof renderProviderReports === 'function') await renderProviderReports();
+
+  // Drilldown links (Reports tab -> here) can request a scroll to a
+  // specific panel once the page has finished rendering.
+  if (STATE.viewingProviderScrollTo === 'reports') {
+    STATE.viewingProviderScrollTo = null;
+    $('#admin-detail-reports')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function renderProviderDetailHeader() {
@@ -11063,7 +11221,11 @@ function drawReports(data) {
     t('admin.reports.col.provider'),
     t('admin.reports.col.commission'),
     t('admin.reports.col.bookings'),
-  ], data.financial.by_provider.map(r => [r.provider_name, fmtMoney(r.commission), r.bookings]));
+    '',
+  ], data.financial.by_provider.map(r => [
+    r.provider_name, fmtMoney(r.commission), r.bookings, reportDrillCell(r.provider_id),
+  ]));
+  wireReportDrilldownLinks('#rep-fin-by-provider');
 
   renderReportTable('#rep-op-by-month', [
     t('admin.reports.col.month'),
@@ -11079,7 +11241,11 @@ function drawReports(data) {
     t('admin.reports.col.passengers'),
     t('admin.reports.col.consumer'),
     t('admin.reports.col.walkin'),
-  ], data.operational.by_provider.map(r => [r.provider_name, r.bookings, r.passengers, r.consumer, r.walkin]));
+    '',
+  ], data.operational.by_provider.map(r => [
+    r.provider_name, r.bookings, r.passengers, r.consumer, r.walkin, reportDrillCell(r.provider_id),
+  ]));
+  wireReportDrilldownLinks('#rep-op-by-provider');
 
   const allEmpty =
     data.financial.total_commission === 0 &&
@@ -11087,15 +11253,135 @@ function drawReports(data) {
   $('#rep-empty').classList.toggle('hidden', !allEmpty);
 }
 
-function renderReportTable(sel, headers, rows) {
-  const tbl = $(sel);
-  tbl.innerHTML =
-    '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>' +
+// A per-provider breakdown row's trailing "View ->" cell. Wrapped in
+// { html } so reportTableRows() knows to skip HTML-escaping just this
+// cell (every other cell still goes through escapeHtml as plain text).
+function reportDrillCell(providerId) {
+  return { html: `<a href="#" class="report-drill" data-provider-id="${providerId}">${escapeHtml(t('admin.reports.drilldown_link'))} →</a>` };
+}
+
+// Wire click handlers on .report-drill links freshly inserted under `scopeSel`.
+// Clicking routes to the admin provider-detail page (Task 7/8) with its
+// Reports panel (this file, below) scrolled into view.
+function wireReportDrilldownLinks(scopeSel) {
+  document.querySelectorAll(scopeSel + ' .report-drill').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pid = parseInt(el.dataset.providerId, 10);
+      if (!pid) return;
+      STATE.viewingProviderId = pid;
+      STATE.viewingProvider = null;       // force refetch in renderProviderDetail
+      STATE.viewingProviderScrollTo = 'reports';
+      goto('admin-provider-detail');
+    });
+  });
+}
+
+// Shared table-body markup: headers + rows -> <thead>/<tbody> innerHTML.
+// A cell may be a plain value (escaped) or { html } (inserted raw — used
+// only for the drilldown link above). Extracted so both the Reports tab
+// (renderReportTable, targets an existing <table id=...>) and the
+// provider-detail Reports panel (renderReportTables, builds its own
+// <table> from scratch) share one row-formatting implementation.
+function reportTableRows(headers, rows) {
+  return '<thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>' +
     '<tbody>' + rows.map(cells =>
-      '<tr>' + cells.map((c, i) =>
-        `<td data-label="${escapeHtml(headers[i] || '')}">${escapeHtml(String(c))}</td>`
-      ).join('') + '</tr>'
+      '<tr>' + cells.map((c, i) => {
+        const label = escapeHtml(headers[i] || '');
+        if (c && typeof c === 'object' && 'html' in c) return `<td data-label="${label}">${c.html}</td>`;
+        return `<td data-label="${label}">${escapeHtml(String(c))}</td>`;
+      }).join('') + '</tr>'
     ).join('') + '</tbody>';
+}
+
+// Reports tab — writes into a pre-existing <table id="..."> already in the DOM.
+function renderReportTable(sel, headers, rows) {
+  $(sel).innerHTML = reportTableRows(headers, rows);
+}
+
+/* ---------- Admin provider-detail: Reports panel (Task 9) ---------- */
+// Builds the Financial + Operational "by month" tables scoped to one
+// provider, reusing reportTableRows()/fmtMoney()/downloadCsv() — the same
+// primitives the Reports tab uses above. "By provider" tables are skipped
+// here since a single-provider payload's by_provider array is always a
+// single row (identical to the totals already shown in the headline).
+function renderReportTables(data, target) {
+  const finRows = reportTableRows([
+    t('admin.reports.col.month'),
+    t('admin.reports.col.commission'),
+    t('admin.reports.col.bookings'),
+  ], data.financial.by_month.map(r => [r.month, fmtMoney(r.commission), r.bookings]));
+
+  const opRows = reportTableRows([
+    t('admin.reports.col.month'),
+    t('admin.reports.col.bookings'),
+    t('admin.reports.col.passengers'),
+    t('admin.reports.col.consumer'),
+    t('admin.reports.col.walkin'),
+  ], data.operational.by_month.map(r => [r.month, r.bookings, r.passengers, r.consumer, r.walkin]));
+
+  const allEmpty = data.financial.total_commission === 0 && data.operational.total_bookings === 0;
+
+  target.innerHTML = `
+    <div class="report-headline">
+      <span class="kv-label" data-i18n="admin.reports.financial.headline">${t('admin.reports.financial.headline')}</span>
+      <span class="kv-value">SDG ${escapeHtml(fmtMoney(data.financial.total_commission))}</span>
+    </div>
+    <div class="report-panel">
+      <div class="report-panel-head">
+        <h4 data-i18n="admin.reports.financial.bymonth">${t('admin.reports.financial.bymonth')}</h4>
+        <button class="btn-inline" id="ap-rep-export-fin" data-i18n="admin.reports.export.csv">${t('admin.reports.export.csv')}</button>
+      </div>
+      <table class="report-table">${finRows}</table>
+    </div>
+
+    <div class="report-headline-grid">
+      <div>
+        <span class="kv-label" data-i18n="admin.reports.operational.bookings">${t('admin.reports.operational.bookings')}</span>
+        <span class="kv-value">${escapeHtml(fmtMoney(data.operational.total_bookings))}</span>
+      </div>
+      <div>
+        <span class="kv-label" data-i18n="admin.reports.operational.passengers">${t('admin.reports.operational.passengers')}</span>
+        <span class="kv-value">${escapeHtml(fmtMoney(data.operational.total_passengers))}</span>
+      </div>
+    </div>
+    <div class="report-panel">
+      <div class="report-panel-head">
+        <h4 data-i18n="admin.reports.financial.bymonth">${t('admin.reports.financial.bymonth')}</h4>
+        <button class="btn-inline" id="ap-rep-export-op" data-i18n="admin.reports.export.csv">${t('admin.reports.export.csv')}</button>
+      </div>
+      <table class="report-table">${opRows}</table>
+    </div>
+
+    <div class="empty-state ${allEmpty ? '' : 'hidden'}" data-i18n="admin.reports.empty">${t('admin.reports.empty')}</div>
+  `;
+
+  const period = data.period || {};
+  const pid = STATE.viewingProviderId;
+  target.querySelector('#ap-rep-export-fin')?.addEventListener('click', () => {
+    downloadCsv(
+      `tazkirati-financial-by-month-${period.from}-to-${period.to}-provider${pid}.csv`,
+      ['month', 'commission', 'bookings'],
+      data.financial.by_month.map(r => [r.month, r.commission, r.bookings]),
+    );
+  });
+  target.querySelector('#ap-rep-export-op')?.addEventListener('click', () => {
+    downloadCsv(
+      `tazkirati-operational-by-month-${period.from}-to-${period.to}-provider${pid}.csv`,
+      ['month', 'bookings', 'passengers', 'consumer', 'walkin'],
+      data.operational.by_month.map(r => [r.month, r.bookings, r.passengers, r.consumer, r.walkin]),
+    );
+  });
+}
+
+async function renderProviderReports() {
+  const pid = STATE.viewingProviderId;
+  const body = $('#admin-detail-reports-body');
+  if (!pid || !body) return;
+  try {
+    const data = await api(`/admin/providers/${pid}/reports`);
+    renderReportTables(data, body);
+  } catch (e) { toast(e.message, true); }
 }
 
 async function downloadCsv(filename, headers, rows) {
