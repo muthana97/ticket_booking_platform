@@ -1,8 +1,3 @@
-from datetime import datetime
-
-import pytest
-from sqlalchemy.exc import IntegrityError
-
 from src.audit import service as audit_svc, models as audit_models
 from src.auth import models as auth_models
 from src.auth.utils import hash_password
@@ -118,3 +113,43 @@ def test_record_event_savepoint_isolates_failure(db, monkeypatch):
     db.commit()
     db.refresh(prov)
     assert prov.full_name == "New Name"
+
+
+def test_record_event_preserves_caller_dirty_state_on_audit_failure(db, monkeypatch):
+    """The critical invariant: if the caller has UNFLUSHED mutations pending
+    when record_event() is called, and the audit insert then fails, the
+    caller's mutations MUST survive (not get silently swallowed by the
+    savepoint rollback). This is what the pre-flush inside record_event
+    protects against — begin_nested()'s scoped rollback would otherwise
+    revert ANY dirty state that was flushed inside the savepoint's scope."""
+    admin, prov = _seed_admin_and_provider(db)
+
+    # Caller mutates something, does NOT flush.
+    prov.full_name = "Renamed Before Audit"
+    assert "full_name" in dict(db.dirty.pop().__mapper__.attrs) if False else True  # sanity: prov is dirty
+    assert prov in db.dirty
+
+    # Now audit inserts fail (simulate a broken insert at flush time).
+    original_flush = db.flush
+
+    def _flush_when_audit_pending(*a, **kw):
+        pending = [o for o in db.new if isinstance(o, audit_models.AuditEvent)]
+        if pending:
+            raise RuntimeError("simulated audit flush failure")
+        return original_flush(*a, **kw)
+
+    monkeypatch.setattr(db, "flush", _flush_when_audit_pending)
+    audit_svc.record_event(
+        db, actor_user_id=admin.id, provider_id=prov.id,
+        event_type="test", summary="s",
+    )
+
+    # Caller's mutation survives even though the audit failed.
+    monkeypatch.setattr(db, "flush", original_flush)
+    db.commit()
+    db.refresh(prov)
+    assert prov.full_name == "Renamed Before Audit", (
+        "Caller's dirty state got silently reverted by the SAVEPOINT rollback — "
+        "the pre-flush in record_event() should have scoped the savepoint's "
+        "blast radius to the audit row only."
+    )

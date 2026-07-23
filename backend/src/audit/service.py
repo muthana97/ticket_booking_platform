@@ -25,8 +25,17 @@ def record_event(
 
     Does NOT commit the outer transaction — the caller's own commit (or
     rollback) determines whether the audit row lands.
+
+    Caller-dirty-state contract: we flush() any caller-pending state to the
+    outer transaction BEFORE opening the savepoint. Otherwise begin_nested()'s
+    on-exit flush would include the caller's dirty objects in the SAVEPOINT's
+    scope, and a failed audit insert would revert those unrelated caller
+    mutations too (silently — because we then swallow the exception). The
+    pre-flush ensures the savepoint's blast radius is exactly one row: the
+    AuditEvent we're inserting.
     """
     try:
+        db.flush()
         with db.begin_nested():
             db.add(models.AuditEvent(
                 actor_user_id=actor_user_id,
