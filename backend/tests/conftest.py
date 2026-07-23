@@ -24,6 +24,18 @@ def engine():
         cur = dbapi_connection.cursor()
         cur.execute("PRAGMA foreign_keys=ON")
         cur.close()
+        # SQLAlchemy's documented pysqlite recipe: turn OFF pysqlite's own
+        # transaction management (which relies on regex-matching statement
+        # text and doesn't recognize SAVEPOINT/RELEASE SAVEPOINT), so
+        # SQLAlchemy can drive BEGIN/SAVEPOINT/ROLLBACK correctly. Required
+        # for db.begin_nested() to participate in outer-transaction rollback
+        # (see backend/src/audit/service.py:record_event and spec §5.4).
+        # Postgres/psycopg2 in prod doesn't need this — it's a pysqlite quirk.
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(eng, "begin")
+    def _do_begin(conn):
+        conn.exec_driver_sql("BEGIN")
 
     from src.database import Base
     import src.auth.models  # noqa: F401
@@ -32,6 +44,7 @@ def engine():
     import src.finance.models  # noqa: F401
     import src.notifications.models  # noqa: F401
     import src.promo.models  # noqa: F401
+    import src.audit.models  # noqa: F401
     Base.metadata.create_all(bind=eng)
     yield eng
     eng.dispose()

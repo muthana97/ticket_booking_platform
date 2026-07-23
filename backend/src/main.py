@@ -18,6 +18,7 @@ from .promo.router import router as promo_router, validate_router as promo_valid
 # Import the model so Base.metadata.create_all() picks up the table.
 from .notifications import models as _notifications_models  # noqa: F401
 from .promo import models as _promo_models  # noqa: F401
+from .audit import models as _audit_models  # noqa: F401
 
 def _ensure_schema():
     """Create tables on the configured engine. Lifted out of module scope so
