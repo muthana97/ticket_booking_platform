@@ -274,6 +274,36 @@ def get_reports(
     )
 
 
+@router.get(
+    "/providers/{provider_id}/reports",
+    response_model=schemas.ReportsResponse,
+)
+def provider_reports(
+    provider_id: int,
+    from_: Optional[str] = Query(default=None, alias="from"),
+    to: Optional[str] = None,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin),
+):
+    """Per-provider drilldown. Thin wrapper that inlines provider_id from
+    the URL path and reuses the existing reports aggregation."""
+    provider = (
+        db.query(auth_models.User)
+        .filter(auth_models.User.id == provider_id, auth_models.User.role == "provider")
+        .first()
+    )
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    if not from_ or not to:
+        d_from, d_to = _default_period()
+        from_ = from_ or d_from
+        to = to or d_to
+    _validate_period(from_, to)
+    return finance_reports.build_reports(
+        db, from_str=from_, to_str=to, provider_id=provider_id,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Provider audit log
 # ---------------------------------------------------------------------------
