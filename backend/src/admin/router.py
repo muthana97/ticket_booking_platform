@@ -6,10 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..auth.dependencies import require_admin
+from ..auth import models as auth_models
 from ..database import get_db
 from ..finance import reports as finance_reports
 from ..inventory import schemas as inv_schemas
 from ..inventory import service as inv_service
+from ..audit import service as audit_svc, schemas as audit_schemas
 from . import schemas, service
 
 router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(require_admin)])
@@ -270,3 +272,64 @@ def get_reports(
     return finance_reports.build_reports(
         db, from_str=from_, to_str=to, provider_id=provider_id,
     )
+
+
+# ---------------------------------------------------------------------------
+# Provider audit log
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/providers/{provider_id}/log",
+    response_model=audit_schemas.AuditLogResponse,
+)
+def provider_log(
+    provider_id: int,
+    q: Optional[str] = None,
+    event_type: Optional[str] = None,
+    from_: Optional[_dt] = Query(default=None, alias="from"),
+    to: Optional[_dt] = None,
+    limit: int = 100,
+    before_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin),
+):
+    """Activity log for a single provider. Admin-only in Phase 1;
+    Phase 2 will widen for operator-admin scoped to their acts_for_provider_id."""
+    provider = (
+        db.query(auth_models.User)
+        .filter(auth_models.User.id == provider_id, auth_models.User.role == "provider")
+        .first()
+    )
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    rows, next_before = audit_svc.query_log(
+        db,
+        provider_id=provider_id,
+        q=q, event_type=event_type,
+        from_ts=from_, to_ts=to,
+        limit=limit, before_id=before_id,
+    )
+
+    # Load actors in one query
+    actor_ids = {r.actor_user_id for r in rows}
+    actors = {
+        u.id: u for u in db.query(auth_models.User).filter(auth_models.User.id.in_(actor_ids)).all()
+    }
+
+    items = []
+    for r in rows:
+        actor = actors.get(r.actor_user_id)
+        actor_out = audit_schemas.AuditActor(
+            id=r.actor_user_id,
+            full_name=actor.full_name if actor else f"user #{r.actor_user_id}",
+            role=actor.role if actor else "unknown",
+        )
+        items.append(audit_schemas.AuditEventItem(
+            id=r.id, event_type=r.event_type, actor=actor_out,
+            target_type=r.target_type, target_id=r.target_id,
+            summary=r.summary, metadata=r.metadata_,
+            created_at=r.created_at,
+        ))
+
+    return {"items": items, "next_before_id": next_before}
