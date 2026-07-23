@@ -4511,11 +4511,13 @@
      physical-left, not logical-start. In Arabic the track flips visually
      to the right, so the knob was landing on the wrong end (over the
      label text). Pin to inset-inline-start instead and mirror the slide. */
-  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap::after {
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap::after,
+  html[dir="rtl"] body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body .caps label.cap::after {
     left: auto;
     right: 6px;
   }
-  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after {
+  html[dir="rtl"] body[data-screen="admin-home"].pillow .admin-row .caps label.cap:has(input:checked)::after,
+  html[dir="rtl"] body[data-screen="admin-provider-detail"].pillow #admin-detail-permissions-body .caps label.cap:has(input:checked)::after {
     transform: translateX(-14px);
   }
 
@@ -8302,6 +8304,13 @@ function refreshDynamicScreen() {
   if (s === 'provider-home')       refreshProviderTab();
   if (s === 'admin-home')          refreshAdminTab();
   if (s === 'admin-settings')      refreshAdminSettings();
+  // Provider detail page: re-render so the JS-baked strings (capability
+  // labels, block/approve button, activity-log filter dropdown options,
+  // empty state) pick up the new language. The screen already re-fetches
+  // the provider row on entry, so this is safe to invoke here too.
+  if (s === 'admin-provider-detail' && typeof renderProviderDetail === 'function') {
+    renderProviderDetail();
+  }
   // Customer trip search results: re-render with cached search data so cities
   // re-translate when the user toggles language mid-browse.
   if (s === 'customer-trips' && STATE.lastCustomerTripSearch) {
