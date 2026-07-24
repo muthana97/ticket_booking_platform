@@ -776,6 +776,74 @@
     body[data-screen="welcome"] #screen-welcome .auth-stage { margin: 0; width: 100%; }
   }
 
+  /* Mobile pillow overrides for the Reports-tab / provider-detail
+     collapsed table cards. The v1 mobile block above styles them with
+     paper/rule/Fraunces (matches v1 editorial look); in pillow mode we
+     want near-white cards, sans-serif, and pillow token colors so the
+     Reports section stops visually reverting to v1 on iOS + narrow web. */
+  @media (max-width: 640px) {
+    body.pillow .report-panel .report-table tr {
+      background: var(--p-card);
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      box-shadow:
+        0 10px 24px -14px var(--p-shadow-drop),
+        0 1px 3px var(--p-shadow-tight),
+        0 1px 0 var(--p-hi-line) inset;
+    }
+    body.pillow .report-panel .report-table td {
+      font-family: var(--p-sans);
+      color: var(--p-ink);
+      font-variant-numeric: tabular-nums;
+      /* The v1 rule used `display: flex` with a default row that could
+         let the label + value collide when the row was narrow. Force
+         space-between and give the value a non-shrinking basis so it
+         stays right-aligned no matter how tight the label pill is. */
+      display: flex; align-items: baseline; gap: 12px;
+      justify-content: space-between;
+    }
+    body.pillow .report-panel .report-table td:first-child {
+      font-family: var(--p-sans);
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.005em;
+      color: var(--p-ink);
+      padding-bottom: 8px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(50,80,140,0.10);
+      display: block; /* first cell stands alone, no inline label */
+    }
+    body.pillow .report-panel .report-table td:not(:first-child)::before {
+      content: attr(data-label);
+      font-family: var(--p-sans);
+      font-weight: 700;
+      font-size: 10.5px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--p-ink-mute);
+      /* No flex-grow — label pill takes only its natural width, the
+         value slides to the right via justify-content: space-between. */
+      flex: 0 0 auto;
+    }
+    body.pillow .report-panel .report-table td:not(:first-child) {
+      /* Value side: prevent shrink so a long number can't clip inside
+         the label. text-align:end is a no-op in a flex row but harmless. */
+      font-weight: 600;
+      color: var(--p-ink);
+    }
+    /* Panel head + headline typography also switch to pillow sans on mobile. */
+    body.pillow .report-panel-head h4,
+    body.pillow #admin-detail-reports-body .report-panel-head h4 {
+      font-family: var(--p-sans);
+      font-weight: 800;
+    }
+    body.pillow .kv-value {
+      font-family: var(--p-sans);
+    }
+  }
+
   .subhead {
     padding: 10px 32px;
     display: flex; align-items: center; gap: 14px;
