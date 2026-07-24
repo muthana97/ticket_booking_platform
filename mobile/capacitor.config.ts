@@ -35,15 +35,19 @@ const config: CapacitorConfig = {
   },
 
   plugins: {
+    // Splash + status bar match the pillow bg-a soft blue so first-launch
+    // fades smoothly into the app's pastel background gradient. Prior value
+    // #0F2A47 (v1 dark navy) caused a jarring dark→light flip on load.
     SplashScreen: {
       launchShowDuration: 1500,
-      backgroundColor: '#0F2A47',
+      backgroundColor: '#E8F0FF',
       showSpinner: false,
       androidScaleType: 'CENTER_CROP',
     },
     StatusBar: {
+      // DARK = dark text on light background — matches the pillow pastel palette.
       style: 'DARK',
-      backgroundColor: '#0F2A47',
+      backgroundColor: '#E8F0FF',
     },
     Keyboard: {
       resize: 'body',

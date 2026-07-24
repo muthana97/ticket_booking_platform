@@ -4,17 +4,14 @@
   "private": true,
   "description": "Capacitor wrap of the Tazkirati web portal. webDir points at ../frontend so the native shell stays in sync with the web build.",
   "scripts": {
-    "sync": "cap sync && npm run --silent point-native-at-v2",
-    "sync:ios": "cap sync ios && npm run --silent point-native-at-v2:ios",
-    "sync:android": "cap sync android && npm run --silent point-native-at-v2:android",
+    "sync": "cap sync",
+    "sync:ios": "cap sync ios",
+    "sync:android": "cap sync android",
     "open:ios": "cap open ios",
     "open:android": "cap open android",
-    "build:ios": "npm run --silent sync:ios",
-    "build:android": "npm run --silent sync:android",
-    "assets": "capacitor-assets generate",
-    "point-native-at-v2": "npm run --silent point-native-at-v2:ios && npm run --silent point-native-at-v2:android",
-    "point-native-at-v2:ios": "cp ../frontend/index-v2.html ios/App/App/public/index.html",
-    "point-native-at-v2:android": "cp ../frontend/index-v2.html android/app/src/main/assets/public/index.html || true"
+    "build:ios": "cap sync ios",
+    "build:android": "cap sync android",
+    "assets": "capacitor-assets generate"
   },
   "dependencies": {
     "@capacitor/android": "^6.1.0",

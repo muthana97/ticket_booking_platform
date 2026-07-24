@@ -5,27 +5,14 @@ A web-portal MVP that demonstrates every role in `Context/requirements.v2.md`, *
 
 Auth is currently **email + password for all roles** (deferred realignment to phone-OTP for customer/provider per AUTH-01 / P-AUTH-01).
 
-## 🎨 Redesign in progress — "Pillow" (v2)
+## 🎨 Design system — "Pillow" (v2, shipped)
 
-Active full visual makeover from the current paper/terra editorial style to the **pillow** design language (soft pastel gradient · near-white 3D-pillow cards · amber `#F4A81D` pill CTAs · faint diagonal-line screen texture · tabular Inter numerics). Direction picked 2026-07-17 from `demos/demo-7.html` (mobile) + `demos/demo-7-desktop.html` (desktop customer phone-column + admin dashboard shell). Accent color moved from the demo's midnight navy to amber during the welcome/sign-in build — reads warmer and gives the pastel surface more energy without losing the pillow's calm.
+Pillow is the current and only design language: soft pastel gradient · near-white 3D-pillow cards · amber `#F4A81D` pill CTAs · faint diagonal-line screen texture · tabular Inter numerics. Full visual makeover from the previous paper/terra editorial style landed between 2026-07-17 and 2026-07-24. Direction picked 2026-07-17 from `demos/demo-7.html` (mobile) + `demos/demo-7-desktop.html` (desktop customer phone-column + admin dashboard shell). Accent color moved from the demo's midnight navy to amber during the welcome/sign-in build — reads warmer and gives the pastel surface more energy without losing the pillow's calm.
 
-### Preservation setup (in place)
-- **Branch**: `redesign/pillow` off `feat/mobile-scaffold`. All v2 work lives here. `main` + `feat/mobile-scaffold` stay pristine until sign-off.
-- **Tag**: `pre-redesign-2026-07-17` on `eb08561` — always-reachable revert point.
-- **Side-by-side file**: `frontend/index-v2.html` starts as a byte-for-byte copy of `frontend/index.html` (created 2026-07-17 on `dfee59d`). `index.html` is **never** touched during the redesign — every migrated screen lands in `index-v2.html` only.
-- **Backend switch** (`backend/src/main.py` `_serve_ui`): explicit `GET /app/` and `GET /app` routes register BEFORE the static mount. They read `?ui=` query param + `taz_ui` cookie. **On `feat/mobile-scaffold` v2 is the default** (flipped 2026-07-18 in `4634877`); `main` still defaults to v1.
-  - `?ui=v2` → serves `index-v2.html` + sets year-long cookie (path `/app/`, SameSite=Lax)
-  - `?ui=v1` → serves `index.html` + sets cookie (opts out of v2 on scaffold)
-  - cookie alone → whichever the cookie says
-  - neither → v2 on scaffold, v1 on main
-
-  Query param always beats cookie so users can flip via URL. Response is `Cache-Control: no-cache` so v2 iterations show up on refresh. `/app/vendor/*`, `/app/sw.js`, `/app/manifest.json` still served by the static mount unchanged. Smoke-tested end-to-end with `TestClient`.
-
-### Rollback
-- **User-level**: hand out `?ui=v1` (sets an opt-out cookie); works on both branches.
-- **Branch-level**: `main` is still on v1 by default, so pointing Render at `main` reverts the whole deploy to v1 without any code changes. (Render was accidentally polling `main` instead of `feat/mobile-scaffold` on 2026-07-18 — dashboard → Service → Settings → Branch is what controls this.)
-- **Full**: `git checkout pre-redesign-2026-07-17` — reachable via tag.
-- **Data**: redesign is frontend-only. Neon DB + backend untouched. Worst case a UI bug prevents booking on v2; v1 stays reachable.
+### Rollback (safety net)
+V1 was fully removed on 2026-07-24 — see Recent Fixes. If the pillow build ever needs to be rolled back:
+- **Full revert**: `git checkout pre-redesign-2026-07-17` (tag on `eb08561`) — always reachable, contains the last v1-only state before migration began.
+- **Data**: pillow migration was frontend-only. Backend + Neon DB unaffected across the migration window. A hypothetical UI regression can't corrupt persisted state.
 
 ### Pillow design system (v2 tokens)
 Palette:
@@ -51,50 +38,15 @@ Primitives (see `demos/demo-7.html` for reference impls):
 - `.seat` / `.sel` / `.booked` — pillow-tile seat treatment.
 - Ticket: pillow surface with `::after` dashed perforation line.
 
-### Migration order (screens)
-Style-only rewrites where possible — keep all JS logic (`goto()` state machine, API layer, i18n, RTL, `tazStore`, `tazShare`, long-poll) byte-for-byte. Change HTML markup + `<style>` block only. All new screens/copy get EN + AR i18n keys added to the `I18N` table.
+### Migration history
 
-**Customer** (passenger cycle fully migrated — 2026-07-18):
-- [x] Welcome + sign-in
-- [x] **NEW screen — category chooser**: sits between login and search. Two large tiles — a filled bus icon and the word "Other" — no h2/lead so the tiles fill the screen; topbar-nav hidden here so the chooser is a real commit point.
-- [x] **NEW screen — Others coming-soon** with back button (via subhead + history pop).
-- [x] Search trips + **bottom nav** (Search · My Tickets · Support). Two stacked chip cards with a 46px dark swap button punched through the middle; frosted pastel bottom bar on mobile with amber active state.
-- [x] Trip detail / booking (seat map + panels). Pillow-tile seats (near-white/amber/muted/danger for available/selected/locked/booked), each right-column panel is its own pillow surface, dark ink countdown with tabular numerics.
-- [x] My Tickets (list + past). Three sections with left-edge accent stripes (warn/ok/muted), booking rows as pillow surfaces, View ticket → amber pill on Awaiting, ghost outline on Upcoming/Past.
-- [x] Ticket modal (PAID/PENDING/EXPIRED status bar preserved and mapped to `--p-ok` / `--p-warn` / `--p-danger`). Near-white pillow ticket over dark navy backdrop; perforation notches retinted; billing ref amber-outlined; amber Print CTA.
-- [x] **Register / Create account** (2026-07-18). Same p-pillow container + p-field/p-input rows as sign-in, amber p-cta save. Role-pick (Passenger / Operator) as amber-active chips with the rp-desc subline preserved.
+Customer (Welcome, sign-in, category chooser, search, trip detail/booking, My Tickets, ticket modal, register), Provider (home, filter strips, trip cards, booking rows, add-trip/edit/manifest modals, commission footer), and Admin (home, filter strips, provider list with capability toggles, row action buttons, Reports tab with breakdown tables + drilldown, Settings hub) all migrated between 2026-07-17 and 2026-07-18. Cross-cutting: universal notifications screen, chrome polish (sign-out chip, gear glyph). Full migration + audit-log/provider-detail Phase 1 (audit_events + `screen-admin-provider-detail`) shipped by 2026-07-23. V1 deleted 2026-07-24 — see Recent Fixes.
 
-**Provider** (fully migrated — 2026-07-18):
-- [x] Provider home (My Trips + My Bookings tabs). Pillow pill tab-bar with amber active state; frosted "+ New Trip" as an amber pill in the head.
-- [x] **Filter strips — `From` / `To` inline with dropdown boxes**. `.filter-strip .fld` re-laid out horizontally with the label glued to the select inside a single rounded pillow chip (`From: Cairo ▾`). Reclaims the vertical row.
-- [x] Trip cards (My Trips) — reused the customer-trips pillow rules via widened selectors; adds variants: amber Walk-in, frosted Edit/Manifest, danger-tinted Delete.
-- [x] Booking rows (My Bookings) — pillow surface, retinted status pills (`walkin` = neutral, `confirmed` = ok, `expired` = danger), amber `→` arrow, success-green Confirm Payment CTA, ghost View ticket, commission dashed rule.
-- [x] Gross / Commission / Net footer as a pillow surface with tabular-nums totals.
-- [x] Add-trip modal — pillow card, layout/repeat/DOW chips light amber when active, dark input tiles.
-- [x] Trip-edit modal — same pillow modal treatment.
-- [x] Manifest modal + CSV export — pillow card, Inter table with rounded dark seat chip, dashed row separators.
-
-**Admin** (fully migrated — 2026-07-18):
-- [x] Admin home (Providers / Trips / Bookings / Pending Payments / Reports tabs). Widened tab-bar + filter-strip + trip-card + booking-row selectors from the provider commit cover the shared pieces.
-- [x] Filter strips — same inline `From:` / `To:` pillow-chip treatment as provider.
-- [x] **`.admin-row`** (Providers + Payments lists) — pillow surface, Inter meta.
-- [x] **Capability toggles** (ADMIN-2) — amber-active pill chips for `can_add_trips` / `can_edit_trips` / `can_delete_trips`. Native checkbox hidden; `:has(input:checked)` drives the state.
-- [x] Row action buttons — frosted default, moss-green success (Approve / Mark paid), danger-tinted Block.
-- [x] Reports tab — amber-stripe section headers; headline tiles + report panels as pillow surfaces; Inter tabular-nums; Export CSV as a frosted chip; label-wrapping reports filter gets its own pillow-chip variant.
-- [x] Admin Settings hub (Commissions + Account) — 2026-07-18. Amber left-stripe section headers, near-white panels, amber-active language chips, pillow-tinted inputs; Overrides `.panel-head` neutralized so the v1 beige strip doesn't leak.
-
-**Cross-cutting**:
-- [x] Notifications screen (2026-07-18) — universal for all 3 roles. Bell unread pill retinted to amber Inter tabular-nums; screen header cleaned up; rows are pillow surfaces with an amber left-stripe when unread; icon dots amber-tinted when unread; empty state gets its own pillow card.
-- [x] Sign-out button + gear icon (chrome polish) — sign-out is a frosted rounded chip (no more monospace uppercase); gear is a bare 24px glyph in the session block, rotates 45° on hover, no more circle background.
-- [ ] Arabic RTL pass on all v2 screens (existing polish backlog still applies: `.tab-support` font-size normalization, `→` glyph flip in RTL routes).
-- [ ] Native (Capacitor) — decide when to point mobile at v2. Currently `webDir: ../frontend` loads `index.html`; will keep loading v1 until we rename or repoint at `index-v2.html`.
-
-### Constraints carried into v2
-1. **Style-only** — keep JS/i18n/API/state byte-for-byte. Only HTML markup + CSS block change.
-2. **i18n coverage** — every new visible string gets EN + AR keys in `I18N`. Placeholders use `data-i18n-placeholder`. Numeric elements force LTR direction in RTL mode (see `frontend/index.html` for the pattern).
-3. **Ticket status bar** — PAID / PENDING / EXPIRED coloring is a hard requirement. Translate colors to pillow tokens.
-4. **Bottom nav** — customer-only on v2 mobile view. Provider + admin keep their tab-bar treatment (adapted to pillow style, but not converted to a bottom nav).
-5. **No `frontend/index.html` edits** on this branch. If a bugfix is genuinely needed in v1, land it on `feat/mobile-scaffold` and merge that branch into `redesign/pillow`.
+### Standing constraints (carried into all pillow work)
+1. **Style-plus rewrites** — JS logic (`goto()`, API layer, i18n, RTL, `tazStore`, `tazShare`, long-poll) preserved verbatim when migrating a screen. Only markup + `<style>` block change. New features (e.g. audit log) do add JS as expected.
+2. **i18n coverage** — every new visible string gets EN + AR keys in the `I18N` table. Placeholders use `data-i18n-placeholder`. Numeric elements force LTR direction in RTL mode (see any existing pattern in `frontend/index.html`).
+3. **Ticket status bar** — PAID / PENDING / EXPIRED coloring is a hard requirement. Uses `--p-ok` / `--p-warn` / `--p-danger` pillow tokens.
+4. **Bottom nav** — customer-only on mobile. Provider + admin keep their tab-bar treatment (pillow-styled but not converted to a bottom nav).
 
 ## 👥 Roles & data isolation (live)
 | Role | Status model | Access |
@@ -266,6 +218,7 @@ Debug APK lands at `mobile/android/app/build/outputs/apk/debug/app-debug.apk` (~
 - **Manifest modal arrow flips wrong in RTL**: the origin → destination line in the manifest header (`#mnf-route`) still uses the literal `→` glyph. In Arabic RTL layout, the text reorders (destination on the left, origin on the right) but the glyph stays pointing right — reading now says "destination → origin". Should either swap the glyph to `←` when `LANG === 'ar'`, or wrap the whole line in a bidi-neutral container and use a directional-aware character. Same audit needed anywhere `→` appears next to reorderable text (trip-card route line, ticket route, admin trip cards). The mobile ticket already handles this by using `↓` vertically — a hint that this class of bug already bit us once.
 
 ## 🐛 Recent fixes (most recent first)
+- **V1 fully removed — pillow is the only design (2026-07-24)**: after a week of pillow (v2) live in production without regressions, retired the v1 design entirely. Concretely: (1) `frontend/index.html` (v1, 277K editorial paper/terra) deleted; `frontend/index-v2.html` (v2, 516K pillow) renamed → `frontend/index.html`. (2) `_serve_ui` in `backend/src/main.py` collapsed from the `?ui=v1/v2` + `taz_ui` cookie branching down to a plain "serve `index.html` with `no-cache`" — dropped the unused `Request` import too. (3) `mobile/package.json` scripts collapsed: the `point-native-at-v2` post-`cap sync` copy step is gone since v2 IS now `index.html` — Capacitor loads it natively via `webDir: ../frontend` with no post-processing. (4) `mobile/capacitor.config.ts` splash `backgroundColor` swapped from `#0F2A47` (v1 navy — caused a jarring dark→light flip on first launch) → `#E8F0FF` (pillow `--bg-a` soft blue, matches the app's actual gradient start so splash → app is visually seamless). `pre-redesign-2026-07-17` tag stays as an always-reachable full revert point.
 - **Provider detail page + audit log Phase 1 (2026-07-23)**: new `audit_events` table + `record_event()` service wired into every mutation site in `inventory/service.py`, `booking/service.py`, and `admin/service.py`. Emit uses a nested SAVEPOINT (`db.begin_nested()`) so a failed audit insert can never break the underlying mutation, and every call is wrapped in a swallowing try/except with `[AUDIT]` log fallback. New `GET /admin/providers/{id}/log` endpoint with keyword ILIKE + event_type + date range + cursor pagination; new `GET /admin/providers/{id}/reports` drilldown reusing `finance/reports.py`. Admin Providers tab rows became clickable — inline capability toggles + block/approve buttons moved to new `screen-admin-provider-detail` page (Header + Permissions + Activity Log + Reports panels). ~28 new backend tests (140 → 168). Spec: `docs/superpowers/specs/2026-07-23-provider-detail-and-audit-log-design.md`, plan: `docs/superpowers/plans/2026-07-23-provider-detail-and-audit-log-phase-1.md`. Phase 2 (operator-admin sub-role — new role acts_for_provider_id, admin creation UI, scoped experience) gets its own spec+plan cycle after this ships.
 - **Email transport swap smtplib → Resend HTTP API + password reset (2026-07-22)**: (1) `_send_email()` in `backend/src/auth/service.py` rewritten to POST Resend's `/emails` endpoint via `httpx` — unblocks OTP delivery on Render's free tier (outbound SMTP was blocked; every OTP had been falling through to the `[EMAIL-OTP-CONSOLE]` log since launch). Config swap: five `SMTP_*` env vars → two `RESEND_API_KEY` + `RESEND_FROM`. Same seam, same console fallback when key is unset — local dev unaffected. 5 new transport tests via `unittest.mock.patch("src.auth.service.httpx.post")`. (2) Password reset flow: extends the existing `EmailOTP` table by adding `"reset"` as a second valid `purpose` value (no schema migration). Two new endpoints — `POST /auth/password-reset/request` (silent — always 200 with generic message, never leaks account existence; rate limit still 429s) and `POST /auth/password-reset/confirm` (returns `TokenResponse`, auto-signing the user in on success). Two new v2/pillow frontend screens on `redesign/pillow` — `screen-forgot-password` (email input + amber "Send reset code" CTA + link on sign-in) and `screen-reset-password` (6-digit code + new password + confirm, client-side mismatch check). 19 new backend tests (110 total). 18 new EN + AR i18n keys. Spec: `docs/superpowers/specs/2026-07-22-resend-and-password-reset-design.md`, plan: `docs/superpowers/plans/2026-07-22-resend-and-password-reset.md`.
 - **Pillow provider + admin + notifications shipped (2026-07-18, `179992f` … `216a124`)**: full v2 migration sweep across the remaining non-customer surfaces. (1) **Notifications** (`6be5c79`, universal): bell unread pill retinted amber Inter tabular-nums; screen title cleaned up; rows are pillow surfaces with an amber left-stripe when unread; icon dots amber-tinted when unread; empty state gets its own pillow card. (2) **Provider home** (`179992f`): tab-bar becomes a pillow-pill container with amber active state (replaces v1 underline); frosted "+ New Trip" pill in the head; filter strip's `From:` / `To:` labels moved INLINE into the dropdown chip (a single rounded pill: `From: Cairo ▾`) — closes the CLAUDE.md ask about reclaiming vertical space; trip cards reuse customer-trips pillow rules via widened selectors, plus variants (amber Walk-in, frosted Edit/Manifest, danger-tinted Delete); booking rows are pillow surfaces with retinted status pills (`walkin`=neutral, `confirmed`=ok, `expired`=danger), commission dashed rule, success-green Confirm CTA, ghost View ticket; Gross/Commission/Net footer as a pillow surface with tabular-nums totals. Add-trip/trip-edit/manifest modals all get the shared pillow-modal treatment (pillow card + amber-active layout/repeat/DOW chips + dark input tiles + Inter table for manifest). (3) **Admin home** (`8838154`): Providers/Payments `.admin-row` as pillow surfaces with Inter meta; capability toggles (ADMIN-2) become amber-active pill chips (native checkbox hidden; `:has(input:checked)` drives state); row actions retinted (moss-green Approve/Mark-paid, danger-tinted Block); Reports tab gets amber-stripe section headers, headline tiles + panels + tables all wrapped in pillow surfaces, Inter tabular-nums numbers, Export CSV as a frosted chip, and its own inline `From:/To:` pillow-chip filter variant for the label-wrapping markup. (4) **Chrome polish** (`c2f159b`): sign-out button becomes a frosted rounded chip (no more monospace uppercase); gear icon drops its circle background — bare 24px glyph that rotates 45° on hover. (5) **Register screen** (`c2f159b`) migrated to pillow using the sign-in primitives (`.p-pillow`, `.p-field`, `.p-input`, `.p-cta`); role-pick (Passenger/Operator) as amber-active chips with the `.rp-desc` subline preserved. (6) **`/app/` v2-default flip on scaffold** (`4634877`): `_serve_ui` now defaults to `index-v2.html`; `?ui=v1` opts out. Main stays on v1 so branch-level rollback is one Render dashboard change. (7) **Overrides card beige leak fix** (`6d50021`): customer Settings' `.panel-head` inherited the v1 `--paper-2` beige strip inside the Overrides card; neutralized inside `admin-settings.pillow` and pillow-ified the Add-override btn-inline as an amber pill. (8) **Admin/provider tab-bar mobile un-fix** (`216a124`): v1's mobile `@media` block pinned admin/provider tab-bars as fixed bottom nav; CLAUDE.md constraint is that pillow mobile only uses a bottom nav for customer, so added pillow-scoped `position: static` overrides that keep the pill container styling and drop the reserved 80px canvas bottom padding. **Deployment note**: the Neon DB "disappeared" mid-migration turned out to be Render's `render.yaml` `databases:` block silently re-injecting the (long-dormant) managed Postgres because the manual `DATABASE_URL` env var got wiped when Render's deploy branch was flipped — pointing `DATABASE_URL` back at the Neon connection string restored everything.
