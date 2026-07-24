@@ -833,6 +833,20 @@
       font-weight: 600;
       color: var(--p-ink);
     }
+    /* Undo the desktop drilldown-column overflow constraint on mobile.
+       The desktop rule (added in af485be) pins td:last-child to 40px +
+       nowrap + text-align:end to keep the "View →" cell narrow on the
+       by-provider tables. But once the table collapses to stacked cards
+       here, that width cramps the last data cell (WALK-IN in by-month
+       tables) so its label + value can't lay out with space-between
+       like every other row. Reset to auto on mobile — the drilldown
+       column becomes just another stacked row, no overflow risk. */
+    body[data-screen="admin-home"].pillow .report-panel .report-table td:last-child,
+    body[data-screen="admin-home"].pillow .report-panel .report-table th:last-child {
+      width: auto;
+      text-align: start;
+      white-space: normal;
+    }
     /* Panel head + headline typography also switch to pillow sans on mobile. */
     body.pillow .report-panel-head h4,
     body.pillow #admin-detail-reports-body .report-panel-head h4 {
