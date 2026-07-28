@@ -29,6 +29,7 @@ class User(Base):
     can_add_trips    = Column(Boolean, default=True, nullable=False)
     can_edit_trips   = Column(Boolean, default=True, nullable=False)
     can_delete_trips = Column(Boolean, default=True, nullable=False)
+    can_view_reports = Column(Boolean, default=False, nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

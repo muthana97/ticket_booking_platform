@@ -88,14 +88,15 @@ def update_provider_capabilities(
     db: Session = Depends(get_db),
     admin=Depends(require_admin),
 ):
-    """Toggle any subset of {can_add_trips, can_edit_trips, can_delete_trips}
-    on a provider. Omitted fields stay as-is."""
+    """Toggle any subset of {can_add_trips, can_edit_trips, can_delete_trips,
+    can_view_reports} on a provider. Omitted fields stay as-is."""
     user = service.update_provider_capabilities(
         db,
         provider_id=provider_id,
         can_add_trips=payload.can_add_trips,
         can_edit_trips=payload.can_edit_trips,
         can_delete_trips=payload.can_delete_trips,
+        can_view_reports=payload.can_view_reports,
         actor_user_id=admin.id,
     )
     return service._decorate_provider(db, user)

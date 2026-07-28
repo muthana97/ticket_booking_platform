@@ -21,6 +21,9 @@ class ProviderSummary(BaseModel):
     can_add_trips: bool = True
     can_edit_trips: bool = True
     can_delete_trips: bool = True
+    # Reports visibility deliberately defaults False — an admin must opt each
+    # provider in explicitly for financial visibility.
+    can_view_reports: bool = False
 
     class Config:
         from_attributes = True
@@ -31,6 +34,7 @@ class ProviderCapabilitiesUpdate(BaseModel):
     can_add_trips: Optional[bool] = None
     can_edit_trips: Optional[bool] = None
     can_delete_trips: Optional[bool] = None
+    can_view_reports: Optional[bool] = None
 
 
 # ---------------------------------------------------------------------------

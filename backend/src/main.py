@@ -50,6 +50,7 @@ def _migrate_if_needed():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_add_trips BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_edit_trips BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_delete_trips BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_view_reports BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS national_id VARCHAR",
         # Promo snapshot columns on bookings + the promo_codes table itself.
         # promo_codes gets created via Base.metadata.create_all() on first

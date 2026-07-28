@@ -41,6 +41,7 @@ def list_providers(db: Session, *, status: Optional[str] = None) -> list[dict]:
             "can_add_trips": p.can_add_trips,
             "can_edit_trips": p.can_edit_trips,
             "can_delete_trips": p.can_delete_trips,
+            "can_view_reports": p.can_view_reports,
         })
     return out
 
@@ -62,6 +63,7 @@ def _decorate_provider(db: Session, user: auth_models.User) -> dict:
         "can_add_trips": user.can_add_trips,
         "can_edit_trips": user.can_edit_trips,
         "can_delete_trips": user.can_delete_trips,
+        "can_view_reports": user.can_view_reports,
     }
 
 
@@ -72,6 +74,7 @@ def update_provider_capabilities(
     can_add_trips: Optional[bool] = None,
     can_edit_trips: Optional[bool] = None,
     can_delete_trips: Optional[bool] = None,
+    can_view_reports: Optional[bool] = None,
     actor_user_id: int,
 ) -> auth_models.User:
     """Partial patch on a provider's three trip-management flags. Any field
@@ -93,6 +96,9 @@ def update_provider_capabilities(
     if can_delete_trips is not None and can_delete_trips != user.can_delete_trips:
         changed["can_delete_trips"] = can_delete_trips
         user.can_delete_trips = can_delete_trips
+    if can_view_reports is not None and can_view_reports != user.can_view_reports:
+        changed["can_view_reports"] = can_view_reports
+        user.can_view_reports = can_view_reports
     if changed:
         db.commit()
         db.refresh(user)

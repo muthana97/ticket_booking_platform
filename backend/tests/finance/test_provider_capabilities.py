@@ -154,3 +154,26 @@ def test_admin_delete_still_works_when_provider_delete_disabled(
     )
     r = client.delete(f"/admin/trips/{trip_id}", headers=auth_header)
     assert r.status_code == 204
+
+
+def test_default_can_view_reports_is_false(provider):
+    """Reports visibility deliberately defaults OFF — one exception to the
+    'other three caps default TRUE' pattern (see spec §1). New providers get
+    no Reports tab until an admin flips the switch."""
+    assert provider.can_view_reports is False
+
+
+def test_patch_can_view_reports(client, auth_header, provider):
+    """Admin can flip can_view_reports via the same capabilities endpoint."""
+    r = client.patch(
+        f"/admin/providers/{provider.id}/capabilities",
+        headers=auth_header,
+        json={"can_view_reports": True},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["can_view_reports"] is True
+    # Other three caps still on their defaults.
+    assert body["can_add_trips"] is True
+    assert body["can_edit_trips"] is True
+    assert body["can_delete_trips"] is True
