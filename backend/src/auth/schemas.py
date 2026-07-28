@@ -54,6 +54,23 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
+class ProfileUpdate(BaseModel):
+    """Partial update payload for PATCH /auth/me.
+
+    Every field is optional in the wire format:
+      - absent    → don't touch the column
+      - null      → set the column to NULL (phone_number, national_id only)
+      - string    → set the column to that value
+
+    `full_name` cannot be cleared: sending null is treated as "absent" by
+    the service layer since the ORM column is NOT NULL. min_length matches
+    RegisterRequest so any name that was valid at signup stays valid on edit.
+    """
+    full_name: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    phone_number: Optional[str] = Field(default=None, max_length=20)
+    national_id: Optional[str] = Field(default=None, max_length=40)
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

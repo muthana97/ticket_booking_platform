@@ -79,6 +79,26 @@ def me(current_user=Depends(deps.get_current_user)):
     return current_user
 
 
+@router.patch("/me", response_model=schemas.UserOut)
+def patch_me(
+    payload: schemas.ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(deps.get_current_user),
+):
+    """Self-service edit of the three profile columns (full_name,
+    phone_number, national_id). Any field can be omitted; phone_number
+    and national_id accept explicit null to clear the column."""
+    return service.update_profile(
+        db,
+        current_user,
+        full_name=payload.full_name,
+        phone_number=payload.phone_number,
+        national_id=payload.national_id,
+        phone_provided="phone_number" in payload.model_fields_set,
+        id_provided="national_id" in payload.model_fields_set,
+    )
+
+
 @router.post("/password-reset/request")
 def password_reset_request(
     payload: schemas.PasswordResetRequestIn,

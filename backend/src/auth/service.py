@@ -385,3 +385,31 @@ def confirm_password_reset(
     db.commit()
     db.refresh(user)
     return user
+
+
+def update_profile(
+    db: Session,
+    user: models.User,
+    *,
+    full_name: str | None,
+    phone_number: str | None,
+    national_id: str | None,
+    phone_provided: bool,
+    id_provided: bool,
+) -> models.User:
+    """Partial update of the three self-editable profile columns.
+
+    `phone_provided` / `id_provided` are the router's proof that the caller
+    actually included the field in the JSON body (via
+    `payload.model_fields_set`). Without them we can't distinguish "leave
+    alone" from "set to null" — Pydantic v2 gives us the same `None` for both.
+    """
+    if full_name is not None:
+        user.full_name = full_name.strip()
+    if phone_provided:
+        user.phone_number = phone_number  # may be None to clear
+    if id_provided:
+        user.national_id = national_id    # may be None to clear
+    db.commit()
+    db.refresh(user)
+    return user
