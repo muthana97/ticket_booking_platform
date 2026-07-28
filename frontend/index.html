@@ -7199,16 +7199,16 @@
               <p class="lead" data-i18n="settings.personal_info.lead">Update the details we use to prefill your bookings.</p>
               <div class="field-block full">
                 <label for="pi-name" data-i18n="settings.personal_info.full_name">Full name</label>
-                <input type="text" id="pi-name" autocomplete="name">
+                <input type="text" id="pi-name" autocomplete="name" maxlength="120">
                 <p class="field-hint" data-i18n="settings.personal_info.name_hint">Best to include a first and family name — passenger names on tickets must have at least two words.</p>
               </div>
               <div class="field-block full">
                 <label for="pi-phone" data-i18n="settings.personal_info.phone">Phone (optional)</label>
-                <input type="tel" id="pi-phone" autocomplete="tel">
+                <input type="tel" id="pi-phone" autocomplete="tel" maxlength="20">
               </div>
               <div class="field-block full">
                 <label for="pi-id" data-i18n="settings.personal_info.national_id">National ID (optional)</label>
-                <input type="text" id="pi-id" autocomplete="off">
+                <input type="text" id="pi-id" autocomplete="off" maxlength="40">
               </div>
               <button type="button" class="cta" id="personal-info-save" data-i18n="settings.personal_info.save">Save changes</button>
             </div>
@@ -8455,6 +8455,7 @@ function refreshDynamicScreen() {
   if (s === 'provider-home')       refreshProviderTab();
   if (s === 'admin-home')          refreshAdminTab();
   if (s === 'admin-settings')      refreshAdminSettings();
+  if (s === 'admin-settings')      refreshPersonalInfo();
   // Provider detail page: re-render so the JS-baked strings (capability
   // labels, block/approve button, activity-log filter dropdown options,
   // empty state) pick up the new language. The screen already re-fetches
@@ -9035,6 +9036,9 @@ function logout() {
   $('#rg-name').value = ''; $('#rg-email').value = ''; $('#rg-password').value = '';
   $('#rg-password-confirm').value = ''; $('#rg-phone').value = ''; $('#rg-national-id').value = '';
   $('#vf-input').value = '';
+  const piName = $('#pi-name'); if (piName) piName.value = '';
+  const piPhone = $('#pi-phone'); if (piPhone) piPhone.value = '';
+  const piId = $('#pi-id'); if (piId) piId.value = '';
   goto('welcome', { replaceHistory: true });
 }
 
