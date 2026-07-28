@@ -2130,6 +2130,57 @@
     margin-top: 8px;
   }
 
+  /* OTP input in pillow — center-aligned tabular numerics with airy tracking.
+     The v1 .otp-input rule at line ~942 uses !important on font-family and
+     font-size, so we match with !important here (higher specificity via the
+     data-screen scope still wins). */
+  body[data-screen="verify-email"].pillow .p-input input.otp-input {
+    font-family: var(--p-sans) !important;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-size: 28px !important;
+    letter-spacing: 0.32em;
+    text-align: center !important;
+    color: var(--p-ink);
+    padding-left: 0.32em;
+  }
+  body[data-screen="verify-email"].pillow .p-input input.otp-input::placeholder {
+    letter-spacing: 0.32em;
+    color: var(--p-ink-faint);
+  }
+
+  /* Pending-card in pillow — override the v1 amber-left-border look. The
+     .p-pillow class already gives us the near-white surface; here we tune
+     the inner typography to match the pillow system (Fraunces h3 stays as
+     a soft display accent; body copy shifts from JetBrains Mono to Inter). */
+  body[data-screen="provider-pending"].pillow .pending-card {
+    background: var(--p-card);
+    border: 0;
+    padding: 22px;
+    margin: 24px 0 0;
+  }
+  body[data-screen="provider-pending"].pillow .pending-card h3 {
+    font-family: var(--p-sans);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0;
+    color: var(--p-ink);
+    margin: 0 0 10px;
+  }
+  body[data-screen="provider-pending"].pillow .pending-card .meta {
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--p-ink-mute);
+    letter-spacing: 0;
+    line-height: 1.65;
+    text-transform: none;
+  }
+  body[data-screen="provider-pending"].pillow .pending-card .meta b {
+    color: var(--p-ink);
+    font-weight: 600;
+  }
+
   /* Welcome tile — replaces .welcome-card visual (class stays for JS) */
   body[data-screen="welcome"] .welcome-grid {
     display: grid;
@@ -6691,9 +6742,16 @@
       <div class="auth-stage">
         <h1 data-i18n="verify.title">Check your email.</h1>
         <div class="lead"><span data-i18n="verify.lead">We sent a 6-digit code to</span> <b id="vf-email">—</b>.</div>
-        <div class="field"><label for="vf-input" data-i18n="verify.code">6-digit code</label><input type="text" id="vf-input" inputmode="numeric" maxlength="6" class="otp-input" placeholder="••••••" /></div>
-        <button class="cta" id="verify-btn" data-i18n="verify.cta">Verify & continue →</button>
-        <button class="cta ghost" id="resend-btn" style="margin-top: 10px;" data-i18n="verify.resend">Resend code</button>
+        <div class="p-pillow">
+          <div class="p-field">
+            <label for="vf-input" data-i18n="verify.code">6-digit code</label>
+            <div class="p-input">
+              <input type="text" id="vf-input" inputmode="numeric" maxlength="6" class="otp-input" placeholder="••••••" />
+            </div>
+          </div>
+        </div>
+        <button class="cta p-cta" id="verify-btn" data-i18n="verify.cta">Verify & continue →</button>
+        <button class="cta p-cta ghost" id="resend-btn" data-i18n="verify.resend">Resend code</button>
         <div class="helper" id="vf-dev-hint">—</div>
       </div>
     </section>
@@ -6703,7 +6761,7 @@
       <div class="auth-stage wide">
         <h1 data-i18n="pending.title">Approval pending.</h1>
         <div class="lead" data-i18n="pending.lead">Thanks for registering as an operator. An administrator will review your application shortly.</div>
-        <div class="pending-card">
+        <div class="p-pillow pending-card">
           <h3 data-i18n="pending.next">What happens next?</h3>
           <div class="meta" data-i18n="pending.steps" data-i18n-html="1">
             • Admin reviews your account at <b>/admin · Providers</b><br>
@@ -6711,7 +6769,7 @@
             • You can keep this tab open — refresh status when you think you've been approved
           </div>
         </div>
-        <button class="cta ghost" id="pending-refresh" data-i18n="pending.refresh">Refresh status</button>
+        <button class="cta p-cta ghost" id="pending-refresh" data-i18n="pending.refresh">Refresh status</button>
       </div>
     </section>
 
@@ -8691,7 +8749,8 @@ function escapeHtml(s) {
 const PILLOW_SCREENS = new Set([
   'welcome', 'sign-in', 'forgot-password', 'reset-password', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
-  'admin-settings', 'notifications', 'provider-home',
+  'admin-settings', 'notifications', 'provider-home', 'provider-pending',
+  'verify-email',
   'admin-home', 'admin-provider-detail',
 ]);
 function goto(screen, opts = {}) {
