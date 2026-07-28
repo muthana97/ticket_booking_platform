@@ -4,9 +4,11 @@ Pure functions over a database session — no router concerns. Bucketing is
 by confirmation date (Booking.confirmed_at). Spec:
 docs/superpowers/specs/2026-06-23-reports-design.md
 """
+import re
 from datetime import datetime
 from typing import Optional
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 
@@ -283,3 +285,34 @@ def build_reports(
             "by_provider": op_by_provider,
         },
     }
+
+
+_YYYY_MM = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
+def validate_period(from_str: str, to_str: str) -> None:
+    """Enforce the from/to YYYY-MM shape + ordering + 24-month cap.
+    Raises HTTPException(400) on any violation. Moved from admin/router.py
+    2026-07-28 to unify the period contract between admin and provider routes."""
+    if not _YYYY_MM.match(from_str) or not _YYYY_MM.match(to_str):
+        raise HTTPException(400, "from/to must be in YYYY-MM format")
+    fy, fm = map(int, from_str.split("-"))
+    ty, tm = map(int, to_str.split("-"))
+    if (fy, fm) > (ty, tm):
+        raise HTTPException(400, "from must be <= to")
+    months = (ty - fy) * 12 + (tm - fm) + 1
+    if months > 24:
+        raise HTTPException(400, "Date range cannot exceed 24 months")
+
+
+def default_period() -> tuple[str, str]:
+    """Return the (from, to) YYYY-MM tuple for a 6-month window ending
+    this month. Moved from admin/router.py 2026-07-28."""
+    now = datetime.utcnow()
+    # 5 months ago through current → 6-month inclusive window
+    m = now.month - 5
+    y = now.year
+    while m <= 0:
+        m += 12
+        y -= 1
+    return f"{y:04d}-{m:02d}", f"{now.year:04d}-{now.month:02d}"
