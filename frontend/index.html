@@ -5921,6 +5921,22 @@
     line-height: 1.5;
   }
 
+  /* Personal Info — helper text under the full-name input. */
+  body[data-screen="admin-settings"].pillow #settings-personal-info-section .field-hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--p-ink-mute);
+    line-height: 1.4;
+  }
+
+  /* Numeric inputs force LTR in RTL mode (matches the pattern used for
+     phone/id in the register form). */
+  html[lang="ar"] #pi-phone,
+  html[lang="ar"] #pi-id {
+    direction: ltr;
+    text-align: right;
+  }
+
   /* Empty state (e.g. "No global commission set yet.") */
   body[data-screen="admin-settings"].pillow .settings-section .empty-state {
     font-family: var(--p-sans);
@@ -7176,6 +7192,29 @@
           </div>
         </section>
 
+        <section class="settings-section" id="settings-personal-info-section">
+          <h3 data-i18n="settings.section.personal_info">Personal Information</h3>
+          <div class="settings-body">
+            <div class="panel">
+              <p class="lead" data-i18n="settings.personal_info.lead">Update the details we use to prefill your bookings.</p>
+              <div class="field-block full">
+                <label for="pi-name" data-i18n="settings.personal_info.full_name">Full name</label>
+                <input type="text" id="pi-name" autocomplete="name">
+                <p class="field-hint" data-i18n="settings.personal_info.name_hint">Best to include a first and family name — passenger names on tickets must have at least two words.</p>
+              </div>
+              <div class="field-block full">
+                <label for="pi-phone" data-i18n="settings.personal_info.phone">Phone (optional)</label>
+                <input type="tel" id="pi-phone" autocomplete="tel">
+              </div>
+              <div class="field-block full">
+                <label for="pi-id" data-i18n="settings.personal_info.national_id">National ID (optional)</label>
+                <input type="text" id="pi-id" autocomplete="off">
+              </div>
+              <button type="button" class="cta" id="personal-info-save" data-i18n="settings.personal_info.save">Save changes</button>
+            </div>
+          </div>
+        </section>
+
         <section class="settings-section">
           <h3 data-i18n="settings.section.commissions">Commissions</h3>
           <div class="settings-body">
@@ -7848,6 +7887,16 @@ const I18N = {
     'settings.crumb': 'Settings',
     'settings.section.language': 'Language',
     'settings.lang.lead': 'Choose the app language. Affects the whole app immediately.',
+    'settings.section.personal_info': 'Personal Information',
+    'settings.personal_info.lead': 'Update the details we use to prefill your bookings.',
+    'settings.personal_info.full_name': 'Full name',
+    'settings.personal_info.name_hint': 'Best to include a first and family name — passenger names on tickets must have at least two words.',
+    'settings.personal_info.phone': 'Phone (optional)',
+    'settings.personal_info.national_id': 'National ID (optional)',
+    'settings.personal_info.save': 'Save changes',
+    'toast.profile_saved': 'Profile updated.',
+    'toast.profile_name_too_short': 'Full name must be at least 2 characters.',
+    'toast.profile_save_failed': "Couldn't save. Try again.",
     'settings.section.commissions': 'Commissions',
     'settings.section.account': 'Account',
     'settings.section.account.soon': 'Password reset and more coming soon.',
@@ -8220,6 +8269,16 @@ const I18N = {
     'settings.crumb': 'الإعدادات',
     'settings.section.language': 'اللغة',
     'settings.lang.lead': 'اختر لغة التطبيق. يطبق التغيير فوراً على كل التطبيق.',
+    'settings.section.personal_info': 'المعلومات الشخصية',
+    'settings.personal_info.lead': 'حدّث البيانات التي نستخدمها لتعبئة حجوزاتك تلقائياً.',
+    'settings.personal_info.full_name': 'الاسم الكامل',
+    'settings.personal_info.name_hint': 'يُفضّل إدخال اسم أول ولقب — يجب أن يتكوّن اسم الراكب على التذكرة من كلمتين على الأقل.',
+    'settings.personal_info.phone': 'رقم الهاتف (اختياري)',
+    'settings.personal_info.national_id': 'الرقم الوطني (اختياري)',
+    'settings.personal_info.save': 'حفظ التغييرات',
+    'toast.profile_saved': 'تم تحديث الملف الشخصي.',
+    'toast.profile_name_too_short': 'يجب أن يتكون الاسم الكامل من حرفين على الأقل.',
+    'toast.profile_save_failed': 'تعذّر الحفظ. حاول مرة أخرى.',
     'settings.section.commissions': 'العمولات',
     'settings.section.account': 'الحساب',
     'settings.section.promos': 'كوبونات الخصم',
@@ -10534,6 +10593,65 @@ async function refreshAdminSettings() {
   } catch (e) { toast(e.message, true); }
 }
 
+function refreshPersonalInfo() {
+  const u = STATE.auth?.user;
+  if (!u) return;
+  const n = $('#pi-name');
+  const p = $('#pi-phone');
+  const i = $('#pi-id');
+  if (n) n.value = u.full_name || '';
+  if (p) p.value = u.phone_number || '';
+  if (i) i.value = u.national_id || '';
+}
+
+async function savePersonalInfo() {
+  const u = STATE.auth?.user;
+  if (!u) return;
+  const nameEl = $('#pi-name');
+  const phoneEl = $('#pi-phone');
+  const idEl = $('#pi-id');
+  if (!nameEl || !phoneEl || !idEl) return;
+
+  const nextName  = (nameEl.value  || '').trim();
+  const nextPhone = (phoneEl.value || '').trim();
+  const nextId    = (idEl.value    || '').trim();
+
+  if (nextName.length < 2) {
+    toast(t('toast.profile_name_too_short'), true);
+    return;
+  }
+
+  const body = {};
+  if (nextName !== (u.full_name || '')) body.full_name = nextName;
+  // Phone / ID: send explicit null when the user cleared a previously-set value;
+  // send the string when it changed to a non-empty value; omit when unchanged.
+  const curPhone = u.phone_number || '';
+  if (nextPhone !== curPhone) body.phone_number = nextPhone === '' ? null : nextPhone;
+  const curId = u.national_id || '';
+  if (nextId !== curId) body.national_id = nextId === '' ? null : nextId;
+
+  // Nothing to send → no-op.
+  if (Object.keys(body).length === 0) {
+    toast(t('toast.profile_saved'));
+    return;
+  }
+
+  const saveBtn = $('#personal-info-save');
+  if (saveBtn) saveBtn.disabled = true;
+  try {
+    const updated = await api('/auth/me', { method: 'PATCH', body: JSON.stringify(body) });
+    STATE.auth.user = updated;
+    if (STATE.auth && typeof tazStore?.save === 'function') tazStore.save(STATE.auth);
+    refreshPersonalInfo();
+    if (typeof paintChrome === 'function') paintChrome();
+    toast(t('toast.profile_saved'));
+  } catch (err) {
+    toast(t('toast.profile_save_failed'), true);
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
 // -------- Promos --------
 function renderPromosList(promos) {
   const wrap = $('#promos-list');
@@ -11782,7 +11900,9 @@ function wire() {
   $('#settings-btn')?.addEventListener('click', () => {
     goto('admin-settings');
     refreshAdminSettings();
+    refreshPersonalInfo();
   });
+  $('#personal-info-save')?.addEventListener('click', savePersonalInfo);
 
   // Settings → Language pills: clicking switches language immediately.
   // Mirrors what the legacy topbar lang-toggle did, just sourced from
