@@ -894,7 +894,6 @@
   body[data-screen="customer-book"]         #screen-customer-book,
   body[data-screen="customer-my-tickets"]   #screen-customer-my-tickets,
   body[data-screen="provider-home"]         #screen-provider-home,
-  body[data-screen="provider-book"]         #screen-customer-book,
   body[data-screen="admin-home"]            #screen-admin-home,
   body[data-screen="admin-provider-detail"] #screen-admin-provider-detail,
   body[data-screen="admin-settings"]        #screen-admin-settings,
@@ -8470,7 +8469,7 @@ function refreshDynamicScreen() {
     renderCustomerTrips(trips, origin, destination);
   }
   // Booking screen text labels are already i18n-tagged; the bus stays as-is.
-  if (s === 'customer-book' || s === 'provider-book') refreshSelectionUI();
+  if (s === 'customer-book') refreshSelectionUI();
 }
 
 /* API base URL resolver.
@@ -8692,7 +8691,7 @@ function escapeHtml(s) {
 const PILLOW_SCREENS = new Set([
   'welcome', 'sign-in', 'forgot-password', 'reset-password', 'register', 'customer-category', 'customer-coming-soon',
   'customer-search', 'customer-trips', 'customer-book', 'customer-my-tickets',
-  'admin-settings', 'notifications', 'provider-home', 'provider-book',
+  'admin-settings', 'notifications', 'provider-home',
   'admin-home', 'admin-provider-detail',
 ]);
 function goto(screen, opts = {}) {
@@ -8810,7 +8809,6 @@ function paintChrome() {
     'customer-book':   STATE.bookingFlow === 'provider'
                           ? (LANG === 'ar' ? 'حجز عند المنفذ' : 'Walk-in booking')
                           : (LANG === 'ar' ? 'اختيار المقاعد' : 'Seat selection'),
-    'provider-book':   LANG === 'ar' ? 'حجز عند المنفذ' : 'Walk-in booking',
     'admin-settings':  t('settings.crumb'),
   };
   $('#crumb').textContent = crumbs[STATE.screen] || '';
@@ -9807,7 +9805,7 @@ function openBooking(trip, asProvider) {
     ${fmtTime(trip.departure_time)}<br>
     <b>${trip.total_seats}</b> ${t('trips.layout').toUpperCase()} · SDG <b>${fmtMoney(trip.price)}</b> / ${t('book.seat').toUpperCase()}
   `;
-  goto(asProvider ? 'provider-book' : 'customer-book');
+  goto('customer-book');
   refreshSelectionUI();
   startStreamLoop();
 }
@@ -12106,7 +12104,7 @@ function wire() {
     } else { goto('welcome', { replaceHistory: true }); }
   });
   $('#back-btn').addEventListener('click', () => {
-    if (STATE.screen === 'customer-book' || STATE.screen === 'provider-book') stopStreamLoop();
+    if (STATE.screen === 'customer-book') stopStreamLoop();
     back();
   });
   $('#admin-detail-back').addEventListener('click', () => back());
