@@ -5245,10 +5245,16 @@
   }
 
   /* ── Reports tab ────────────────────────────────────────────────────── */
-  body[data-screen="admin-home"].pillow .report-section {
+  /* Also applies on provider-home — the self-service Reports tab (gated
+     by can_view_reports) reuses these same admin Reports tab primitives
+     (.report-section / .report-panel / .report-table / filter-strip
+     label pattern) so the two surfaces stay visually consistent. */
+  body[data-screen="admin-home"].pillow .report-section,
+  body[data-screen="provider-home"].pillow .report-section {
     margin: 24px 0;
   }
-  body[data-screen="admin-home"].pillow .report-section h3 {
+  body[data-screen="admin-home"].pillow .report-section h3,
+  body[data-screen="provider-home"].pillow .report-section h3 {
     font-family: var(--p-sans);
     font-weight: 800;
     font-size: 20px;
@@ -5258,7 +5264,8 @@
     padding-left: 12px;
     position: relative;
   }
-  body[data-screen="admin-home"].pillow .report-section h3::before {
+  body[data-screen="admin-home"].pillow .report-section h3::before,
+  body[data-screen="provider-home"].pillow .report-section h3::before {
     content: '';
     position: absolute; left: 0; top: 4px; bottom: 4px;
     width: 4px;
@@ -5314,7 +5321,8 @@
   }
 
   /* Report panel — table wrapped in a pillow surface */
-  body[data-screen="admin-home"].pillow .report-panel {
+  body[data-screen="admin-home"].pillow .report-panel,
+  body[data-screen="provider-home"].pillow .report-panel {
     background: var(--p-card);
     border: 0;
     border-radius: 20px;
@@ -5361,13 +5369,15 @@
   }
 
   /* Report table — Inter, tabular numerics */
-  body[data-screen="admin-home"].pillow .report-table {
+  body[data-screen="admin-home"].pillow .report-table,
+  body[data-screen="provider-home"].pillow .report-table {
     width: 100%; border-collapse: collapse;
     font-family: var(--p-sans);
     font-size: 13px;
     font-variant-numeric: tabular-nums;
   }
-  body[data-screen="admin-home"].pillow .report-table th {
+  body[data-screen="admin-home"].pillow .report-table th,
+  body[data-screen="provider-home"].pillow .report-table th {
     font-family: var(--p-sans);
     font-weight: 700;
     font-size: 10.5px;
@@ -5378,17 +5388,20 @@
     border-bottom: 1px solid rgba(50,80,140,0.16);
     text-align: left;
   }
-  body[data-screen="admin-home"].pillow .report-table td {
+  body[data-screen="admin-home"].pillow .report-table td,
+  body[data-screen="provider-home"].pillow .report-table td {
     padding: 10px 12px;
     border-bottom: 1px dashed rgba(50,80,140,0.10);
     color: var(--p-ink);
     font-weight: 500;
     text-align: left;
   }
-  body[data-screen="admin-home"].pillow .report-table tr:nth-child(even) td {
+  body[data-screen="admin-home"].pillow .report-table tr:nth-child(even) td,
+  body[data-screen="provider-home"].pillow .report-table tr:nth-child(even) td {
     background: transparent;
   }
-  body[data-screen="admin-home"].pillow .report-table tr:last-child td {
+  body[data-screen="admin-home"].pillow .report-table tr:last-child td,
+  body[data-screen="provider-home"].pillow .report-table tr:last-child td {
     border-bottom: 0;
   }
 
@@ -5430,16 +5443,21 @@
   }
   /* Safety net: if a narrow viewport ever squeezes the table beyond the
      panel, scroll horizontally rather than clipping the drilldown cell. */
-  body[data-screen="admin-home"].pillow .report-panel {
+  body[data-screen="admin-home"].pillow .report-panel,
+  body[data-screen="provider-home"].pillow .report-panel {
     overflow-x: auto;
   }
 
   /* Reports filter strip — uses <label> wrappers with inline <span> +
-     <input>/<select> (different markup from the trips/bookings filter). */
-  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip {
+     <input>/<select> (different markup from the trips/bookings filter).
+     Provider-home's Reports panel uses [data-ptab-panel] (its own tab
+     attribute convention) instead of admin's [data-tab-panel]. */
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip,
+  body[data-screen="provider-home"].pillow [data-ptab-panel="reports"] .filter-strip {
     gap: 10px;
   }
-  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label {
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label,
+  body[data-screen="provider-home"].pillow [data-ptab-panel="reports"] .filter-strip label {
     display: inline-flex; align-items: center; gap: 8px;
     background: var(--p-card);
     border: 0;
@@ -5457,11 +5475,14 @@
     text-transform: none;
     min-width: 180px;
   }
-  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label > span::after {
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label > span::after,
+  body[data-screen="provider-home"].pillow [data-ptab-panel="reports"] .filter-strip label > span::after {
     content: ':';
   }
   body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label input,
-  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label select {
+  body[data-screen="admin-home"].pillow [data-tab-panel="reports"] .filter-strip label select,
+  body[data-screen="provider-home"].pillow [data-ptab-panel="reports"] .filter-strip label input,
+  body[data-screen="provider-home"].pillow [data-ptab-panel="reports"] .filter-strip label select {
     background: transparent;
     color: var(--p-ink);
     border: 0;
@@ -5476,6 +5497,29 @@
     flex: 1;
     min-width: 0;
     font-variant-numeric: tabular-nums;
+  }
+  /* Export CSV pill on the provider filter strip (admin's equivalent
+     .report-panel-head .btn-inline isn't reused here since provider has
+     a single filter-strip-level export button, not per-panel). */
+  body[data-screen="provider-home"].pillow [data-ptab-panel="reports"] .filter-strip .btn-inline {
+    appearance: none;
+    background: rgba(255,255,255,0.6);
+    color: var(--p-ink);
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-family: var(--p-sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--p-hi-line) inset, 0 6px 14px -10px var(--p-shadow-drop);
+    transition: background 180ms ease, transform 120ms ease;
+  }
+  body[data-screen="provider-home"].pillow [data-ptab-panel="reports"] .filter-strip .btn-inline:hover {
+    background: var(--p-card);
+    transform: translateY(-1px);
   }
 
   /* ── Ticket modal (paper receipt in pillow tokens) ─────────────────── */
@@ -7006,6 +7050,7 @@
         <div class="tab-bar provider-tabs" id="provider-tab-bar">
           <button data-ptab="trips" class="active"><span data-i18n="provider.tab.trips">My Trips</span> <span class="count" id="pcnt-trips">0</span></button>
           <button data-ptab="bookings"><span data-i18n="provider.tab.bookings">My Bookings</span> <span class="count" id="pcnt-bookings">0</span></button>
+          <button data-ptab="reports" id="provider-tab-reports" hidden><span data-i18n="provider.tab.reports">Reports</span></button>
           <a class="tab-support" href="mailto:gadget.service.solutions@gmail.com" data-i18n="nav.support">Support</a>
         </div>
         <div class="tab-content" id="provider-tab-content">
@@ -7046,6 +7091,29 @@
               <h3 data-i18n="provider.empty.bookings.title">No bookings yet.</h3>
               <p data-i18n="provider.empty.bookings.desc">Bookings will appear here once passengers book your trips — including walk-ins.</p>
             </div>
+          </div>
+          <div data-ptab-panel="reports" id="provider-reports-tab">
+            <div class="filter-strip">
+              <label><span data-i18n="admin.reports.filter.from">From</span><input type="month" id="pr-from" /></label>
+              <label><span data-i18n="admin.reports.filter.to">To</span><input type="month" id="pr-to" /></label>
+              <button class="btn-inline" id="pr-export" data-i18n="provider.reports.export">Export CSV</button>
+            </div>
+
+            <section class="report-section">
+              <h3 data-i18n="provider.reports.revenue.title">Revenue</h3>
+              <div class="report-panel">
+                <table class="report-table" id="pr-revenue-table"></table>
+                <div class="empty-state hidden" id="pr-revenue-empty" data-i18n="provider.reports.revenue.empty">No revenue in this period yet.</div>
+              </div>
+            </section>
+
+            <section class="report-section">
+              <h3 data-i18n="provider.reports.activity.title">Trip Activity</h3>
+              <div class="report-panel">
+                <table class="report-table" id="pr-activity-table"></table>
+                <div class="empty-state hidden" id="pr-activity-empty" data-i18n="provider.reports.activity.empty">No trip activity in this period yet.</div>
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -7884,6 +7952,7 @@ const I18N = {
     'admin.action.approve': 'Approve', 'admin.action.block': 'Block',
     'admin.caps.label': 'Trip permissions:', 'admin.caps.add': 'Add', 'admin.caps.edit': 'Edit', 'admin.caps.delete': 'Delete',
     'admin.caps.enabled': 'Permission enabled', 'admin.caps.disabled': 'Permission disabled',
+    'admin.provider.cap.view_reports': 'Can view reports',
     'admin.action.markpaid': 'Mark Paid',
     'admin.row.joined': 'joined', 'admin.row.trips': 'trip(s)',
     'admin.provider.detail.back': 'Back to providers',
@@ -8068,6 +8137,24 @@ const I18N = {
     'admin.reports.col.walkin': 'Walk-in',
     'admin.reports.export.csv': 'Export CSV',
     'admin.reports.empty': 'No activity in the selected range.',
+    // Provider self-service Reports tab (can_view_reports capability).
+    // Copy is deliberately reworded for the operator voice — same
+    // underlying numbers as admin.reports.* above, different framing.
+    'provider.tab.reports': 'Reports',
+    'provider.reports.revenue.title': 'Revenue',
+    'provider.reports.revenue.empty': 'No revenue in this period yet.',
+    'provider.reports.activity.title': 'Trip Activity',
+    'provider.reports.activity.empty': 'No trip activity in this period yet.',
+    'provider.reports.col.month': 'Month',
+    'provider.reports.col.bookings': 'Bookings',
+    'provider.reports.col.gross': 'Gross',
+    'provider.reports.col.commission': 'Commission Deducted',
+    'provider.reports.col.net': 'My Net',
+    'provider.reports.col.trips': 'Trips',
+    'provider.reports.col.seats': 'Seats Sold',
+    'provider.reports.col.walkin': 'Walk-ins',
+    'provider.reports.col.consumer': 'Consumer',
+    'provider.reports.export': 'Export CSV',
     'admin.reports.detail.empty': 'No activity for this provider in the last 6 months.',
     'admin.reports.drilldown_link': 'View',
   },
@@ -8267,6 +8354,7 @@ const I18N = {
     'admin.action.approve': 'موافقة', 'admin.action.block': 'حظر',
     'admin.caps.label': 'صلاحيات الرحلات:', 'admin.caps.add': 'إضافة', 'admin.caps.edit': 'تعديل', 'admin.caps.delete': 'حذف',
     'admin.caps.enabled': 'تم تفعيل الصلاحية', 'admin.caps.disabled': 'تم إلغاء الصلاحية',
+    'admin.provider.cap.view_reports': 'يمكنه عرض التقارير',
     'admin.action.markpaid': 'تأكيد الدفع',
     'admin.row.joined': 'انضمّ في', 'admin.row.trips': 'رحلة',
     'admin.provider.detail.back': 'العودة إلى المشغلين',
@@ -8450,6 +8538,22 @@ const I18N = {
     'admin.reports.col.walkin': 'حجز عند المنفذ',
     'admin.reports.export.csv': 'تصدير CSV',
     'admin.reports.empty': 'لا نشاط في الفترة المختارة.',
+    // Provider self-service Reports tab (can_view_reports capability).
+    'provider.tab.reports': 'التقارير',
+    'provider.reports.revenue.title': 'الإيرادات',
+    'provider.reports.revenue.empty': 'لا يوجد إيرادات في هذه الفترة بعد.',
+    'provider.reports.activity.title': 'نشاط الرحلات',
+    'provider.reports.activity.empty': 'لا يوجد نشاط رحلات في هذه الفترة بعد.',
+    'provider.reports.col.month': 'الشهر',
+    'provider.reports.col.bookings': 'الحجوزات',
+    'provider.reports.col.gross': 'الإجمالي',
+    'provider.reports.col.commission': 'العمولة المخصومة',
+    'provider.reports.col.net': 'صافي إيراداتي',
+    'provider.reports.col.trips': 'الرحلات',
+    'provider.reports.col.seats': 'المقاعد المباعة',
+    'provider.reports.col.walkin': 'حجوزات المنفذ',
+    'provider.reports.col.consumer': 'حجوزات إلكترونية',
+    'provider.reports.export': 'تصدير CSV',
     'admin.reports.detail.empty': 'لا نشاط لهذا المشغل خلال الأشهر الستة الماضية.',
     'admin.reports.drilldown_link': 'عرض',
   },
@@ -9261,8 +9365,16 @@ async function refreshProviderTab() {
   // on a trip that already departed. Bookings tab is a historic view of
   // records, so it deliberately stays unguarded.
   if (STATE.providerTab === 'trips') pinDateFloor('#pt-date');
+  // Reports tab (self-service financial visibility) is gated by the
+  // provider's own can_view_reports capability, admin-toggled from the
+  // Provider Detail page. Belt-and-braces with the backend 403 on
+  // GET /reports/mine — this is just the "no ghost tab" UI gate.
+  const canReports = !!STATE.auth?.user?.can_view_reports;
+  $('#provider-tab-reports').hidden = !canReports;
+  if (!canReports && STATE.providerTab === 'reports') { switchProviderTab('trips'); return; }
   if (STATE.providerTab === 'trips')    return refreshProviderTrips();
   if (STATE.providerTab === 'bookings') return refreshProviderBookings();
+  if (STATE.providerTab === 'reports')  return refreshProviderReports();
 }
 
 function switchProviderTab(tab) {
@@ -9332,6 +9444,112 @@ async function refreshProviderBookings() {
     renderProviderBookingsFooter(bookings);
     api('/trips/mine').then(ts => $('#pcnt-trips').textContent = ts.length).catch(()=>{});
   } catch (e) { toast(e.message, true); }
+}
+
+/* ---------- Provider self-service Reports tab ----------
+ * Consumes GET /reports/mine (provider-scoped; by_provider trimmed
+ * server-side). Only visible when STATE.auth.user.can_view_reports is
+ * true — gated in refreshProviderTab(). Copy is deliberately reworded
+ * for the operator voice (Revenue / Commission Deducted / My Net-style
+ * framing) — same underlying numbers as the admin Reports tab, which
+ * keeps its own platform-voice copy unchanged.
+ *
+ * NOTE on columns actually rendered: backend/src/finance/reports.py
+ * financial_by_month() rows only carry {month, commission, bookings} —
+ * there's no per-month gross/total_price aggregate anywhere in the
+ * reports module (confirmed by grep + by mirroring the admin Reports
+ * tab's own renderReportTables(), which likewise has no Gross/Net
+ * columns). So the Revenue table shows Month / Bookings / Commission
+ * Deducted only — no Gross or My Net column, since that data doesn't
+ * exist server-side. Similarly operational_by_month() rows carry
+ * {month, bookings, passengers, consumer, walkin} — no "trips"/"seats"
+ * keys — so Trip Activity uses those real keys ("Seats Sold" label
+ * mapped to r.passengers, which is the true seats-sold count). */
+async function refreshProviderReports() {
+  const from = $('#pr-from')?.value || undefined;
+  const to   = $('#pr-to')?.value   || undefined;
+  const qs   = new URLSearchParams();
+  if (from) qs.set('from', from);
+  if (to)   qs.set('to', to);
+  try {
+    const resp = await api('/reports/mine' + (qs.toString() ? '?' + qs : ''));
+    renderRevenueTable(resp.financial?.by_month || []);
+    renderActivityTable(resp.operational?.by_month || []);
+  } catch (e) { toast(e.message, true); }
+}
+
+function renderRevenueTable(rows) {
+  const table = $('#pr-revenue-table');
+  const empty = $('#pr-revenue-empty');
+  if (!rows.length) {
+    table.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  const head = `<thead><tr>
+    <th data-i18n="provider.reports.col.month">${t('provider.reports.col.month')}</th>
+    <th data-i18n="provider.reports.col.bookings">${t('provider.reports.col.bookings')}</th>
+    <th data-i18n="provider.reports.col.commission">${t('provider.reports.col.commission')}</th>
+  </tr></thead>`;
+  const body = rows.map(r => `<tr>
+    <td>${escapeHtml(r.month)}</td>
+    <td>${r.bookings}</td>
+    <td>SDG ${fmtMoney(r.commission || 0)}</td>
+  </tr>`).join('');
+  table.innerHTML = head + `<tbody>${body}</tbody>`;
+}
+
+function renderActivityTable(rows) {
+  const table = $('#pr-activity-table');
+  const empty = $('#pr-activity-empty');
+  if (!rows.length) {
+    table.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  const head = `<thead><tr>
+    <th data-i18n="provider.reports.col.month">${t('provider.reports.col.month')}</th>
+    <th data-i18n="provider.reports.col.bookings">${t('provider.reports.col.bookings')}</th>
+    <th data-i18n="provider.reports.col.seats">${t('provider.reports.col.seats')}</th>
+    <th data-i18n="provider.reports.col.walkin">${t('provider.reports.col.walkin')}</th>
+    <th data-i18n="provider.reports.col.consumer">${t('provider.reports.col.consumer')}</th>
+  </tr></thead>`;
+  const body = rows.map(r => `<tr>
+    <td>${escapeHtml(r.month)}</td>
+    <td>${r.bookings ?? '—'}</td>
+    <td>${r.passengers ?? '—'}</td>
+    <td>${r.walkin ?? '—'}</td>
+    <td>${r.consumer ?? '—'}</td>
+  </tr>`).join('');
+  table.innerHTML = head + `<tbody>${body}</tbody>`;
+}
+
+function exportReportsCsv() {
+  const revRows = Array.from($('#pr-revenue-table').querySelectorAll('tbody tr'))
+    .map(tr => Array.from(tr.children).map(td => td.textContent.trim()));
+  const actRows = Array.from($('#pr-activity-table').querySelectorAll('tbody tr'))
+    .map(tr => Array.from(tr.children).map(td => td.textContent.trim()));
+
+  const csv = [
+    'Revenue',
+    'Month,Bookings,Commission Deducted',
+    ...revRows.map(r => r.map(_csvEscape).join(',')),
+    '',
+    'Trip Activity',
+    'Month,Bookings,Seats Sold,Walk-ins,Consumer',
+    ...actRows.map(r => r.map(_csvEscape).join(',')),
+  ].join('\n');
+
+  const now = new Date();
+  const fname = `my-revenue-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.csv`;
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function makeProviderBookingRow(b) {
@@ -11218,6 +11436,7 @@ function renderProviderDetailPermissions() {
       <label class="cap"><input type="checkbox" data-cap="can_add_trips"    ${p.can_add_trips    ? 'checked' : ''}> ${t('admin.caps.add')}</label>
       <label class="cap"><input type="checkbox" data-cap="can_edit_trips"   ${p.can_edit_trips   ? 'checked' : ''}> ${t('admin.caps.edit')}</label>
       <label class="cap"><input type="checkbox" data-cap="can_delete_trips" ${p.can_delete_trips ? 'checked' : ''}> ${t('admin.caps.delete')}</label>
+      <label class="cap"><input type="checkbox" id="cap-view-reports" data-cap="can_view_reports" ${p.can_view_reports ? 'checked' : ''}> ${t('admin.provider.cap.view_reports')}</label>
     </div>` : '';
   body.innerHTML = `
     ${capsBlock}
@@ -12304,6 +12523,16 @@ function wire() {
   });
   $('#pb-status').addEventListener('change', refreshProviderBookings);
   $('#pb-date')?.addEventListener('change', refreshProviderBookings);
+
+  // Provider reports filter strip (self-service Reports tab)
+  $('#pr-export')?.addEventListener('click', exportReportsCsv);
+  let _prDebounce = null;
+  function _debouncedReportsRefresh() {
+    clearTimeout(_prDebounce);
+    _prDebounce = setTimeout(refreshProviderReports, 280);
+  }
+  $('#pr-from')?.addEventListener('input', _debouncedReportsRefresh);
+  $('#pr-to')?.addEventListener('input', _debouncedReportsRefresh);
 }
 
 /* PWA service worker (no-op on initial fail).

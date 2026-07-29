@@ -49,6 +49,14 @@ class UserOut(BaseModel):
     status: UserStatus
     email_verified: bool
     created_at: datetime
+    # Provider self-service Reports tab gate (frontend Task 3). Defaults
+    # False for non-providers too — harmless, only read for role=='provider'.
+    # Without this on the caller's own session payload, a provider has no
+    # way to know their own can_view_reports flag client-side (the other
+    # three trip caps are enforced purely server-side and never surfaced
+    # here either, but tab *visibility* needs a pre-check to avoid a ghost
+    # tab / a doomed-to-403 request).
+    can_view_reports: bool = False
 
     class Config:
         from_attributes = True
