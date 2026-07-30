@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -148,3 +148,32 @@ class ReportsResponse(BaseModel):
     period: ReportPeriod
     financial: FinancialSection
     operational: OperationalSection
+
+
+# ---------------------------------------------------------------------------
+# Care admin lifecycle
+# ---------------------------------------------------------------------------
+
+class CareAdminCreate(BaseModel):
+    email: EmailStr
+    full_name: str = Field(min_length=2, max_length=120)
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("full_name")
+    @classmethod
+    def _at_least_two_words(cls, v: str) -> str:
+        parts = v.strip().split()
+        if len(parts) < 2:
+            raise ValueError("full_name must contain at least two words")
+        return " ".join(parts)
+
+
+class CareAdminSummary(BaseModel):
+    id: int
+    email: EmailStr
+    full_name: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

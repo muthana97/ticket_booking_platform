@@ -12,6 +12,7 @@ from .auth.router import router as auth_router
 from .booking.router import router as booking_router
 from .booking.tasks import cleanup_expired_bookings # <--- Import the task
 from .admin.router import router as admin_router
+from .admin.care_admin_router import router as care_admin_router
 from .finance.router import router as finance_router
 from .notifications.router import router as notifications_router
 from .promo.router import router as promo_router, validate_router as promo_validate_router
@@ -220,6 +221,7 @@ app.include_router(inventory_router)
 app.include_router(auth_router)
 app.include_router(booking_router)
 app.include_router(admin_router)
+app.include_router(care_admin_router)
 app.include_router(finance_router)
 app.include_router(notifications_router)
 app.include_router(promo_router)
