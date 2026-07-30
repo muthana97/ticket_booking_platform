@@ -6227,6 +6227,23 @@
     box-shadow: 0 10px 20px -10px rgba(217,74,62,0.6);
   }
 
+  /* Care Admin Accounts row (Task 4) — reuses .commission-override-row's
+     layout wholesale. Each row has exactly one action button, so it's
+     always :last-child and would otherwise inherit the danger-red tint
+     above (correct for "Block", wrong for "Unblock"). Same specificity as
+     the :last-child rule above (one class swapped for another) so source
+     order — this block comes later — decides the tie for .unblock. */
+  body[data-screen="admin-settings"].pillow .care-admin-row .actions button.unblock {
+    background: rgba(23,166,107,0.12);
+    color: var(--p-ok);
+    box-shadow: 0 0 0 1px rgba(23,166,107,0.22) inset;
+  }
+  body[data-screen="admin-settings"].pillow .care-admin-row .actions button.unblock:hover {
+    background: var(--p-ok);
+    color: white;
+    box-shadow: 0 10px 20px -10px rgba(23,166,107,0.6);
+  }
+
   /* Gear button in the topbar (all pillow screens) — bare icon, no chip.
      Same visual footprint as the old circle, just without the surround. */
   body.pillow .gear-btn {
@@ -7381,6 +7398,26 @@
           </div>
         </section>
 
+        <!-- Care Admin Accounts (Task 4) — full-admin-only, same gate pattern
+             as Commissions above. Guard already wired in paintChrome() (Task
+             3): `$('#settings-care-admin-section').hidden = !isFullAdmin()`.
+             No default `hidden` attribute here — matches the Commissions /
+             Promos sections above, which rely entirely on paintChrome. -->
+        <section class="settings-section" id="settings-care-admin-section">
+          <h3 data-i18n="settings.section.care_admin">Care Admin Accounts</h3>
+          <div class="settings-body">
+            <div class="panel" id="care-admin-card">
+              <div class="panel-head">
+                <h4 data-i18n="settings.care_admin.title">Care Admin Accounts</h4>
+                <button class="btn-inline admin" id="care-admin-add-btn" data-i18n="settings.care_admin.add_cta">+ Add care admin</button>
+              </div>
+              <p class="lead" data-i18n="settings.care_admin.lead">Create limited-access admin accounts for customer care agents. They can view bookings, trips, providers, and confirm pending payments.</p>
+              <div id="care-admin-list"></div>
+              <div id="care-admin-empty" class="empty-state" data-i18n="settings.care_admin.empty">No care admin accounts yet.</div>
+            </div>
+          </div>
+        </section>
+
         <section class="settings-section" id="settings-promos-section">
           <h3 data-i18n="settings.section.promos">Promos</h3>
           <div class="settings-body">
@@ -7694,6 +7731,31 @@
     <div class="modal-actions">
       <button class="cta ghost" id="cov-cancel" data-i18n="ticket.close">Cancel</button>
       <button class="cta admin" id="cov-save" data-i18n="commission.save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Care Admin Create Modal (Task 4) -->
+<div id="care-admin-create-modal" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3 data-i18n="settings.care_admin.modal.title">New care admin</h3>
+    <div class="field-block">
+      <label data-i18n="settings.care_admin.modal.name">Full name</label>
+      <input type="text" id="ca-name" maxlength="120" autocomplete="off"
+             data-i18n-placeholder="settings.care_admin.modal.name.ph"
+             placeholder="Two words minimum" />
+    </div>
+    <div class="field-block">
+      <label data-i18n="settings.care_admin.modal.email">Email</label>
+      <input type="email" id="ca-email" maxlength="120" autocomplete="off" />
+    </div>
+    <div class="field-block">
+      <label data-i18n="settings.care_admin.modal.password">Password</label>
+      <input type="password" id="ca-password" maxlength="128" autocomplete="new-password" />
+    </div>
+    <div class="modal-actions">
+      <button class="cta ghost" id="care-admin-modal-cancel" data-i18n="action.cancel">Cancel</button>
+      <button class="cta admin" id="ca-submit" data-i18n="settings.care_admin.modal.submit">Create</button>
     </div>
   </div>
 </div>
@@ -8024,6 +8086,28 @@ const I18N = {
     'toast.profile_name_too_short': 'Full name must be at least 2 characters.',
     'toast.profile_save_failed': "Couldn't save. Try again.",
     'settings.section.commissions': 'Commissions',
+    'settings.section.care_admin': 'Care Admin Accounts',
+    'settings.care_admin.title': 'Care Admin Accounts',
+    'settings.care_admin.lead': 'Create limited-access admin accounts for customer care agents. They can view bookings, trips, providers, and confirm pending payments.',
+    'settings.care_admin.add_cta': '+ Add care admin',
+    'settings.care_admin.empty': 'No care admin accounts yet.',
+    'settings.care_admin.status.active': 'Active',
+    'settings.care_admin.status.blocked': 'Blocked',
+    'settings.care_admin.action.block': 'Block',
+    'settings.care_admin.action.unblock': 'Unblock',
+    'settings.care_admin.modal.title': 'New care admin',
+    'settings.care_admin.modal.name': 'Full name',
+    'settings.care_admin.modal.name.ph': 'Two words minimum',
+    'settings.care_admin.modal.email': 'Email',
+    'settings.care_admin.modal.password': 'Password',
+    'settings.care_admin.modal.submit': 'Create',
+    'settings.care_admin.err.name': 'Full name needs at least two words.',
+    'settings.care_admin.err.fields': 'Fill every field. Password must be at least 8 characters.',
+    'settings.care_admin.err.dup': 'Email already in use.',
+    'settings.care_admin.err.create': 'Could not create the care admin account.',
+    'settings.care_admin.toast.created': 'Care admin created.',
+    'settings.care_admin.toast.blocked': 'Care admin blocked.',
+    'settings.care_admin.toast.unblocked': 'Care admin unblocked.',
     'settings.section.account': 'Account',
     'settings.section.account.soon': 'Password reset and more coming soon.',
     'settings.section.promos': 'Promos',
@@ -8425,6 +8509,28 @@ const I18N = {
     'toast.profile_name_too_short': 'يجب أن يتكون الاسم الكامل من حرفين على الأقل.',
     'toast.profile_save_failed': 'تعذّر الحفظ. حاول مرة أخرى.',
     'settings.section.commissions': 'العمولات',
+    'settings.section.care_admin': 'حسابات دعم العملاء',
+    'settings.care_admin.title': 'حسابات دعم العملاء',
+    'settings.care_admin.lead': 'أنشئ حسابات إدارية بصلاحيات محدودة لموظفي دعم العملاء. يمكنهم عرض الحجوزات والرحلات والمشغلين وتأكيد المدفوعات المعلقة.',
+    'settings.care_admin.add_cta': '+ إضافة حساب دعم',
+    'settings.care_admin.empty': 'لا توجد حسابات دعم عملاء بعد.',
+    'settings.care_admin.status.active': 'نشط',
+    'settings.care_admin.status.blocked': 'محظور',
+    'settings.care_admin.action.block': 'حظر',
+    'settings.care_admin.action.unblock': 'إلغاء الحظر',
+    'settings.care_admin.modal.title': 'حساب دعم جديد',
+    'settings.care_admin.modal.name': 'الاسم الكامل',
+    'settings.care_admin.modal.name.ph': 'كلمتان على الأقل',
+    'settings.care_admin.modal.email': 'البريد الإلكتروني',
+    'settings.care_admin.modal.password': 'كلمة المرور',
+    'settings.care_admin.modal.submit': 'إنشاء',
+    'settings.care_admin.err.name': 'الاسم الكامل يجب أن يحتوي على كلمتين على الأقل.',
+    'settings.care_admin.err.fields': 'املأ جميع الحقول. كلمة المرور 8 أحرف على الأقل.',
+    'settings.care_admin.err.dup': 'البريد الإلكتروني مستخدم بالفعل.',
+    'settings.care_admin.err.create': 'تعذّر إنشاء حساب الدعم.',
+    'settings.care_admin.toast.created': 'تم إنشاء حساب الدعم.',
+    'settings.care_admin.toast.blocked': 'تم حظر الحساب.',
+    'settings.care_admin.toast.unblocked': 'تم إلغاء الحظر.',
     'settings.section.account': 'الحساب',
     'settings.section.promos': 'كوبونات الخصم',
     'promos.title': 'أكواد الخصم',
@@ -10893,6 +10999,9 @@ async function refreshAdminSettings() {
     const promos = await api('/admin/promos');
     renderPromosList(promos);
   } catch (e) { toast(e.message, true); }
+  // Care Admin Accounts (Task 4) — same admin-only gate as Commissions/Promos
+  // above (this whole function already returned early for non-admin roles).
+  refreshCareAdmins();
 }
 
 function refreshPersonalInfo() {
@@ -10951,6 +11060,115 @@ async function savePersonalInfo() {
     toast(t('toast.profile_save_failed'), true);
   } finally {
     if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
+// -------- Care Admin Accounts (Task 4) --------
+// Full-admin-only surface. `isFullAdmin()` gate mirrors the one already
+// wired into paintChrome() for #settings-care-admin-section (Task 3) — this
+// is defense in depth so a stray call site can never fetch/render for a
+// care admin or any other role.
+async function refreshCareAdmins() {
+  if (!isFullAdmin()) return;
+  try {
+    const rows = await api('/admin/care-admins');
+    renderCareAdminRows(rows);
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+function renderCareAdminRows(rows) {
+  const list = $('#care-admin-list');
+  const empty = $('#care-admin-empty');
+  if (!list || !empty) return;
+  list.innerHTML = '';
+  if (!rows || !rows.length) {
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  list.innerHTML = rows.map(r => {
+    const pillCls = r.status === 'active' ? 'active' : 'blocked';
+    const pillLabel = r.status === 'active'
+      ? t('settings.care_admin.status.active')
+      : t('settings.care_admin.status.blocked');
+    const action = r.status === 'active'
+      ? `<button class="block" data-id="${r.id}" data-action="block" data-i18n="settings.care_admin.action.block">${t('settings.care_admin.action.block')}</button>`
+      : `<button class="unblock" data-id="${r.id}" data-action="unblock" data-i18n="settings.care_admin.action.unblock">${t('settings.care_admin.action.unblock')}</button>`;
+    return `<div class="commission-override-row care-admin-row">
+      <span class="status-pill ${pillCls}">${pillLabel}</span>
+      <span class="label">${escapeHtml(r.full_name)} · ${escapeHtml(r.email)} · ${t('admin.row.joined')} ${fmtTime(r.created_at)}</span>
+      <span class="actions">${action}</span>
+    </div>`;
+  }).join('');
+  applyLanguage();  // re-translate the freshly-inserted [data-i18n] labels
+}
+
+function openCareAdminModal() {
+  const nameEl = $('#ca-name'), emailEl = $('#ca-email'), passEl = $('#ca-password');
+  if (nameEl) nameEl.value = '';
+  if (emailEl) emailEl.value = '';
+  if (passEl) passEl.value = '';
+  $('#care-admin-create-modal')?.classList.add('show');
+  setTimeout(() => nameEl?.focus(), 0);
+}
+
+function closeCareAdminModal() {
+  $('#care-admin-create-modal')?.classList.remove('show');
+}
+
+async function submitCareAdmin() {
+  const name = ($('#ca-name')?.value || '').trim();
+  const email = ($('#ca-email')?.value || '').trim();
+  const password = $('#ca-password')?.value || '';
+  // Client-side mirrors of the server rules (fail-fast UX) — server (Task 2's
+  // CareAdminCreate schema) is still the source of truth for both checks.
+  if (name.split(/\s+/).filter(Boolean).length < 2) {
+    toast(t('settings.care_admin.err.name'), true);
+    return;
+  }
+  if (!email || !password || password.length < 8) {
+    toast(t('settings.care_admin.err.fields'), true);
+    return;
+  }
+  const submitBtn = $('#ca-submit');
+  if (submitBtn) submitBtn.disabled = true;
+  try {
+    await api('/admin/care-admins', {
+      method: 'POST',
+      body: JSON.stringify({ full_name: name, email, password }),
+    });
+    closeCareAdminModal();
+    toast(t('settings.care_admin.toast.created'));
+    refreshCareAdmins();
+  } catch (err) {
+    // api() throws Error with message "409 Conflict — Email already in use"
+    // on dupe (matches the commission-override-modal 409 handling pattern).
+    if (err.message?.startsWith('409')) toast(t('settings.care_admin.err.dup'), true);
+    else toast(err.message || t('settings.care_admin.err.create'), true);
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+async function blockCareAdmin(id) {
+  try {
+    await api(`/admin/care-admins/${id}/block`, { method: 'POST' });
+    toast(t('settings.care_admin.toast.blocked'));
+    refreshCareAdmins();
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+async function unblockCareAdmin(id) {
+  try {
+    await api(`/admin/care-admins/${id}/unblock`, { method: 'POST' });
+    toast(t('settings.care_admin.toast.unblocked'));
+    refreshCareAdmins();
+  } catch (err) {
+    toast(err.message, true);
   }
 }
 
@@ -12400,6 +12618,23 @@ function wire() {
   $('#promo-modal-save')?.addEventListener('click', savePromo);
   $('#promo-modal')?.addEventListener('click', (e) => {
     if (e.target.id === 'promo-modal') closePromoModal();
+  });
+
+  // Care Admin Accounts (Task 4) — add button, row action delegation, modal
+  // wiring. Mirrors the promos-list delegation pattern above (data-action +
+  // data-id on the button, single click listener on the list container).
+  $('#care-admin-add-btn')?.addEventListener('click', openCareAdminModal);
+  $('#care-admin-list')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id, 10);
+    if (btn.dataset.action === 'block') blockCareAdmin(id);
+    else if (btn.dataset.action === 'unblock') unblockCareAdmin(id);
+  });
+  $('#care-admin-modal-cancel')?.addEventListener('click', closeCareAdminModal);
+  $('#ca-submit')?.addEventListener('click', submitCareAdmin);
+  $('#care-admin-create-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'care-admin-create-modal') closeCareAdminModal();
   });
   // Pill toggles inside the modal (kind + scope)
   $$('#pm-kind label').forEach(lbl => lbl.addEventListener('click', () => {
