@@ -9616,23 +9616,28 @@ function renderRevenueTable(rows) {
     return;
   }
   empty.classList.add('hidden');
+  const lMonth = t('provider.reports.col.month');
+  const lBookings = t('provider.reports.col.bookings');
+  const lGross = t('provider.reports.col.gross');
+  const lCommission = t('provider.reports.col.commission');
+  const lNet = t('provider.reports.col.net');
   const head = `<thead><tr>
-    <th data-i18n="provider.reports.col.month">${t('provider.reports.col.month')}</th>
-    <th data-i18n="provider.reports.col.bookings">${t('provider.reports.col.bookings')}</th>
-    <th data-i18n="provider.reports.col.gross">${t('provider.reports.col.gross')}</th>
-    <th data-i18n="provider.reports.col.commission">${t('provider.reports.col.commission')}</th>
-    <th data-i18n="provider.reports.col.net">${t('provider.reports.col.net')}</th>
+    <th data-i18n="provider.reports.col.month">${lMonth}</th>
+    <th data-i18n="provider.reports.col.bookings">${lBookings}</th>
+    <th data-i18n="provider.reports.col.gross">${lGross}</th>
+    <th data-i18n="provider.reports.col.commission">${lCommission}</th>
+    <th data-i18n="provider.reports.col.net">${lNet}</th>
   </tr></thead>`;
   const body = rows.map(r => {
     const gross = r.gross || 0;
     const commission = r.commission || 0;
     const net = gross - commission;
     return `<tr>
-      <td>${escapeHtml(r.month)}</td>
-      <td>${r.bookings}</td>
-      <td>SDG ${fmtMoney(gross)}</td>
-      <td>SDG ${fmtMoney(commission)}</td>
-      <td>SDG ${fmtMoney(net)}</td>
+      <td data-label="${escapeHtml(lMonth)}">${escapeHtml(r.month)}</td>
+      <td data-label="${escapeHtml(lBookings)}">${r.bookings}</td>
+      <td data-label="${escapeHtml(lGross)}">SDG ${fmtMoney(gross)}</td>
+      <td data-label="${escapeHtml(lCommission)}">SDG ${fmtMoney(commission)}</td>
+      <td data-label="${escapeHtml(lNet)}">SDG ${fmtMoney(net)}</td>
     </tr>`;
   }).join('');
   table.innerHTML = head + `<tbody>${body}</tbody>`;
@@ -9647,19 +9652,24 @@ function renderActivityTable(rows) {
     return;
   }
   empty.classList.add('hidden');
+  const lMonth = t('provider.reports.col.month');
+  const lBookings = t('provider.reports.col.bookings');
+  const lSeats = t('provider.reports.col.seats');
+  const lWalkin = t('provider.reports.col.walkin');
+  const lConsumer = t('provider.reports.col.consumer');
   const head = `<thead><tr>
-    <th data-i18n="provider.reports.col.month">${t('provider.reports.col.month')}</th>
-    <th data-i18n="provider.reports.col.bookings">${t('provider.reports.col.bookings')}</th>
-    <th data-i18n="provider.reports.col.seats">${t('provider.reports.col.seats')}</th>
-    <th data-i18n="provider.reports.col.walkin">${t('provider.reports.col.walkin')}</th>
-    <th data-i18n="provider.reports.col.consumer">${t('provider.reports.col.consumer')}</th>
+    <th data-i18n="provider.reports.col.month">${lMonth}</th>
+    <th data-i18n="provider.reports.col.bookings">${lBookings}</th>
+    <th data-i18n="provider.reports.col.seats">${lSeats}</th>
+    <th data-i18n="provider.reports.col.walkin">${lWalkin}</th>
+    <th data-i18n="provider.reports.col.consumer">${lConsumer}</th>
   </tr></thead>`;
   const body = rows.map(r => `<tr>
-    <td>${escapeHtml(r.month)}</td>
-    <td>${r.bookings ?? '—'}</td>
-    <td>${r.passengers ?? '—'}</td>
-    <td>${r.walkin ?? '—'}</td>
-    <td>${r.consumer ?? '—'}</td>
+    <td data-label="${escapeHtml(lMonth)}">${escapeHtml(r.month)}</td>
+    <td data-label="${escapeHtml(lBookings)}">${r.bookings ?? '—'}</td>
+    <td data-label="${escapeHtml(lSeats)}">${r.passengers ?? '—'}</td>
+    <td data-label="${escapeHtml(lWalkin)}">${r.walkin ?? '—'}</td>
+    <td data-label="${escapeHtml(lConsumer)}">${r.consumer ?? '—'}</td>
   </tr>`).join('');
   table.innerHTML = head + `<tbody>${body}</tbody>`;
 }
