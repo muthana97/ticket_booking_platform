@@ -63,3 +63,12 @@ def require_admin(user: models.User = Depends(get_current_user)) -> models.User:
     if user.role != "admin" or user.status != "active":
         raise HTTPException(status_code=403, detail="Admin role required")
     return user
+
+
+def require_admin_or_care(user: models.User = Depends(get_current_user)) -> models.User:
+    """Accepts both `admin` and `care_admin`. Used on read-mostly admin
+    endpoints plus POST /admin/payments/{id}/confirm — the one mutation
+    the restricted care-admin tier is allowed to make."""
+    if user.role not in ("admin", "care_admin") or user.status != "active":
+        raise HTTPException(status_code=403, detail="Admin role required")
+    return user

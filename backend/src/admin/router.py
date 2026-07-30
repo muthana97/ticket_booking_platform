@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from ..auth.dependencies import require_admin
+from ..auth.dependencies import require_admin, require_admin_or_care
 from ..auth import models as auth_models
 from ..database import get_db
 from ..finance import reports as finance_reports
@@ -13,7 +13,7 @@ from ..inventory import service as inv_service
 from ..audit import service as audit_svc, schemas as audit_schemas
 from . import schemas, service
 
-router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(require_admin)])
+router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
 # ---------------------------------------------------------------------------
@@ -24,6 +24,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(requir
 def list_providers(
     status: Optional[str] = Query(default=None, regex="^(pending|active|blocked)$"),
     db: Session = Depends(get_db),
+    admin=Depends(require_admin_or_care),
 ):
     """List provider users, optionally filtered by status."""
     return service.list_providers(db, status=status)
@@ -88,6 +89,7 @@ def list_trips(
     time: Optional[str] = Query(default=None, regex="^(upcoming|past|all)$"),
     travel_date: Optional[str] = Query(default=None, description="ISO date (YYYY-MM-DD) — filters to that calendar day"),
     db: Session = Depends(get_db),
+    admin=Depends(require_admin_or_care),
 ):
     """All trips in the system. Filters mirror /admin/bookings for parity."""
     from datetime import datetime as _dt
@@ -190,6 +192,7 @@ def list_all_bookings(
     provider_id: Optional[int] = Query(default=None),
     travel_date: Optional[str] = Query(default=None, description="ISO date (YYYY-MM-DD) — filters to bookings whose trip departs that day"),
     db: Session = Depends(get_db),
+    admin=Depends(require_admin_or_care),
 ):
     """A-OP-06: All bookings, searchable. Defaults to status='confirmed'."""
     # Treat empty status (or status="any") as no filter
@@ -201,13 +204,13 @@ def list_all_bookings(
 
 
 @router.get("/payments/pending", response_model=List[schemas.PendingPaymentItem])
-def list_pending_payments(db: Session = Depends(get_db)):
+def list_pending_payments(db: Session = Depends(get_db), admin=Depends(require_admin_or_care)):
     return service.list_pending_payments(db)
 
 
 @router.post("/payments/{booking_id}/confirm", response_model=schemas.ConfirmPaymentResponse)
 def confirm_payment(
-    booking_id: int, db: Session = Depends(get_db), admin=Depends(require_admin),
+    booking_id: int, db: Session = Depends(get_db), admin=Depends(require_admin_or_care),
 ):
     """Move booking from `committed_pending` → `confirmed`, lock seats as
     `booked` permanently, and (in the demo) print a delivery line for the
@@ -237,6 +240,7 @@ def get_reports(
     to: Optional[str] = Query(default=None),
     provider_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ):
     if not from_ or not to:
         d_from, d_to = finance_reports.default_period()
@@ -295,7 +299,7 @@ def provider_log(
     limit: int = 100,
     before_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    admin=Depends(require_admin),
+    admin=Depends(require_admin_or_care),
 ):
     """Activity log for a single provider. Admin-only in Phase 1;
     Phase 2 will widen for operator-admin scoped to their acts_for_provider_id."""

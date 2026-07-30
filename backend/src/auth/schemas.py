@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
-UserRole = Literal["customer", "provider", "admin"]
+UserRole = Literal["customer", "provider", "admin", "care_admin"]
 UserStatus = Literal["pending", "active", "blocked"]
 
 
