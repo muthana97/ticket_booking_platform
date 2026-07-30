@@ -7133,7 +7133,7 @@
           <button data-tab="trips"><span data-i18n="admin.tab.trips">Trips</span> <span class="count" id="cnt-trips">0</span></button>
           <button data-tab="bookings"><span data-i18n="admin.tab.bookings">Bookings</span> <span class="count" id="cnt-bookings">0</span></button>
           <button data-tab="payments"><span data-i18n="admin.tab.payments">Pending Payments</span> <span class="count" id="cnt-payments">0</span></button>
-          <button data-tab="reports" data-i18n="admin.reports.tab">Reports</button>
+          <button data-tab="reports" id="admin-tab-reports" data-i18n="admin.reports.tab">Reports</button>
         </div>
         <div class="tab-content">
           <div data-tab-panel="providers" class="active">
@@ -7759,7 +7759,7 @@ const I18N = {
   en: {
     // top bar / nav
     'signout': 'Sign out', 'nav.search': 'Search', 'nav.mytickets': 'My Tickets', 'nav.support': 'Support',
-    'role.customer': 'Passenger', 'role.provider': 'Operator', 'role.admin': 'Administrator',
+    'role.customer': 'Passenger', 'role.provider': 'Operator', 'role.admin': 'Administrator', 'role.care_admin': 'Care Admin',
     'back': '← Back',
     // welcome
     'welcome.status': 'Sudan Intercity Coach · Live',
@@ -8161,7 +8161,7 @@ const I18N = {
   ar: {
     // top bar / nav
     'signout': 'تسجيل الخروج', 'nav.search': 'بحث', 'nav.mytickets': 'تذاكري', 'nav.support': 'الدعم',
-    'role.customer': 'راكب', 'role.provider': 'مشغل', 'role.admin': 'مدير',
+    'role.customer': 'راكب', 'role.provider': 'مشغل', 'role.admin': 'مدير', 'role.care_admin': 'دعم العملاء',
     'back': 'رجوع →',
     // welcome
     'welcome.status': 'شبكة السودان للنقل بين المدن · مباشر',
@@ -8763,6 +8763,15 @@ const STATE = {
   auditLog: { items: [], nextBefore: null, filters: { q: '', event_type: '', from: '', to: '' } },  // admin provider-detail: activity log panel
 };
 
+/* ---------- role helpers ----------
+ * Care admin (role="care_admin") shares the admin chrome + tab-bar shell but
+ * loses mutation power on providers/trips + visibility on Reports/Commissions.
+ * These two helpers are the single source of truth for that split — render
+ * functions should gate on these rather than re-checking STATE.auth.user.role
+ * inline, so the full/care split stays in one place. */
+const isFullAdmin = () => STATE.auth?.user?.role === 'admin';
+const isCareAdmin = () => STATE.auth?.user?.role === 'care_admin';
+
 /* ---------- DOM utils ---------- */
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -8884,7 +8893,7 @@ function paintChrome() {
   const session = $('#session');
   const subhead = $('#subhead');
   const nav = $('#topbar-nav');
-  topbar.classList.remove('role-customer', 'role-provider', 'role-admin');
+  topbar.classList.remove('role-customer', 'role-provider', 'role-admin', 'role-care_admin');
   document.body.classList.toggle('pillow', PILLOW_SCREENS.has(STATE.screen));
   nav.innerHTML = '';
   if (auth) {
@@ -8945,16 +8954,30 @@ function paintChrome() {
   const langToggle = $('#lang-toggle');
   if (langToggle) langToggle.hidden = !!auth;
 
-  // Commissions section visibility — admin only.
+  // Commissions section visibility — full admin only. `!isFullAdmin()` (not
+  // `isCareAdmin()`) is deliberate: it also hides the section from
+  // customers/operators who somehow land on Settings, not just care admin.
   const commCard = $('#commission-global-card');
   const ovCard   = $('#commission-overrides-card');
   const commSection = commCard?.closest('.settings-section');
-  if (commSection) commSection.hidden = (auth?.user?.role !== 'admin');
+  if (commSection) commSection.hidden = !isFullAdmin();
+  // Care Admin Accounts section (Task 4 adds the markup) — same full-admin-only
+  // gate. Optional chaining on the lookup only; Task 4's section lands hidden
+  // for care admin/customers/providers automatically once it exists.
+  const careAdminSection = $('#settings-care-admin-section');
+  if (careAdminSection) careAdminSection.hidden = !isFullAdmin();
   // Promos section visibility — admin only. Customers + operators
   // otherwise saw an empty Promos card since the /admin/promos fetch
   // silently 403s for them.
   const promosSection = $('#settings-promos-section');
   if (promosSection) promosSection.hidden = (auth?.user?.role !== 'admin');
+
+  // Reports tab is full-admin only server-side (require_admin, not
+  // require_admin_or_care) — hide the tab button for care admin. The
+  // stale-route bounce-back (if a care admin somehow lands ON the Reports
+  // panel) lives in refreshAdminTab().
+  const reportsTabBtn = $('#admin-tab-reports');
+  if (reportsTabBtn) reportsTabBtn.hidden = isCareAdmin();
 
   // Hide the subhead on screens where the back button isn't useful (main
   // landing screens for each role + the auth flow). Only sub-screens that
@@ -9171,7 +9194,7 @@ async function refreshPendingStatus() {
 function routeAfterAuth() {
   const u = STATE.auth.user;
   STATE.history = [];
-  if (u.role === 'admin') {
+  if (u.role === 'admin' || u.role === 'care_admin') {
     goto('admin-home', { replaceHistory: true });
     refreshAdminTab(); startAdminRefresh();
     return;
@@ -11318,8 +11341,15 @@ function renderOverrideList(rows) {
 }
 
 async function refreshAdminTab() {
-  if (STATE.auth?.user.role !== 'admin') return;
+  if (!isFullAdmin() && !isCareAdmin()) return;
   const tab = STATE.adminTab;
+  // Care admin has no Reports access server-side (require_admin, not
+  // require_admin_or_care) — bounce back to the default tab if a stale
+  // route (e.g. leftover from a previous full-admin session) points here.
+  if (isCareAdmin() && tab === 'reports') {
+    switchAdminTab('providers');
+    return;
+  }
   // Populate provider filter dropdowns on Trips + Bookings tabs the first
   // time either is opened. Silent-fail — dropdown stays on "Any operator".
   if (tab === 'trips')    populateAdminProviderSelect('#at-provider');
@@ -11402,11 +11432,22 @@ async function renderProviderDetail() {
   } catch (e) { toast(e.message, true); return; }
 
   renderProviderDetailHeader();
-  renderProviderDetailPermissions();
+
+  // Permissions (capability toggles + approve/block) and the per-provider
+  // Reports drilldown are both full-admin-only server-side (require_admin,
+  // not require_admin_or_care) — care admin gets neither the mutation power
+  // nor the fetch, so skip the call entirely rather than eat a 403 toast.
+  const permSection = $('#admin-detail-permissions');
+  if (permSection) permSection.hidden = isCareAdmin();
+  if (isFullAdmin()) renderProviderDetailPermissions();
+
   // Task 8:
   if (typeof renderProviderAuditLog === 'function') renderProviderAuditLog(true /*reset*/);
+
+  const reportsSection = $('#admin-detail-reports');
+  if (reportsSection) reportsSection.hidden = isCareAdmin();
   // Task 9:
-  if (typeof renderProviderReports === 'function') await renderProviderReports();
+  if (isFullAdmin() && typeof renderProviderReports === 'function') await renderProviderReports();
 
   // Drilldown links (Reports tab -> here) can request a scroll to a
   // specific panel once the page has finished rendering.
@@ -11605,14 +11646,18 @@ async function renderAdminTrips(opts = {}) {
       </div>
       <div class="price">${fmtMoney(trip.price)}<small>${t('trips.sdg_per_seat')}</small></div>
       <div class="trip-card-actions">
-        <button class="btn-inline alt" data-action="edit">${t('trips.action.edit')}</button>
+        ${isFullAdmin() ? `<button class="btn-inline alt" data-action="edit">${t('trips.action.edit')}</button>` : ''}
         <button class="btn-inline alt" data-action="manifest">${t('trips.action.manifest')}</button>
-        <button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>
+        ${isFullAdmin() ? `<button class="btn-inline danger" data-action="delete">${t('trips.action.delete')}</button>` : ''}
       </div>
     `;
-    card.querySelector('[data-action="edit"]').addEventListener('click', () => openTripEdit(trip, '/admin/trips/'));
+    // Edit + Delete are full-admin-only server-side (DELETE/PATCH
+    // /admin/trips/{id} both require_admin, not require_admin_or_care) —
+    // the buttons above are only in the DOM for a full admin, so these
+    // listeners simply have nothing to attach to for care admin.
+    card.querySelector('[data-action="edit"]')?.addEventListener('click', () => openTripEdit(trip, '/admin/trips/'));
     card.querySelector('[data-action="manifest"]').addEventListener('click', () => openManifest(trip));
-    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTrip(trip.trip_id, '/admin/trips/'));
+    card.querySelector('[data-action="delete"]')?.addEventListener('click', () => deleteTrip(trip.trip_id, '/admin/trips/'));
     list.appendChild(card);
   });
 }
