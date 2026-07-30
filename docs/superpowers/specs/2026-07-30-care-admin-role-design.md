@@ -73,7 +73,7 @@ The router-level dependency is therefore **removed**. Every existing per-handler
 | `POST /admin/providers/{id}/approve` | `require_admin` | Provider lifecycle |
 | `POST /admin/providers/{id}/block` | `require_admin` | Provider lifecycle |
 | `PATCH /admin/providers/{id}/capabilities` | `require_admin` | Permission management |
-| `GET /admin/providers/{id}/log` | `require_admin_or_care` | Per-provider audit log — supports customer-complaint troubleshooting; no financial data |
+| `GET /admin/providers/{id}/log` | `require_admin_or_care` | Per-provider audit log — supports customer-complaint troubleshooting; no financial aggregates (individual audit entries may reference per-transaction amounts, which is deliberate — care admin needs "when was payment X of SDG Y confirmed" to answer customer calls) |
 | `GET /admin/providers/{id}/reports` | `require_admin` | Per-provider financial drilldown — same policy as aggregate Reports |
 | `GET /admin/trips` | `require_admin_or_care` | View |
 | `PATCH /admin/trips/{id}` | `require_admin` | Trip edit — full admin only |
