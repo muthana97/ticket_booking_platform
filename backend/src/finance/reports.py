@@ -63,7 +63,9 @@ def financial_by_month(
     if provider_id is not None:
         q = q.filter(Trip.provider_id == provider_id)
 
-    buckets: dict[str, dict] = {m: {"commission": 0.0, "bookings": 0} for m in period}
+    buckets: dict[str, dict] = {
+        m: {"commission": 0.0, "gross": 0.0, "bookings": 0} for m in period
+    }
     for b, _t in q.all():
         # Spec §5: rows with commission_amount IS NULL are excluded entirely
         # from the financial side. Walk-ins keep amount=0.0 (not NULL) so they
@@ -75,9 +77,15 @@ def financial_by_month(
             continue
         buckets[key]["bookings"] += 1
         buckets[key]["commission"] += b.commission_amount
+        buckets[key]["gross"] += b.total_price or 0
 
     return [
-        {"month": m, "commission": round(v["commission"], 2), "bookings": v["bookings"]}
+        {
+            "month": m,
+            "commission": round(v["commission"], 2),
+            "gross": round(v["gross"], 2),
+            "bookings": v["bookings"],
+        }
         for m, v in buckets.items()
     ]
 
@@ -113,9 +121,10 @@ def financial_by_provider(
             continue
         pid = t.provider_id
         if pid not in buckets:
-            buckets[pid] = {"commission": 0.0, "bookings": 0}
+            buckets[pid] = {"commission": 0.0, "gross": 0.0, "bookings": 0}
         buckets[pid]["bookings"] += 1
         buckets[pid]["commission"] += b.commission_amount
+        buckets[pid]["gross"] += b.total_price or 0
 
     pids = list(buckets.keys())
     if not pids:
@@ -130,6 +139,7 @@ def financial_by_provider(
             "provider_id": pid,
             "provider_name": name_by_id.get(pid, "—"),
             "commission": round(v["commission"], 2),
+            "gross": round(v["gross"], 2),
             "bookings": v["bookings"],
         }
         for pid, v in buckets.items()

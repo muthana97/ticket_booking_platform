@@ -9619,13 +9619,22 @@ function renderRevenueTable(rows) {
   const head = `<thead><tr>
     <th data-i18n="provider.reports.col.month">${t('provider.reports.col.month')}</th>
     <th data-i18n="provider.reports.col.bookings">${t('provider.reports.col.bookings')}</th>
+    <th data-i18n="provider.reports.col.gross">${t('provider.reports.col.gross')}</th>
     <th data-i18n="provider.reports.col.commission">${t('provider.reports.col.commission')}</th>
+    <th data-i18n="provider.reports.col.net">${t('provider.reports.col.net')}</th>
   </tr></thead>`;
-  const body = rows.map(r => `<tr>
-    <td>${escapeHtml(r.month)}</td>
-    <td>${r.bookings}</td>
-    <td>SDG ${fmtMoney(r.commission || 0)}</td>
-  </tr>`).join('');
+  const body = rows.map(r => {
+    const gross = r.gross || 0;
+    const commission = r.commission || 0;
+    const net = gross - commission;
+    return `<tr>
+      <td>${escapeHtml(r.month)}</td>
+      <td>${r.bookings}</td>
+      <td>SDG ${fmtMoney(gross)}</td>
+      <td>SDG ${fmtMoney(commission)}</td>
+      <td>SDG ${fmtMoney(net)}</td>
+    </tr>`;
+  }).join('');
   table.innerHTML = head + `<tbody>${body}</tbody>`;
 }
 
@@ -9663,7 +9672,7 @@ function exportReportsCsv() {
 
   const csv = [
     'Revenue',
-    'Month,Bookings,Commission Deducted',
+    'Month,Bookings,Gross,Commission Deducted,My Net',
     ...revRows.map(r => r.map(_csvEscape).join(',')),
     '',
     'Trip Activity',

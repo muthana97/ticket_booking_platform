@@ -61,8 +61,8 @@ def test_financial_by_month_empty_period(db, trip):
         db, period=period_months("2026-01", "2026-02"), provider_id=None,
     )
     assert rows == [
-        {"month": "2026-01", "commission": 0.0, "bookings": 0},
-        {"month": "2026-02", "commission": 0.0, "bookings": 0},
+        {"month": "2026-01", "commission": 0.0, "gross": 0.0, "bookings": 0},
+        {"month": "2026-02", "commission": 0.0, "gross": 0.0, "bookings": 0},
     ]
 
 
@@ -73,10 +73,10 @@ def test_financial_by_month_one_booking(db, trip):
         db, period=period_months("2026-01", "2026-04"), provider_id=None,
     )
     assert rows == [
-        {"month": "2026-01", "commission": 0.0,   "bookings": 0},
-        {"month": "2026-02", "commission": 0.0,   "bookings": 0},
-        {"month": "2026-03", "commission": 160.0, "bookings": 1},
-        {"month": "2026-04", "commission": 0.0,   "bookings": 0},
+        {"month": "2026-01", "commission": 0.0,   "gross": 0.0,    "bookings": 0},
+        {"month": "2026-02", "commission": 0.0,   "gross": 0.0,    "bookings": 0},
+        {"month": "2026-03", "commission": 160.0, "gross": 2000.0, "bookings": 1},
+        {"month": "2026-04", "commission": 0.0,   "gross": 0.0,    "bookings": 0},
     ]
 
 
@@ -85,15 +85,19 @@ def test_financial_by_month_excludes_null_commission(db, trip):
     _booking(db, trip, total=1000.0, commission=None,
              when=_dt.datetime(2026, 3, 15))
     rows = financial_by_month(db, period=["2026-03", "2026-03"], provider_id=None)
-    assert rows == [{"month": "2026-03", "commission": 0.0, "bookings": 0}]
+    assert rows == [{"month": "2026-03", "commission": 0.0, "gross": 0.0, "bookings": 0}]
 
 
 def test_financial_by_month_walkin_counts_with_zero(db, trip):
-    """Walk-ins have commission_amount=0.0 (not NULL) — included in count, 0 sum."""
+    """Walk-ins have commission_amount=0.0 (not NULL) — included in count, 0 sum.
+    Gross still reflects the ticket sale price, though — the provider took the
+    money at the counter, we just didn't take a cut."""
     _booking(db, trip, total=1000.0, commission=0.0,
              channel="walkin", when=_dt.datetime(2026, 3, 15))
     rows = financial_by_month(db, period=["2026-03", "2026-03"], provider_id=None)
-    assert rows == [{"month": "2026-03", "commission": 0.0, "bookings": 1}]
+    assert rows == [
+        {"month": "2026-03", "commission": 0.0, "gross": 1000.0, "bookings": 1}
+    ]
 
 
 def test_financial_by_provider_empty(db, trip):
@@ -113,7 +117,7 @@ def test_financial_by_provider_groups_per_provider(db, trip, provider_user):
     assert rows == [
         {"provider_id": provider_user.id,
          "provider_name": provider_user.full_name,
-         "commission": 300.0, "bookings": 2},
+         "commission": 300.0, "gross": 2000.0, "bookings": 2},
     ]
 
 
