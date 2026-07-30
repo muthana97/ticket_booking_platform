@@ -10989,7 +10989,7 @@ async function refreshAdminSettings() {
   const emailEl = $('#account-email');
   if (emailEl) emailEl.textContent = STATE.auth.user.email || '—';
   // Commissions + Promos only fetched for admin.
-  if (STATE.auth.user.role !== 'admin') return;
+  if (!isFullAdmin()) return;
   try {
     const data = await api('/admin/commissions');
     renderGlobalCommission(data.global);
