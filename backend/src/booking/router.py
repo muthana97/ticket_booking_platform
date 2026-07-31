@@ -145,7 +145,9 @@ def get_ticket(
 
     Access rules:
       - Booking owner (customer_id) can always read their own ticket.
-      - Admins can read any ticket.
+      - Full admins AND care admins can read any ticket (care admins need
+        this to answer customer support calls — "what's the status of my
+        booking BOK-XXXX-XX?" is the single most common ticket-lookup case).
       - Providers can read tickets on trips they own.
     """
     booking = db.query(Booking).filter(Booking.id == booking_id).first()
@@ -153,13 +155,13 @@ def get_ticket(
         raise HTTPException(status_code=404, detail="Booking not found")
 
     is_owner = booking.customer_id == current_user.id
-    is_admin = current_user.role == "admin"
+    is_admin_tier = current_user.role in ("admin", "care_admin")
     is_trip_owner = False
     if current_user.role == "provider":
         trip = db.query(Trip).filter(Trip.id == booking.trip_id).first()
         is_trip_owner = bool(trip and trip.provider_id == current_user.id)
 
-    if not (is_owner or is_admin or is_trip_owner):
+    if not (is_owner or is_admin_tier or is_trip_owner):
         raise HTTPException(status_code=403, detail="Not authorized to view this ticket")
 
     if not booking.billing_reference:
